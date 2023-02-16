@@ -56,9 +56,10 @@ const Parent = mongoose.Schema(
                     return /^\+?\d+$/.test(value.trim())
                 },
                 message: "invalidTel"
-            }
+            },
+            unique : true
         },
-        studentChilds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
+        students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
     }
     ,
     {

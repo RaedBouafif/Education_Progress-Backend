@@ -7,7 +7,8 @@ const Group = Schema(
         groupName: {
             type: String,
             required: [true, "groupNameRequired"],
-            unique: true
+            unique: true , 
+            trim : true
         },
         section: {
             type: Schema.Types.ObjectId,
