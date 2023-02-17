@@ -1,6 +1,6 @@
-const ParentModel = require("../models/Users/parent.model.js");
+const ParentModel = require("./../../models/Users/parent.model.js");
 const bcrypt = require("bcryptjs");
-const generateToken = require("../../functions/generateToken.js");
+const generateToken = require("./../../functions/generateToken.js");
 
 exports.createParent = async (req, res) => {
   try {
@@ -42,10 +42,10 @@ exports.createParent = async (req, res) => {
 
 exports.getParentById = async (req, res) => {
   try {
-    if (!req.params.parentId)
+    if (!req.params.id)
       return res.status(400).json({ error: "parentIdRequired" });
     const parent = await ParentModel.findById(
-      req.params.parentId,
+      req.params.id,
       "firstName lastName email tel"
     );
     return res.status(200).json(parent);
@@ -56,10 +56,10 @@ exports.getParentById = async (req, res) => {
 
 exports.getParentAndChildsById = async (req, res) => {
   try {
-    if (!req.params.parentId)
+    if (!req.params.id)
       return res.status(400).json({ error: "parentIdRequired" });
     const parent = await ParentModel.findById(
-      req.params.parentId,
+      req.params.id,
       "firstName lastName email tel"
     ).populate({
       path: "students",
@@ -103,11 +103,11 @@ exports.login = async (req, res) => {
 exports.updateParent = async (req, res) => {
   //request with same name of parent attributs
   try {
-    if (!req.params.idParent)
+    if (!req.params.id)
       return res.status(400).json({
         error: "badRequest",
       });
-    const newParent = await ParentModel.findByIdAndupdate(idParent, req.body, {
+    const newParent = await ParentModel.findByIdAndupdate(req.params.id, req.body, {
       new: true,
     });
     if (newParent)
