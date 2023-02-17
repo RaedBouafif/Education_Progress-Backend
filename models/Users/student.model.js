@@ -37,9 +37,7 @@ const Student = mongoose.Schema(
         },
         password: {
             type: String,
-            trim: true,
             required: [true, "passwordRequired"],
-            minLength: [6, "shortPassword"]
         },
         birth: {
             type: Date,

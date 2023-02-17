@@ -43,9 +43,7 @@ const Parent = mongoose.Schema(
         },
         password: {
             type: String,
-            trim: true,
-            required: [true, "passwordRequired"],
-            minLength: [6, "shortPassword"]
+            required: [true, "passwordRequired"]
         },
         tel: {
             type: String,
@@ -57,7 +55,7 @@ const Parent = mongoose.Schema(
                 },
                 message: "invalidTel"
             },
-            unique : true
+            unique: true
         },
         students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
     }
