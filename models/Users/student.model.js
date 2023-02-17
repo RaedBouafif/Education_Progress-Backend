@@ -43,6 +43,10 @@ const Student = mongoose.Schema(
         birth: {
             type: Date,
             required: [true, "birthRequired"]
+        },
+        parent : {
+            type : mongoose.Schema.Types.ObjectId,
+            ref : 'Parent'
         }
     },
     {

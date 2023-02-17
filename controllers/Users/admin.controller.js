@@ -1,14 +1,16 @@
-const Student = require('../../models/Users/student.model')
+const Admin = require('../../models/Users/admin.model')
 const bcrypt = require("bcryptjs")
 const generateToken = require('../../functions/generateToken')
-const Parent = require('../../models/Users/parent.model')
-const {Types} = require('mongoose')
-//Create a new student
-exports.createStudent = async (req,res) => {
+
+
+
+//Create a new Admin
+exports.createAdmin = async (req,res) => {
     try{
-        if(!req.body){
+        const {username , password , role} = req.body
+        if(!username || !password || !role){
             return res.status(400).send({
-                error : 'Bad Request'
+                error : 'Bad Request!'
             })
         }
         if (req.body.password.length < 6){
@@ -17,23 +19,17 @@ exports.createStudent = async (req,res) => {
             })
         }
         const encryptedPassword = await bcrypt.hash(req.body.password, 10)
-        const student = new Student({
-            firstName : req.body.firstName || null,
-            lastName : req.body.lastName || null,
-            username : req.body.username || null,
-            password : encryptedPassword || null,
-            birth : req.body.birth || null,
-            parent : new Types.ObjectId (req.body.idParent || null)
+        const admin = new Admin({
+            username : username || null,
+            password : password || null,
+            role : role || null
         })
-        student.save().then( data => {
+        admin.save().then( data => {
             console.log(data)
             return res.status(201).send({
                 _id : data._id,
-                firstName : data.firstName,
-                lastName : data.lastName,
                 username : data.username,
-                birth : data.birth,
-                parent : data.parent
+                role : data.role
             })
         }).catch( err => {
             if (err.keyValue?.username){
@@ -56,22 +52,21 @@ exports.createStudent = async (req,res) => {
     }
 }
 
-//Retrieve all students
-exports.findAllStudents = (req,res) => {
+//Retrieve all Admins
+exports.findAllAdmins = (req,res) => {
     try{    
-        Student.find({},{password : 0}).populate({path :'parent', select : {password : 0}}).then(students => {
-            if (students.length == 0){
+        Admin.find({},{password : 0}).then(admins => {
+            if (admins.length == 0){
                 return res.status(204).send({
-                    message : "There is no students in the database!",
+                    message : "There is no admins in database!",
                     found : false
-
                 })
             }
-            return res.status(200).send({students, found: true})
+            return res.status(200).send({admins, found: true})
             }).catch(err => {
                 return res.status(400).send({
                 error : err.message,
-                message : "Some error occured while retrieving all students!"
+                message : "Some error occured while retrieving all admins!"
             })
         })
     }catch(e) {
@@ -83,33 +78,33 @@ exports.findAllStudents = (req,res) => {
 }
 
 
-//Reetrieve Student by Id 
- exports.findOneStudent = (req,res) => {
+//Retrieve Admin by Id 
+ exports.findOneAdmin = (req,res) => {
     try{
-        if (!req.params.studentId){
+        if (!req.params.adminId){
             return res.status(400).send({
-                error : "Student id is required!"
+                error : "Admin id is required!"
             })
         }
-        Student.findById(req.params.studentId, {password : 0}).populate({path :'parent', select : {password : 0}}).then(student => {
-            if (student.length == 0){
+        Admin.findById(req.params.adminId, {password : 0}).then(admin => {
+            if (admin.length == 0){
                 return res.status(404).send({
-                    message : "Student with the id:" + req.params.studentId + "not found!",
+                    message : "Admin with the id:" + req.params.adminId + "not found!",
                     found : false
                 })
             }
             return res.status(200).send({
-                student,
+                admin,
                 found : true
             })
         }).catch(err => {
             if (err.kind === "ObjectId" ){
                 return res.status(404).send({
-                    error : "Student not found with id: "+req.params.studentId
+                    error : "Admin not found with id: "+req.params.adminId
                 })
             }
             return res.status(400).send({
-                error : "Some Error while finding student with id" + req.params.studentId
+                error : "Some Error while finding admin with id" + req.params.adminId
             })
         })
     }catch(e) {
@@ -122,20 +117,20 @@ exports.findAllStudents = (req,res) => {
 
 
 
- // Delete a Student with the specified studentId
+ // Delete an Admin with the specified adminId
 
- exports.deleteStudent = (req,res) => {
+ exports.deleteAdmin = (req,res) => {
     try{
-        if(!req.params.studentId){
+        if(!req.params.adminId){
             return res.status(400).send({
                 error : "Bad Request!"
             })
         }
-        const { studentId } = req.params 
-        Student.findByIdAndRemove(studentId).then( student => {
-            if (!student){
+        const { adminId } = req.params 
+        Admin.findByIdAndRemove(adminId).then( admin => {
+            if (!admin){
                 return res.status(404).send({
-                    message : "student not found with id " + studentId,
+                    message : "student not found with id " + adminId,
                     deleted : false
                 })
             }
@@ -146,11 +141,11 @@ exports.findAllStudents = (req,res) => {
         }).catch(err => {
             if ( err.kind === "ObjectId" || err.name === 'NotFound'){
                 return res.status(404).send({
-                    error: "Student not found with id" + studentId
+                    error: "Student not found with id" + adminId
                 })
             }
             return res.status(400).send({
-                error : "Some Error occured while finding student with id"+ studentId
+                error : "Some Error occured while finding student with id"+ adminId
             })
         })
     }catch(e) {
@@ -162,7 +157,7 @@ exports.findAllStudents = (req,res) => {
  }
 
 
- //login for the Student
+ //login for the Admin
  exports.login = async (req,res) => {
     try{
         const { username, password } = req.body
@@ -171,13 +166,11 @@ exports.findAllStudents = (req,res) => {
                 error : "Credentials required!"
             })
         }
-        Student.findOne({username}).then( async student => {
-            if (student && await (bcrypt.compare(password,student.password))){
+        Admin.findOne({username}).then( async (admin) => {
+            if (admin && await (bcrypt.compare(password,admin.password))){
                 const token = generateToken({
-                    firstName : student.firstName,
-                    lastName : student.lastName ,
-                    username : student.username ,
-                    birth : student.birth
+                    username : admin.username ,
+                    role : admin.role
                 }, '3d')
                 return res.status(200).json({logged : true , token})
             }else {
@@ -186,12 +179,12 @@ exports.findAllStudents = (req,res) => {
         }).catch(err => {
             if (err.kind === 'ObjectId' || err.name == "NotFound"){
                 return res.status(404).send({
-                    error : "Student with username:" + username + " not found!"
+                    error : "Admin with username:" + username + " not found!"
                 })
             }
             console.log(err.message)
             return res.status(400).send({
-                error : "Some error occured while student attempting to Log in!"
+                error : "Some error occured while admin attempting to Log in!"
             })
         })
     }catch(e) {
@@ -202,10 +195,10 @@ exports.findAllStudents = (req,res) => {
     }
 }
 
-// update student by id
-exports.updateStudent = async (req,res) => {
+// update Admin by adminId
+exports.updateAdmin = async (req,res) => {
     try{
-        if (!req.params.studentId){
+        if (!req.params.adminId){
             return res.status(400).send({
                 error : "Bad Request"
             })
@@ -220,21 +213,21 @@ exports.updateStudent = async (req,res) => {
             }
         }
         // assuming that the request body have the same database attributes name
-        Student.findByIdAndUpdate(req.params.studentId, req.body, {new : true, runValidators : true, fields : {password : 0}}).then( student => {
+        Admin.findByIdAndUpdate(req.params.adminId, req.body, {new : true, runValidators : true, fields : {password : 0}}).then( admin => {
             if (student.length == 0){
                 return res.status(404).send({
-                    message : "Student with id: " +req.params.studentId + " not found",
+                    message : "Admin with id: " +req.params.adminId + " not found",
                     found : false
                 })
             }
             return res.status(200).send({
-                student,
+                admin,
                 found : true
             })
         }).catch(err => {
             if (err.kind === 'ObjectId' || err.name === 'NotFound'){
                 return res.status(404).send({
-                    error : "Student with id: " +req.params.studentId + " not found"
+                    error : "Admin with id: " +req.params.adminId + " not found"
                 })
             }
             if (err.keyValue?.username){
@@ -244,7 +237,7 @@ exports.updateStudent = async (req,res) => {
                 })
             }
             return res.status(400).send({
-                error : "Some Error occured while updating the student with id : "+ req.params.studentId
+                error : "Some Error occured while updating the admin with id : "+ req.params.adminId
             })
         })
     }catch (e) {
@@ -253,7 +246,6 @@ exports.updateStudent = async (req,res) => {
             message : "Server error!"
         })
     }
-
 }
 
 

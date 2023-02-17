@@ -1,9 +1,10 @@
 const express = require("express")
 require("dotenv").config()
-const connectDB = require('./db/connect')
+const connectDB = require('./config/dbConnect')
 const cors = require("cors")
 const mongoose = require('mongoose')
 const parentRouter = require("./routers/Users/parent.router")
+const studentRouter = require("./routers/Users/student.route")
 var app = express()
 
 app.use(express.json())
@@ -19,6 +20,8 @@ const baseURL = "/api/v1"
 
 
 app.use(`${baseURL}/parent`, parentRouter)
+app.use(`${baseURL}/student`, studentRouter)
+
 
 
 
