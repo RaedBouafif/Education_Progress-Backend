@@ -26,7 +26,6 @@ const Student = mongoose.Schema(
                 message: "invalidLastName"
             },
             minLength: [2, "shortLastName"],
-
         },
         username: {
             type: String,

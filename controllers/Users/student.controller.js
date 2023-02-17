@@ -5,11 +5,11 @@ const generateToken = require('../../functions/generateToken')
 
 
 //Create a new student
-exports.create = async (req,res) => {
+exports.createStudent = async (req,res) => {
     try{
         if(!req.body){
             return res.status(400).send({
-                message : 'Eleve can not be empty'
+                error : 'Bad Request'
             })
         }
         const encryptedPassword = await bcrypt.hash(req.body.password.trim(), 10)
@@ -44,9 +44,14 @@ exports.create = async (req,res) => {
 }
 
 //Retrieve all students
-exports.findAll = (req,res) => {
+exports.findAllStudents = (req,res) => {
     try{    
         Student.findAll().then(students => {
+            if (!students){
+                res.status(404).send({
+                    error : "There is no students in the database!"
+                })
+            }
             res.status(200).send(students)
             }).catch(err => {
                 res.status(400).send({
@@ -64,23 +69,32 @@ exports.findAll = (req,res) => {
 
 
 //Reetrieve Student by Id 
- exports.findOne = (req,res) => {
+ exports.findOneStudent = (req,res) => {
     try{
+        if (!req.params.studentId){
+            return res.status(400).send({
+                error : "Student id is required!"
+            })
+        }
         Student.findById(req.params.studentId).then(student => {
             if (!student){
                 return res.status(404).send({
-                    message : "Student with the id:" + req.params.studentId + "not found!"
+                    error : "Student with the id:" + req.params.studentId + "not found!",
+                    found : false
                 })
             }
-            res.status(200).send(student)
+            res.status(200).send({
+                student,
+                found : true
+            })
         }).catch(err => {
             if (err.kind === "ObjectId" ){
                 return res.status(404).send({
-                    message : "Student not found with id: "+req.params.studentId
+                    error : "Student not found with id: "+req.params.studentId
                 })
             }
             return res.status(400).send({
-                message : "Error while finding student with id" + req.params.studentId
+                error : "Some Error while finding student with id" + req.params.studentId
             })
         })
     }catch(e) {
@@ -95,26 +109,33 @@ exports.findAll = (req,res) => {
 
  // Delete a Student with the specified studentId
 
- exports.delete = (req,res) => {
+ exports.deleteStudent = (req,res) => {
     try{
+        if(!req.body){
+            return res.status(400).send({
+                error : "Bad Request!"
+            })
+        }
         const { studentId } = req.params 
         Student.findByIdAndRemove(studentId).then( student => {
             if (!student){
                 return res.status(404).send({
-                    message : "student not found with id " + studentId
+                    message : "student not found with id " + studentId,
+                    deleted : false
                 })
             }
             res.status(200).send({
-                message : "Student deleted Successfully!!"
+                message : "Student deleted Successfully!!",
+                deleted : true
             })
         }).catcht(err => {
             if ( err.kind === "ObjectId" || err.name === 'NotFound'){
                 return res.status(404).send({
-                    message: "Student not found with id" + studentId
+                    error: "Student not found with id" + studentId
                 })
             }
             return res.status(400).send({
-                message : "Error occured while finding student with id"+ studentId
+                error : "Some Error occured while finding student with id"+ studentId
             })
         })
     }catch(e) {
@@ -132,7 +153,7 @@ exports.findAll = (req,res) => {
         const { username, password } = req.body
         if (!username || !password){
             return res.status(400).send({
-                message : "Credentialss required!"
+                error : "Credentialss required!"
             })
         }
         Student.findOne({username : username}).then( student => {
@@ -149,8 +170,13 @@ exports.findAll = (req,res) => {
                 return res.status(404).json({logged : false})
             }
         }).catch(err => {
+            if (err.kind === 'ObjectId'){
+                return res.status(404).send({
+                    error : "Student with username:" + username + " not found!"
+                })
+            }
             return res.status(400).send({
-                message : "Student with username:" + username + " not found!"
+                error : "Some error occured while user attempting to Log in!"
             })
         })
     }catch(e) {
@@ -160,5 +186,52 @@ exports.findAll = (req,res) => {
         })
     }
 }
+
+// update student by id
+exports.updateStudent() = (req,res) => {
+    try{
+        if (!req.body){
+            return res.status(400).send({
+                error : "Bad Request"
+            })
+        }
+        // assuming that the request body have the same database attributes name
+        Student.findByIdAndUpdate(req.body.studentId, req.body, {new : true}).then( student => {
+            if (!student){
+                return res.status(400).send({
+                    message : "Student with id: " +req.body.studentId + " not found",
+                    found : false
+                })
+            }
+            return res.statues(200).send({
+                student,
+                found : true
+            })
+        }).catch(err => {
+            if (err.kind === 'ObjectId'){
+                return res.status(404).send({
+                    error : "Student with id: " +req.body.studentId + " not found"
+                })
+            }
+            if (err.keyValue?.username){
+                return res.status(409).send({
+                    error : "Conflict email",
+                    message : "Username already exist!"
+                })
+            }
+            return res.status(400).send({
+                error : "Some Error occured while updating the student with id : "+ req.body.studentId
+            })
+        })
+    }catch (e) {
+        res.status(500).send({
+            error : e.message,
+            message : "Server error!"
+        })
+    }
+
+}
+
+
    
 
