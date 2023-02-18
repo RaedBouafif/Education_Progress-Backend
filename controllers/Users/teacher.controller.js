@@ -78,7 +78,7 @@ exports.getAllTeachers = async (req, res) => {
         );
         return teachers?.length
             ? res.status(200).json({ teachers, found: true })
-            : res.status(204).json({ found: false, message: "noTeachers" });
+            : res.status(204).json({ found: false });
     } catch {
         return res.status(500).json({ error: "serverSideError" });
     }
@@ -178,7 +178,9 @@ exports.addSubject = async (req, res) => {
         if (!teacher) return res.status(404).json({ teacherFound: false });
         const subject = await SubjectModel.findById(subjectId);
         if (subject) {
-            if (!teacher.subjects.find((element) => element === subjectId)) {
+            if (!teacher.subjects.find((element) => {
+                return element.toString() === subjectId
+            })) {
                 //teacher already have this subject
                 teacher.subjects.push(subjectId);
                 await teacher.save();
@@ -217,10 +219,11 @@ exports.removeSubject = async (req, res) => {
         const teacher = await TeacherModel.findById(teacherId);
         if (!teacher) return res.status(404).json({ teacherFound: false });
         console.log(teacher.subjects)
-        if (!teacher.subjects.find(element => element === subjectId)) {
+        if (!teacher.subjects.find(element => element.toString() === subjectId)) {
             return res.status(404).json({ teacherFound: true, subjectFound: false })
         } else {
-            teacher.subjects.filter(element => element !== subjectId)
+            teacher.subjects = teacher.subjects.filter(element => element.toString() !== subjectId)
+            await teacher.save()
             return res.status(200).json({ teacherFound: true, subjectFound: true })
         }
     } catch (e) {
@@ -228,15 +231,5 @@ exports.removeSubject = async (req, res) => {
         return res.status(500).json({
             error: "serverSideError",
         });
-    }
-}
-
-exports.deleteAll = async (req, res) => {//juste for testing
-    try {
-        const teacher = await TeacherModel.deleteMany({});
-        return res.status(200).send("success")
-    } catch (e) {
-        console.log(e)
-        return res.status(500).send("error")
     }
 }

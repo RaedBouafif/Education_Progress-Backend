@@ -3,15 +3,15 @@ const mongoose = require("mongoose")
 
 const Classroom = mongoose.Schema(
     {
-        className: {
+        classroomName: {
             type: String,
-            required: [true, "classNameRequired"],
+            required: [true, "classroomNameRequired"],
             unique: true,
             trim: true
         },
         type: {
             type: String,
-            enum: ["TP", "COURS"],
+            enum: ["TP", "COUR"],
             default: "COUR"
         }
     },

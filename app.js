@@ -7,6 +7,8 @@ const parentRouter = require("./routers/Users/parent.router")
 // const studentRouter = require("./routers/Users/student.router")
 const teacherRouter = require("./routers/Users/teacher.router")
 // const adminRouter = require("./routers/Users/admin.router")
+const classroomRouter = require("./routers/classroom.router")
+
 var app = express()
 
 app.use(express.json())
@@ -25,6 +27,7 @@ app.use(`${baseURL}/parent`, parentRouter)
 // app.use(`${baseURL}/student`, studentRouter)
 app.use(`${baseURL}/teacher`, teacherRouter)
 // app.use(`${baseURL}/admin`, adminRouter)
+app.use(`${baseURL}/classroom`, classroomRouter)
 
 
 mongoose.set('strictQuery', true)

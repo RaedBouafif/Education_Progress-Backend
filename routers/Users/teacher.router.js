@@ -7,7 +7,6 @@ const {
     login,
     addSubject,
     removeSubject,
-    deleteAll
 } = require("../../controllers/Users/teacher.controller");
 
 //---posts requests---
@@ -21,6 +20,5 @@ Router.route("/getAll").get(getAllTeachers);
 Router.route("/addSubject/:teacherId/:subjectId").get(addSubject);
 //---delete requests---
 Router.route("/removeSubject/:teacherId/:subjectId").delete(removeSubject)
-Router.route("/deleteAll").delete(deleteAll)
 
 module.exports = Router;
