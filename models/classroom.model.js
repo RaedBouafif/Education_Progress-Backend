@@ -6,7 +6,8 @@ const Classroom = mongoose.Schema(
         className: {
             type: String,
             required: [true, "classNameRequired"],
-            unique: true
+            unique: true,
+            trim: true
         },
         type: {
             type: String,

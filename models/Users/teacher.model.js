@@ -12,9 +12,9 @@ const Teacher = mongoose.Schema(
             validate: {
                 validator: (value) => {
                     return /^[A-Za-z]+$/.test(value.trim())
-                }
+                },
+                message: "invalidLastName",
             },
-            message: "invalidLastName",
             minLength: [2, "shortName"],
         },
         lastName: {

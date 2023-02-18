@@ -6,11 +6,13 @@ const StudentAbsence = Schema(
     {
         student: {
             type: Schema.Types.ObjectId,
-            ref: "Student"
+            ref: "Student",
+            required: [true, "studentRequired"]
         },
         session: {
             type: Schema.Types.ObjectId,
-            ref: "Session"
+            ref: "Session",
+            required: [true, "sessionRequired"]
         },
         justified: {
             type: Boolean,

@@ -7,13 +7,14 @@ const Subject = mongoose.Schema(
         subjectName: {
             type: String,
             required: [true, "subjectNameRequired"],
-            unique: true
+            unique: true,
+            trim: true
         },
-        properties: [{
-            section : {type :String, required : true},
-            coefficient : {type : Number, required : true},
-            required : true
-        }],
+        // properties: [{
+        //     section: { type: String, required: true },
+        //     coefficient: { type: Number, required: true },
+        //     required: true
+        // }],
         active: {
             type: Boolean,
             default: true

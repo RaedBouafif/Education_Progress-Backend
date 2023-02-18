@@ -10,9 +10,9 @@ const Student = mongoose.Schema(
             validate: {
                 validator: (value) => {
                     return /^[A-Za-z]+$/.test(value.trim())
-                }
+                },
+                message: "invalidLastName",
             },
-            message: "invalidLastName",
             minLength: [2, "shortName"]
         },
         lastName: {
@@ -42,9 +42,9 @@ const Student = mongoose.Schema(
             type: Date,
             required: [true, "birthRequired"]
         },
-        parent : {
-            type : mongoose.Schema.Types.ObjectId,
-            ref : 'Parent'
+        parent: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Parent'
         }
     },
     {

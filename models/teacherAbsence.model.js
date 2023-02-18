@@ -7,11 +7,13 @@ const teacherAbsence = Schema(
     {
         teacher: {
             type: Schema.Types.ObjectId,
-            ref: "Teacher"
+            ref: "Teacher",
+            required: [true, "teacherRequired"]
         },
         session: {
             type: Schema.Types.ObjectId,
-            ref: "Session"
+            ref: "Session",
+            required: [true, "sessionRequired"]
         },
         justified: {
             type: Boolean,

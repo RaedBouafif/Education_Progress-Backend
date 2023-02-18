@@ -1,13 +1,12 @@
-const TeacherModel = require("../../models/Users/teacher.model")
+const TeacherModel = require("../../models/Users/teacher.model");
 const SubjectModel = require("../../models/subject.model");
 const { Types } = require("mongoose");
-const bcrypt = require("bcryptjs")
-const generateToken = require("../../functions/generateToken")
-
+const bcrypt = require("bcryptjs");
+const generateToken = require("../../functions/generateToken");
 
 exports.create = async (req, res) => {
     try {
-        const { firstName, lastName, email, tel, password, salary } = req.body
+        const { firstName, lastName, email, tel, password, salary } = req.body;
         if (!firstName || !lastName || !email || !tel || !password || !salary)
             return res.status(400).json({
                 error: "badRequest",
@@ -23,7 +22,7 @@ exports.create = async (req, res) => {
             email,
             tel,
             password: encryptedPassword,
-            salary
+            salary,
         });
         await teacher.save();
         return res.status(201).json({
@@ -53,37 +52,37 @@ exports.create = async (req, res) => {
             });
         }
     }
-}
+};
 
-
-
-exports.getTeacherById = async (req, res) => { //WithSubjects
+exports.getTeacherById = async (req, res) => {
+    //WithSubjects
     try {
         if (!req.params.teacherId)
             return res.status(400).json({ error: "teacherIdRequired" });
         const teacher = await TeacherModel.findById(
             req.params.teacherId,
             "firstName lastName email tel salary"
-        ).populate("subjects")
+        ).populate("subjects");
         if (teacher) return res.status(200).json({ found: true, teacher });
-        else return res.status(404).json({ found: false })
+        else return res.status(404).json({ found: false });
     } catch (e) {
-        console.log(e)
+        console.log(e);
         return res.status(500).json({ error: "serverSideError" });
     }
-}
-
+};
 
 exports.getAllTeachers = async (req, res) => {
     try {
-        const teachers = await TeacherModel.find({}, { password: 0 }).populate("subjects")
-        return teachers.length ? res.status(200).json({ teachers, found: true }) :
-            res.status(204).json({ found: false, message: "noTeachers" })
+        const teachers = await TeacherModel.find({}, { password: 0 }).populate(
+            "subjects"
+        );
+        return teachers?.length
+            ? res.status(200).json({ teachers, found: true })
+            : res.status(204).json({ found: false, message: "noTeachers" });
     } catch {
         return res.status(500).json({ error: "serverSideError" });
     }
-}
-
+};
 
 exports.login = async (req, res) => {
     try {
@@ -100,7 +99,7 @@ exports.login = async (req, res) => {
                     firstName: teacher.firstName,
                     lastName: teacher.lastName,
                     tel: teacher.tel,
-                    salary: teacher.salary
+                    salary: teacher.salary,
                 },
                 "3d"
             );
@@ -109,12 +108,10 @@ exports.login = async (req, res) => {
             return res.status(404).json({ logged: false });
         }
     } catch (e) {
-        console.log(e)
+        console.log(e);
         return res.status(500).json({ error: "serverSideError" });
     }
-}
-
-
+};
 
 exports.updateTeacher = async (req, res) => {
     //request with same name of parent attributs
@@ -128,12 +125,16 @@ exports.updateTeacher = async (req, res) => {
                 error: "passwordMinLength",
             });
         if (req.body.password)
-            req.body.password = await bcrypt.hash(req.body.password, 10)
-        const newTeacher = await TeacherModel.findByIdAndUpdate(req.params.teacherId, req.body, {
-            new: true,
-            runValidators: true,
-            fields: { password: 0 }
-        });
+            req.body.password = await bcrypt.hash(req.body.password, 10);
+        const newTeacher = await TeacherModel.findByIdAndUpdate(
+            req.params.teacherId,
+            req.body,
+            {
+                new: true,
+                runValidators: true,
+                fields: { password: 0 },
+            }
+        );
         if (newTeacher)
             return res.status(200).json({
                 newTeacher,
@@ -164,25 +165,78 @@ exports.updateTeacher = async (req, res) => {
     }
 };
 
-exports.addSubject = async (req, res) => {//need test
+exports.addSubject = async (req, res) => {
+    //need test
     try {
-        const subjectId = req.params.subjectId
-        const idTeacher = req.params.idTeacher
-        if (!subjectId || !idTeacher)
+        const subjectId = req.params.subjectId;
+        const teacherId = req.params.teacherId;
+        if (!subjectId || !teacherId)
             return res.status(400).json({
                 error: "badRequest",
             });
-        const teacher = await TeacherModel.findById(idTeacher, { password: 0 })
-        if (!teacher)
-            return res.status(404).json({ teacher: { found: false } })
-        console.log(teacher.subjects)
-        teacher.subjects.push(new Types.ObjectId(subjectId))
-        await teacher.save()
-        return res.status(200).json({ teacher: { found: true } })
+        const teacher = await TeacherModel.findById(teacherId);
+        if (!teacher) return res.status(404).json({ teacherFound: false });
+        const subject = await SubjectModel.findById(subjectId);
+        if (subject) {
+            if (!teacher.subjects.find((element) => element === subjectId)) {
+                //teacher already have this subject
+                teacher.subjects.push(subjectId);
+                await teacher.save();
+                return res
+                    .status(200)
+                    .json({ teacherFound: true, subjectFound: true, subjectExist: false });
+                //subject exist mean that teacher already have this subject
+            } else {
+                //teacher don't have the subject
+                return res
+                    .status(200)
+                    .json({
+                        teacherFound: true,
+                        subjectFound: true,
+                        subjectExist: true,
+                    });
+            }
+        } else
+            return res.status(404).json({ teacherFound: true, subjectFound: false });
     } catch (e) {
         console.log(e);
         return res.status(500).json({
             error: "serverSideError",
         });
+    }
+};
+
+exports.removeSubject = async (req, res) => {
+    try {
+        const subjectId = req.params.subjectId;
+        const teacherId = req.params.teacherId;
+        if (!subjectId || !teacherId)
+            return res.status(400).json({
+                error: "badRequest",
+            });
+        const teacher = await TeacherModel.findById(teacherId);
+        if (!teacher) return res.status(404).json({ teacherFound: false });
+        console.log(teacher.subjects)
+        if (!teacher.subjects.find(element => element === subjectId)) {
+            return res.status(404).json({ teacherFound: true, subjectFound: false })
+        } else {
+            teacher.subjects.filter(element => element !== subjectId)
+            return res.status(200).json({ teacherFound: true, subjectFound: true })
+        }
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({
+            error: "serverSideError",
+        });
+    }
+}
+
+exports.deleteAll = async (req, res) => {//juste for testing
+    try {
+        const teacher = await TeacherModel.deleteMany({});
+        return res.status(200).send("success")
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send("error")
     }
 }

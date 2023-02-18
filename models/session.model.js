@@ -29,15 +29,15 @@ const Session = Schema(
             type: Date,
             required: [true, "durationRequired"],
         },
-        sessionType : {
-            type : String,
-            required : true,
-            enum : ['TP', 'COURS']
+        sessionType: {
+            type: String,
+            required: [true, "sessionTypeRequired"],
+            enum: ['TP', 'COURS']
         },
-        sessionCategorie : {
-            type : String,
-            required : true,
-            enum : ['Manual', 'Template'],
+        sessionCategorie: {
+            type: String,
+            required: [true, "sessionCategorieRequired"],
+            enum: ['Manual', 'Template'],
         },
         active: {
             type: Boolean,
