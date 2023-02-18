@@ -31,9 +31,7 @@ const Teacher = mongoose.Schema(
         },
         password: {
             type: String,
-            trim: true,
             required: [true, "passwordRequired"],
-            minLength: [6, "shortPassword"]
         },
         email: {
             type: String,
@@ -59,7 +57,7 @@ const Teacher = mongoose.Schema(
                 message: "invalidTel"
             }
         },
-        subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
+        subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject", unique: true }],
         salary: {
             type: Number,
             required: [true, "salaryRequired"],

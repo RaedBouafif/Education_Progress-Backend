@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs")
 const generateToken = require('../../functions/generateToken')
 const Parent = require('../../models/Users/parent.model')
 const {Types} = require('mongoose')
+
+
 //Create a new student
 exports.createStudent = async (req,res) => {
     try{
@@ -59,6 +61,32 @@ exports.createStudent = async (req,res) => {
 //Retrieve all students
 exports.findAllStudents = (req,res) => {
     try{    
+        Student.find({},{password : 0}).then(students => {
+            if (students.length == 0){
+                return res.status(204).send({
+                    message : "There is no students in the database!",
+                    found : false
+
+                })
+            }
+            return res.status(200).send({students, found: true})
+            }).catch(err => {
+                return res.status(400).send({
+                error : err.message,
+                message : "Some error occured while retrieving all students!"
+            })
+        })
+    }catch(e) {
+        return res.status(500).send({
+            error : e.message,
+            message : "Server error!"
+        })
+    }
+}
+
+//Retrieve all students with their parents data
+exports.findAllStudentsWithParent = (req,res) => {
+    try{    
         Student.find({},{password : 0}).populate({path :'parent', select : {password : 0}}).then(students => {
             if (students.length == 0){
                 return res.status(204).send({
@@ -83,8 +111,9 @@ exports.findAllStudents = (req,res) => {
 }
 
 
-//Reetrieve Student by Id 
- exports.findOneStudent = (req,res) => {
+
+//Reetrieve Student by Id with his parent data
+ exports.findOneStudentWithParent = (req,res) => {
     try{
         if (!req.params.studentId){
             return res.status(400).send({
@@ -92,6 +121,43 @@ exports.findAllStudents = (req,res) => {
             })
         }
         Student.findById(req.params.studentId, {password : 0}).populate({path :'parent', select : {password : 0}}).then(student => {
+            if (student.length == 0){
+                return res.status(404).send({
+                    message : "Student with the id:" + req.params.studentId + "not found!",
+                    found : false
+                })
+            }
+            return res.status(200).send({
+                student,
+                found : true
+            })
+        }).catch(err => {
+            if (err.kind === "ObjectId" ){
+                return res.status(404).send({
+                    error : "Student not found with id: "+req.params.studentId
+                })
+            }
+            return res.status(400).send({
+                error : "Some Error while finding student with id" + req.params.studentId
+            })
+        })
+    }catch(e) {
+        res.status(500).send({
+            error : e.message,
+            message : "Server error!"
+        })
+    } 
+ }
+
+ //Reetrieve Student by Id 
+ exports.findOneStudent = (req,res) => {
+    try{
+        if (!req.params.studentId){
+            return res.status(400).send({
+                error : "Student id is required!"
+            })
+        }
+        Student.findById(req.params.studentId, {password : 0}).then(student => {
             if (student.length == 0){
                 return res.status(404).send({
                     message : "Student with the id:" + req.params.studentId + "not found!",

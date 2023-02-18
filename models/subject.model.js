@@ -9,10 +9,11 @@ const Subject = mongoose.Schema(
             required: [true, "subjectNameRequired"],
             unique: true
         },
-        coefficient: {
-            type: Number,
-            required: [true, "coefficientRequired"]
-        },
+        properties: [{
+            section : {type :String, required : true},
+            coefficient : {type : Number, required : true},
+            required : true
+        }],
         active: {
             type: Boolean,
             default: true
@@ -22,7 +23,6 @@ const Subject = mongoose.Schema(
         timestamps: true
     }
 )
-
 
 
 

@@ -18,14 +18,13 @@ exports.createAdmin = async (req,res) => {
                 error : "password Length should be >= 6"
             })
         }
-        const encryptedPassword = await bcrypt.hash(req.body.password, 10)
+        const encryptedPassword = await bcrypt.hash(password, 10)
         const admin = new Admin({
             username : username || null,
-            password : password || null,
+            password : encryptedPassword || null,
             role : role || null
         })
         admin.save().then( data => {
-            console.log(data)
             return res.status(201).send({
                 _id : data._id,
                 username : data.username,
@@ -167,7 +166,9 @@ exports.findAllAdmins = (req,res) => {
             })
         }
         Admin.findOne({username}).then( async (admin) => {
-            if (admin && await (bcrypt.compare(password,admin.password))){
+            const encryptedPassword = await (bcrypt.compare(password,admin.password))
+            console.log(encryptedPassword)
+            if (admin && encryptedPassword){
                 const token = generateToken({
                     username : admin.username ,
                     role : admin.role
@@ -214,7 +215,7 @@ exports.updateAdmin = async (req,res) => {
         }
         // assuming that the request body have the same database attributes name
         Admin.findByIdAndUpdate(req.params.adminId, req.body, {new : true, runValidators : true, fields : {password : 0}}).then( admin => {
-            if (student.length == 0){
+            if (admin.length == 0){
                 return res.status(404).send({
                     message : "Admin with id: " +req.params.adminId + " not found",
                     found : false
@@ -236,6 +237,13 @@ exports.updateAdmin = async (req,res) => {
                     message : "Username already exist!"
                 })
             }
+            if (err.name === 'ValidationError'){
+                return res.status(409).send({
+                    error : "Conflict role",
+                    message : "The role given cannot be inserted!"
+                })
+            }
+            console.log(err.name)
             return res.status(400).send({
                 error : "Some Error occured while updating the admin with id : "+ req.params.adminId
             })
