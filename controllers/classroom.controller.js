@@ -96,7 +96,6 @@ exports.update = async (req, res) => {
         if (classroom) return res.status(200).json({ found: true, classroom })
         else return res.status(404).json({ found: false })
     } catch (e) {
-        console.log(e);
         if (e.keyValue?.classroomName) {
             return res.status(409).json({
                 error: "conflictClassroomName",
