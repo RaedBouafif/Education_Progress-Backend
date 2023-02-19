@@ -4,9 +4,10 @@ const connectDB = require('./config/dbConnect')
 const cors = require("cors")
 const mongoose = require('mongoose')
 const parentRouter = require("./routers/Users/parent.router")
-// const studentRouter = require("./routers/Users/student.router")
+const studentRouter = require("./routers/Users/student.router")
 const teacherRouter = require("./routers/Users/teacher.router")
-// const adminRouter = require("./routers/Users/admin.router")
+const adminRouter = require("./routers/Users/admin.router")
+const subjectRouter = require("./routers/subject.router")
 var app = express()
 
 app.use(express.json())
@@ -22,9 +23,10 @@ const baseURL = "/api/v1"
 
 
 app.use(`${baseURL}/parent`, parentRouter)
-// app.use(`${baseURL}/student`, studentRouter)
+app.use(`${baseURL}/student`, studentRouter)
 app.use(`${baseURL}/teacher`, teacherRouter)
-// app.use(`${baseURL}/admin`, adminRouter)
+app.use(`${baseURL}/admin`, adminRouter)
+app.use(`${baseURL}/subject`, subjectRouter)
 
 
 mongoose.set('strictQuery', true)

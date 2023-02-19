@@ -290,12 +290,12 @@ exports.updateStudent = async (req,res) => {
             if (student.length == 0){
                 return res.status(404).send({
                     message : "Student with id: " +req.params.studentId + " not found",
-                    found : false
+                    updated : false
                 })
             }
             return res.status(200).send({
                 student,
-                found : true
+                updated : true
             })
         }).catch(err => {
             if (err.kind === 'ObjectId' || err.name === 'NotFound'){

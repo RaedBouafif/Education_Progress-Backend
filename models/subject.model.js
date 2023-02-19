@@ -1,8 +1,26 @@
 const mongoose = require("mongoose")
 
 
+//Sub-schema
+const PropertiesSchema = mongoose.Schema(
+    {
+        sectionName : {
+            type : String,
+            required : [true, "sectionNameRequired!!"],
+        },
+        coefficient : {
+            type : Number,
+            required : [true, "coefficientRequired!!"]
+        },
+        active : {
+            type : Boolean,
+            default : true
+        }
+    }
+)
 
-const Subject = mongoose.Schema(
+//Main-Schema
+const SubjectSchema = mongoose.Schema(
     {
         subjectName: {
             type: String,
@@ -10,11 +28,7 @@ const Subject = mongoose.Schema(
             unique: true,
             trim: true
         },
-        // properties: [{
-        //     section: { type: String, required: true },
-        //     coefficient: { type: Number, required: true },
-        //     required: true
-        // }],
+        properties : [{type : PropertiesSchema , requried : true}],
         active: {
             type: Boolean,
             default: true
@@ -25,7 +39,7 @@ const Subject = mongoose.Schema(
     }
 )
 
-
-
-
-module.exports = mongoose.model("Subject", Subject)
+module.exports = {
+   Subject : mongoose.model("Subject", SubjectSchema),
+   Properties : mongoose.model("Properties",PropertiesSchema)
+}
