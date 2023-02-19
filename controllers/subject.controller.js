@@ -70,8 +70,7 @@ exports.createSubject = (req,res) => {
 //get All subjects
 exports.findAllSubjects = (req,res) => {
     try{
-        Subject.find().then( subjects => {
-            console.log(subjects.length)
+        Subject.find({}).then( subjects => {
             if(subjects.length === 0){
                 return res.status(204).send({
                     message : "There is no subjects in the database!",
