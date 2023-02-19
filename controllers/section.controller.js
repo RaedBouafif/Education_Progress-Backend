@@ -235,3 +235,64 @@ exports.addSubject = async (req,res) => {
         })
     }
 }
+
+// Remove subject from a section
+exports.removeSubject = async (req,res) => {
+    try{
+        const sectionName = req.params.sectionName
+        const subjectId = req.params.subjectId
+        if (!sectionName || !subjectId){
+            return res.status(400).send({
+                error : "Bad Request!"
+            })
+        }
+        const section = await Section.findOne({sectionName})
+        if (!section){
+            return res.status(404).send({
+                message : " Section with name " +sectionName+ " Not Found!",
+                subjectRemoved : false
+            })
+        }
+        if ( section.subjects.length !== 0){
+            tempSubjects = section.subjects
+            const filteredSubjects = tempSubjects.filter( (element) => element.toString() !== subjectId)
+            if (tempSubjects.length !== filteredSubjects.length){
+                section.subjects = filteredSubjects
+                section.save().then( data => {
+                    return res.status(201).send({
+                        section,
+                        subjectRemoved : true
+                    })
+                }).catch( err => {
+                    return res.status(400).send({
+                        error : err.message,
+                        message : "Some error occured while Removing the subject with Id " +subjectId+ " From the Section " +sectionName
+                    })
+                })
+            }else{
+                return res.status(404).send({
+                    message : "Subject with id " +subjectId+ " Does not exist in the Section " +sectionName,
+                    subjectRemoved : false,
+                    subjectFound : false
+                })
+            }
+        }else {
+            return res.status(400).send({
+                message : "Section " +sectionName+ " does not have any subject!",
+                subjectRemoved : false,
+                subjectFound : false
+            })
+        }
+    }catch(e) {
+        if (e.keyValue?.sectionName){
+            return res.status(409).send({
+                error : "Conflict SectionName",
+                message : "Section allready exists"
+            })
+        }
+        return res.status(500).send({
+            error : e.message,
+            message : "Server ERROR!"
+        })
+    }
+}

@@ -1,10 +1,11 @@
 const { default: mongoose } = require('mongoose')
 const {Subject} = require('../models/subject.model')
+const Section = require('../models/section.model')
 
 
 //need update
 //Create a new Subject
-exports.createSubject = (req,res) => {
+exports.createSubject = async (req,res) => {
     try{
         const { subjectName , active, properties} = req.body
         if (!subjectName){
@@ -14,10 +15,17 @@ exports.createSubject = (req,res) => {
         }
         if(!properties){
             return res.status(400).send({
-                error : "Bad Reques!"
+                error : "Bad Request!"
             })
         }
         for (let i =0 ; i< properties.length ; i++){
+            let currentSectionName = properties[i].sectionName
+                const section = await Section.findOne({sectionName : currentSectionName})
+                if (!section){
+                    return res.status(400).send({
+                        error : "Section "+currentSectionName+ " cannot be inserted or updated"
+                    })
+                }
             for ( let j=i+1 ; j< properties.length ; j++){
                 if (properties[i].sectionName == properties[j].sectionName){
                     return res.status(400).send({
@@ -51,7 +59,6 @@ exports.createSubject = (req,res) => {
                     message : "Subject allready exists!"
                 })
             }
-                console.log(err)
                 return res.status(400).send({
                     error : err.message,
                     message : "Some error occured while creating the subject!"
@@ -116,7 +123,6 @@ exports.findSubjectByName = (req,res) => {
                 found : true
             })
         }).catch(err => {
-            console.log(err)
             if (err.kind === 'ObjectId' || err.name === 'NotFound'){
                 return res.status(404).send({
                     error : "There is no subject with the name" + subjectName + " in database!",
@@ -136,12 +142,27 @@ exports.findSubjectByName = (req,res) => {
 }
 
 //update subject 
-exports.updateSubject = (req,res) => {
+exports.updateSubject = async (req,res) => {
     try {
-        if (!req.params.subjectName){
+        const  subjectName  = req.params.subjectName
+        if (!subjectName){
             return res.status(500).send({
                 error : "Bad Request!"
             })
+        }
+        if (!req.body.properties){
+            const subject = await Subject.findOne({subjectName : subjectName})
+            req.body = {...req.body, properties : subject.properties }
+        }else{
+            for (let x=0 ; x < req.body.properties.length; x++){
+                let currentSectionName = req.body.properties[x].sectionName
+                const section = await Section.findOne({sectionName : currentSectionName})
+                if (!section){
+                    return res.status(400).send({
+                        error : "Section "+currentSectionName+ " cannot be added or updated"
+                    })
+                }
+            }
         }
         for (let i =0 ; i< req.body.properties.length ; i++){
             for ( let j=i+1 ; j< req.body.properties.length ; j++){
@@ -152,10 +173,10 @@ exports.updateSubject = (req,res) => {
                 }
             }
         }
-        Subject.findOneAndUpdate({subjectName : req.params.subjectName}, req.body, {new : true, runValidators : true}).then( subject => {
+        Subject.findOneAndUpdate({subjectName : subjectName}, req.body, {new : true, runValidators : true}).then( subject => {
             if(!subject){
                 return res.status(404).send({
-                    message : "Subject with name : " + req.params.subjectName + " Not found!",
+                    message : "Subject with name : " + subjectName + " Not found!",
                     updated : false
                 })
             }
@@ -172,12 +193,17 @@ exports.updateSubject = (req,res) => {
                     }
                 }
                 return res.status(400).send({
-                    error : errorMessages.join(', ') + "|| for subject name :" + req.params.subjectName
+                    error : errorMessages.join(', ') + "|| for subject name :" + subjectName
+                })
+            }
+            if (err.kind = 'ObjectId'){
+                return res.status(400).send({
+                    error : "Coefficient should be a number"
                 })
             }
             return res.status(400).send({
                 error : err.message,
-                message : "Some error occured while updating the subject with name " + req.params.subjectName
+                message : "Some error occured while updating the subject with name " + subjectName
             })    
         })
     }catch(e) {
