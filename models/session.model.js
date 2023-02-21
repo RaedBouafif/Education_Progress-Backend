@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb")
 const { Schema, model } = require("mongoose")
 
 const Session = Schema(
@@ -5,12 +6,12 @@ const Session = Schema(
         teacher: {
             type: Schema.Types.ObjectId,
             ref: "Teacher",
-            requried: [true, "teacherRequired"]
+            required: [true, "teacherRequired"]
         },
         classroom: {
             type: Schema.Types.ObjectId,
             ref: "Classroom",
-            required: [true, "classRoom Required!"]
+            required: [true, "classroomRequired"]
         },
         subject: {
             type: Schema.Types.ObjectId,
@@ -20,34 +21,45 @@ const Session = Schema(
         group: {
             type: Schema.Types.ObjectId,
             ref: "Group",
+            required : [true, "groupRequired"]
         },
-        startAt: {
+        startsAt: {
             type: Date,
             required: [true, "startAtRequired"]
         },
-        duration: {
+        endsAt: {
             type: Date,
-            required: [true, "durationRequired"],
+            required: [true, "endsAtRequired"]
         },
         sessionType: {
             type: String,
             required: [true, "sessionTypeRequired"],
-            enum: ['TP', 'COURS']
+            enum: ['TP', 'COUR']
         },
         sessionCategorie: {
             type: String,
             required: [true, "sessionCategorieRequired"],
             enum: ['Manual', 'Template'],
         },
-        active: {
+        active: { 
             type: Boolean,
             default: true
+        },
+        createdBy : {
+            type : Schema.Types.ObjectId,
+            ref: "Admin",
+            required : [true, "createdByRequired"]
+        },
+        modifiedBy : {
+            type : String
         }
-        //typeSession : ostedh
     },
     {
         timestamps: true,
     }
 )
 
+Session.index({ teacher : 1, group : 1, startsAt : 1}, {unique : true})
+
 module.exports = model("Session", Session) 
+
