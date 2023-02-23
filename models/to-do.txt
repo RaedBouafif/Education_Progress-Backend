@@ -1,1 +1,6 @@
----lowercase to email 
+
+---need to test teacher controller  => done 
+~~~error handling for teacher and parent => ~done 
+
+
+--- les devoirs  ( we will add a planning categorie Examen ...)

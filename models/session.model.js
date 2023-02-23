@@ -1,5 +1,4 @@
-const { ObjectId } = require("mongodb")
-const { Schema, model } = require("mongoose")
+const { Schema, model, Types } = require("mongoose")
 
 const Session = Schema(
     {
@@ -21,14 +20,20 @@ const Session = Schema(
         group: {
             type: Schema.Types.ObjectId,
             ref: "Group",
-            required : [true, "groupRequired"]
+            required : [true, "groupRequired"] 
+        },
+        day : {
+            type : Number,
+            required : [true, "dayRequired"],
+            min : [0, "minDayException"],
+            max : [6 , "maxDayException"]
         },
         startsAt: {
-            type: Date,
+            type: Number, 
             required: [true, "startAtRequired"]
         },
         endsAt: {
-            type: Date,
+            type: Number,
             required: [true, "endsAtRequired"]
         },
         sessionType: {
@@ -39,10 +44,7 @@ const Session = Schema(
         sessionCategorie: {
             type: String,
             required: [true, "sessionCategorieRequired"],
-            enum: ['Manual', 'Template'],
-        },
-        weeks : {
-            type : Number
+            enum: ['manual', 'template'],
         },
         active: { 
             type: Boolean,
@@ -62,7 +64,31 @@ const Session = Schema(
     }
 )
 
-Session.index({ teacher : 1, group : 1, startsAt : 1}, {unique : true})
+// Session.index({ teacher : 1, group : 1, startsAt : 1}, {unique : true})
+Session.statics.getDistinctLatest = async function(group , categorie){
+
+        return await this.aggregate([
+            {$sort: { "createdAt": -1 }},
+            {$match : {group : new Types.ObjectId(group) ,sessionCategorie : categorie }},
+            {
+                $group: {
+                    _id: { day: "$day", startsAt: "$startsAt" },
+                    doc: { $first: "$$ROOT" } 
+                },
+            },
+            // to project the docs ( if i need all the data)
+            // {
+            //     $project: {
+            //         docs: 1
+            //     }
+            // }
+            {
+                $replaceRoot : {
+                    newRoot :  "$doc"
+                }
+            }
+        ])  
+}   
 
 module.exports = model("Session", Session) 
 

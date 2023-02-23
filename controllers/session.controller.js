@@ -9,14 +9,14 @@ const Planning = require('../models/Planning.model')
 // create a new session
 exports.createSession = async (req,res) => {
     try {
-        if (req.body.sessionCategorie == "Manual"){
-            if(!req.body.week){
-                return res.status(400).send({
-                    error: "Bad Request!",
-                    message : "Week Required!"
-                })
-            }
-        }
+        // if (req.body.sessionCategorie == "Manual"){
+        //     if(!req.body.week){
+        //         return res.status(400).send({
+        //             error: "Bad Request!",
+        //             message : "Week Required!"
+        //         })
+        //     }
+        // }
         const session = await Session.create(req.body)
         session.save().then( data => {
             return res.status(201).send({
@@ -172,3 +172,6 @@ exports.findSessionById = (req,res) => {
         })
     }
 }
+
+
+// find by date find by week find by ..........................................

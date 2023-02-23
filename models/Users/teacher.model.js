@@ -44,6 +44,7 @@ const Teacher = mongoose.Schema(
                 },
                 message: "invalidEmail"
             },
+            lowercase: true,
             unique: true
         },
         tel: {
@@ -57,11 +58,23 @@ const Teacher = mongoose.Schema(
                 message: "invalidTel"
             }
         },
-        subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject", unique: true }],
-        salary: {
-            type: Number,
-            required: [true, "salaryRequired"],
-        }
+        gender: {
+            type: String,
+            enum: {
+                values: ["femme", "homme"],
+                message: "invalidGenderEnum"
+            },
+            required: [true, "genderRequired"]
+        },
+        maritalStatus: {
+            type: String,
+            enum: {
+                values: ["celibataire", "marie"],
+                message: "invalidMaritalStatusEnum"
+            },
+            required: [true, "maritalStatusRequired"]
+        },
+        subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
     },
     {
         timestamps: true
