@@ -39,6 +39,7 @@ const Parent = mongoose.Schema(
                 },
                 message: "invalidEmail"
             },
+            lowercase: true,
             unique: true
         },
         password: {

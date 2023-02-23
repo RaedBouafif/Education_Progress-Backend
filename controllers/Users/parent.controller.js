@@ -104,11 +104,11 @@ exports.login = async (req, res) => {
       return res.status(400).json({
         error: "credentialsRequired",
       });
-    const parent = await ParentModel.findOne({ email: email.trim() });
+    const parent = await ParentModel.findOne({ email: email.toLowerCase().trim() });
     if (parent && (await bcrypt.compare(password, parent.password))) {
       const token = generateToken(
         {
-          email: parent.email,
+          email: parent.email.toLowerCase().trim(),
           firstName: parent.firstName,
           lastName: parent.lastName,
           tel: parent.tel,
@@ -138,6 +138,8 @@ exports.updateParent = async (req, res) => {
       });
     if (req.body.password)
       req.body.password = await bcrypt.hash(req.body.password, 10)
+    if (req.body.email)
+      req.body.email = req.body.email.toLowerCase().trim()
     const newParent = await ParentModel.findByIdAndUpdate(req.params.parentId, req.body, {
       new: true,
       runValidators: true,

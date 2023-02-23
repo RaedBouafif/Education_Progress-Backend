@@ -3,7 +3,6 @@
 const PlanningModel = require("../models/Planning.model")
 const Session = require("../models/session.model")
 const section = require("../models/section.model")
-const { restart } = require("nodemon")
 
 
 exports.create = async (req, res) => {
@@ -16,12 +15,16 @@ exports.create = async (req, res) => {
         if (e.code === 11000) {
             return res.status(409).json({
                 error: "conflictPlanning",
-                message: "week and group combination are already used"
+                message: "week , group and semester combination are already used"
             })
         }
         if (e.errors?.week?.properties) return res.status(400).json({
             error: e.errors.week.properties.message
         })
+        else if (e.errors?.semester?.properties?.message === "semesterRequired")
+            return res.status(400).json({
+                error: "semesterRequired"
+            })
         else if (e.errors?.dateBegin?.properties?.message === "dateBeginRequired")
             return res.status(400).json({
                 error: "dateBeginRequired"
@@ -53,8 +56,8 @@ exports.create = async (req, res) => {
 exports.getAll = async (req, res) => {
     try {
         const plannings = await PlanningModel.find(req.body)
-            .populate({ path: "sessions" })
-            .populate({ path: "group", populate: { path: "section" } })
+            .populate("semester")
+        // .populate({ path: "group", populate: { path: "section" } }) comments cause we find by groupe 
         return plannings.length
             ? res.status(200).json({ found: true, plannings })
             : res.status(204).json({ found: false })
@@ -63,6 +66,21 @@ exports.getAll = async (req, res) => {
         return res.status(500).json({
             error: "serverSideError"
         })
+    }
+}
+
+
+
+//get template of last year of the group ** for semester **  and modify else create new one  
+
+/**get template service by group and semester (if semester is unique for every year 
+or we should add the year to select the right one )**/
+
+exports.getTemplate = async (req, res) => {
+    try {
+
+    } catch (e) {
+
     }
 }
 
@@ -83,7 +101,7 @@ exports.getById = async (req, res) => {
 }
 
 
-exports.deleteById = async (req, res) => {
+exports.deleteById = async (req, res) => {//delete only manual sessions with the planning => en cas ou
     try {
         const { planningId } = req.params
         const planning = await PlanningModel.findByIdAndRemove(planningId)
@@ -114,7 +132,7 @@ exports.update = async (req, res) => {
         if (e.code === 11000) {
             return res.status(409).json({
                 error: "conflictPlanning",
-                message: "week and group combination are already used"
+                message: "week , group and semester combination are already used"
             })
         }
         else if (e.errors?.week?.properties) return res.status(400).json({

@@ -8,6 +8,7 @@ const Planning = Schema(
             type: Number,
             required: [true, "weekRequired"],
             min: [0, "invalidWeek"] // max week needed 
+            //autoincrement if group and semester exist
         },
         dateBegin: {
             type: Date,
@@ -22,10 +23,15 @@ const Planning = Schema(
             ref: "Group",
             required: [true, "groupRequired"]
         },
-        sessions: [{
+        semester: {
             type: Schema.Types.ObjectId,
-            ref: "Session",
-        }]
+            ref: "Semester",
+            required: [true, "semesterRequired"]
+        },
+        // sessions: [{//last method show that we don't need session here 
+        //     type: Schema.Types.ObjectId,
+        //     ref: "Session",
+        // }]
     },
     {
         timestamps: true
@@ -33,6 +39,6 @@ const Planning = Schema(
 )
 
 
-Planning.index({ week: 1, group: 1 }, { unique: true })
+Planning.index({ week: 1, group: 1, semester: 1 }, { unique: true })
 
 module.exports = model("Planning", Planning)

@@ -1,37 +1,38 @@
-const { Schema, model } = requrie('mongoose')
+const { Schema, model } = require('mongoose')
 
 
 
 const Semester = Schema(
     {
-        name : {
-            type : String,
-            enum : ['Semester 1','Semester 2'],
-            required : [true , "nameRequired"]
-        }, 
-        dateBegin : {
-            type: Date , 
-            required :  [true ,"DateBegin"]
-        } , 
-        dateEnd : {
-            Type : Date , 
-            required : [true , "DateEnded"]
+        name: {
+            type: String,
+            required: [true, "nameRequired"]
         },
-        coefficient : {
-            type : Number,
-            required : [true, "CoefficientRequired"]
+        dateBegin: {
+            type: Date,
+            required: [true, "dateBeginRequired"],
+            unique: true
         },
-        active : {
-            type : Boolean,
-            default : true
-        }
+        dateEnd: {
+            type: Date,
+            required: [true, "dateEndRequired"]
+        },
+        coefficient: {
+            type: Number,
+            required: [true, "coefficientRequired"]
+        },
+        active: {
+            type: Boolean,
+            default: true
+        },
+        //weeks=>[] or something like this
     },
     {
-        timestamp : true
+        timestamp: true
     }
 )
 
-module.exports = model("Semester" ,Semester)
+module.exports = model("Semester", Semester)
 
 
 

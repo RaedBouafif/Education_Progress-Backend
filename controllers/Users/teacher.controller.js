@@ -6,8 +6,8 @@ const generateToken = require("../../functions/generateToken");
 
 exports.create = async (req, res) => {
     try {
-        const { firstName, lastName, email, tel, password, salary } = req.body;
-        if (!firstName || !lastName || !email || !tel || !password || !salary)
+        const { firstName, lastName, email, tel, password, gender, maritalStatus } = req.body;
+        if (!firstName || !lastName || !email || !tel || !password || !gender || !maritalStatus)
             return res.status(400).json({
                 error: "badRequest",
             });
@@ -22,7 +22,8 @@ exports.create = async (req, res) => {
             email,
             tel,
             password: encryptedPassword,
-            salary,
+            gender,
+            maritalStatus
         });
         await teacher.save();
         return res.status(201).json({
@@ -31,22 +32,35 @@ exports.create = async (req, res) => {
             lastName: teacher.lastName,
             email: teacher.email,
             tel: teacher.tel,
-            salary: teacher.salary,
+            gender: teacher.gender,
+            maritalStatus: teacher.maritalStatus
         });
     } catch (e) {
         console.log(e);
         if (e.keyValue?.email)
-            res.status(409).json({
+            return res.status(409).json({
                 error: "conflictEmail",
                 message: "Email already used",
             });
         else if (e.keyValue?.tel)
-            res.status(409).json({
+            return res.status(409).json({
                 error: "conflictTel",
                 message: "Tel already used",
             });
+        else if (e.errors?.gender?.properties)
+            return res.status(400).json({
+                error: e.errors?.gender?.properties?.message
+            })
+        else if (e.errors?.maritalStatus?.properties)
+            return res.status(400).json({
+                error: e.errors?.maritalStatus?.properties?.message
+            })
+        else if (e.errors?.gender || e.errors?.maritalStatus || e.errors?.password || e.errors?.tel
+            || e.errors?.email || e.errors?.lastName || e.errors?.firstName)
+            return res.status(400).json({
+                error: "badRequest"
+            })
         else {
-            console.log(e);
             return res.status(500).json({
                 error: "serverSideError",
             });
@@ -61,7 +75,7 @@ exports.getTeacherById = async (req, res) => {
             return res.status(400).json({ error: "teacherIdRequired" });
         const teacher = await TeacherModel.findById(
             req.params.teacherId,
-            "firstName lastName email tel salary"
+            "firstName lastName email tel gender maritalStatus"
         ).populate("subjects");
         if (teacher) return res.status(200).json({ found: true, teacher });
         else return res.status(404).json({ found: false });
@@ -91,15 +105,16 @@ exports.login = async (req, res) => {
             return res.status(400).json({
                 error: "credentialsRequired",
             });
-        const teacher = await TeacherModel.findOne({ email: email.trim() });
+        const teacher = await TeacherModel.findOne({ email: email.toLowerCase().trim() });
         if (teacher && (await bcrypt.compare(password, teacher.password))) {
             const token = generateToken(
                 {
-                    email: teacher.email,
+                    email: teacher.email.toLowerCase().trim(),
                     firstName: teacher.firstName,
                     lastName: teacher.lastName,
                     tel: teacher.tel,
-                    salary: teacher.salary,
+                    gender: teacher.gender,
+                    maritalStatus: teacher.maritalStatus
                 },
                 "3d"
             );
@@ -126,6 +141,8 @@ exports.updateTeacher = async (req, res) => {
             });
         if (req.body.password)
             req.body.password = await bcrypt.hash(req.body.password, 10);
+        if (req.body.email)
+            req.body.email = req.body.email.toLowerCase()
         const newTeacher = await TeacherModel.findByIdAndUpdate(
             req.params.teacherId,
             req.body,
@@ -156,8 +173,20 @@ exports.updateTeacher = async (req, res) => {
                 error: "conflictTel",
                 message: "Tel already used",
             });
+        else if (e.errors?.gender?.properties)
+            return res.status(400).json({
+                error: e.errors?.gender?.properties?.message
+            })
+        else if (e.errors?.maritalStatus?.properties)
+            return res.status(400).json({
+                error: e.errors?.maritalStatus?.properties?.message
+            })
+        else if (e.errors?.gender || e.errors?.maritalStatus || e.errors?.password || e.errors?.tel
+            || e.errors?.email || e.errors?.lastName || e.errors?.firstName)
+            return res.status(400).json({
+                error: "badRequest"
+            })
         else {
-            console.log(e);
             return res.status(500).json({
                 error: "serverSideError",
             });
