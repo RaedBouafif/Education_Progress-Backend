@@ -4,11 +4,19 @@ const Classroom = require('../models/classroom.model')
 const Subject = require('../models/subject.model')
 const Group = require('../models/group.model')
 const Admin = require('../models/Users/admin.model')
-const
+const Planning = require('../models/Planning.model')
  
 // create a new session
 exports.createSession = async (req,res) => {
     try {
+        if (req.body.sessionCategorie == "Manual"){
+            if(!req.body.week){
+                return res.status(400).send({
+                    error: "Bad Request!",
+                    message : "Week Required!"
+                })
+            }
+        }
         const session = await Session.create(req.body)
         session.save().then( data => {
             return res.status(201).send({
@@ -73,16 +81,20 @@ exports.createSession = async (req,res) => {
                 error : "createdByRequired",
                 message : "The Creator of Session is Required!"
             })
-        } else if (e.erros?.sessionType?.kind === "enum"){
+        } else if (e.errors?.sessionType?.kind === "enum"){
             return res.status(400).send({
                 error: "sessionTypeEnum",
                 message: "Session type can be only 'COUR' or 'TP' ",
             });
-        } else if (e.erros?.sessionCategorie?.kind === "enum"){
+        } else if (e.errors?.sessionCategorie?.kind === "enum"){
             return res.status(400).send({
                 error: "sessionCategorieEnum",
                 message: "Session Categorie can be only 'Manual' or 'Template' ",
-            });
+            }); 
+        }else if ( e.errors?.active?.kind === 'Boolean'){
+            return res.status(400).send({
+                error : "Active attribute should be a Boolean value"
+            })
         }
         return res.status(500).send({
             error : e.message,
@@ -92,20 +104,71 @@ exports.createSession = async (req,res) => {
 }
 
 // find All sessions 
-exports.findSessions = async (req,res) => {
+exports.findSessions = (req,res) => {
     try{
-        const sessions = await Session.find(req.body)
+        Session.find(req.body)
         .populate({path :'teacher' , select : {firstName : 1, lastName : 1}})
         .populate( {path : 'group' , select : {groupName : 1}, populate : { path : 'section', selecet :{sectionName : 1}}})
         .populate( {path : 'classroom', select : { classroomName : 1, type : 1}})
         .populate( {path : 'subject', select : { subjectName : 1}})
-        .populate( {})
-        console.log(sessions)
+        .then( sessions => {
+            return res.status(200).send({
+                sessions,
+                found : true
+            })
+        }).catch( err => {
+            return res.status(400).send({
+                error : err.message,
+                message : "Some ERROR occured while finding the Sessions"
+            })
+        })
     }catch(e){
         return res.status(500).send({
             error : e.message,
             message : "Server ERROR!"
         })
     }
+}
 
+// find Session by Id
+exports.findSessionById = (req,res) => {
+    try {
+        if (!req.params.sessionId){
+            return res.status(400).send({
+                error : "Bad Request!"
+            })
+        }
+        Session.findById(req.params.sessionId)
+        .populate({path :'teacher' , select : {firstName : 1, lastName : 1}})
+        .populate( {path : 'group' , select : {groupName : 1}, populate : { path : 'section', selecet :{sectionName : 1}}})
+        .populate( {path : 'classroom', select : { classroomName : 1, type : 1}})
+        .populate( {path : 'subject', select : { subjectName : 1}})
+        .then( session => {
+            if(!session){
+                return res.status(404).send({
+                    error : "Session with id " +req.params.sessionId+ " Not Found!!",
+                    found : false
+                })
+            }
+            return res.status(200).send({
+                session,
+                found: true
+            })
+        }).catch ( err => {
+            if (err.kind === "ObjectId" || err.name === "NotFound"){
+                return res.status(404).send({
+                    error : "Session with id " +req.params.sessionId+ " Not Found!"
+                })
+            }
+            return res.status(400).send({
+                error : err.message,
+                message : "Some Error occured while finding the session with id " +req.params.sessionId
+            })
+        })
+    }catch(e) {
+        return res.status(500).send({
+            error : e.message,
+            message : "Server Error!"
+        })
+    }
 }

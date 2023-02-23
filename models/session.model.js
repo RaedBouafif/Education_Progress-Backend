@@ -41,6 +41,9 @@ const Session = Schema(
             required: [true, "sessionCategorieRequired"],
             enum: ['Manual', 'Template'],
         },
+        weeks : {
+            type : Number
+        },
         active: { 
             type: Boolean,
             default: true

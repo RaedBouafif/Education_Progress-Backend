@@ -10,11 +10,11 @@ const Semester = Schema(
             required : [true , "nameRequired"]
         }, 
         dateBegin : {
-            type: Date , 
+            type: Date, 
             required :  [true ,"DateBegin"]
-        } , 
+        }, 
         dateEnd : {
-            Type : Date , 
+            type : Date, 
             required : [true , "DateEnded"]
         },
         coefficient : {
