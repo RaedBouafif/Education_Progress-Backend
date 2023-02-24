@@ -20,16 +20,16 @@ const Session = Schema(
         group: {
             type: Schema.Types.ObjectId,
             ref: "Group",
-            required : [true, "groupRequired"] 
+            required: [true, "groupRequired"]
         },
-        day : {
-            type : Number,
-            required : [true, "dayRequired"],
-            min : [0, "minDayException"],
-            max : [6 , "maxDayException"]
+        day: {
+            type: Number,
+            required: [true, "dayRequired"],
+            min: [0, "minDayException"],
+            max: [6, "maxDayException"]
         },
         startsAt: {
-            type: Number, 
+            type: Number,
             required: [true, "startAtRequired"]
         },
         endsAt: {
@@ -46,17 +46,17 @@ const Session = Schema(
             required: [true, "sessionCategorieRequired"],
             enum: ['manual', 'template'],
         },
-        active: { 
+        active: {
             type: Boolean,
             default: true
         },
-        createdBy : {
-            type : Schema.Types.ObjectId,
+        createdBy: {
+            type: Schema.Types.ObjectId,
             ref: "Admin",
-            required : [true, "createdByRequired"]
+            required: [true, "createdByRequired"]
         },
-        modifiedBy : {
-            type : String
+        modifiedBy: {
+            type: String
         }
     },
     {
@@ -65,30 +65,30 @@ const Session = Schema(
 )
 
 // Session.index({ teacher : 1, group : 1, startsAt : 1}, {unique : true})
-Session.statics.getDistinctLatest = async function(group , categorie){
+Session.statics.getDistinctLatestSessionTemplate = async function (group, categorie) {
 
-        return await this.aggregate([
-            {$sort: { "createdAt": -1 }},
-            {$match : {group : new Types.ObjectId(group) ,sessionCategorie : categorie }},
-            {
-                $group: {
-                    _id: { day: "$day", startsAt: "$startsAt" },
-                    doc: { $first: "$$ROOT" } 
-                },
+    return await this.aggregate([
+        { $sort: { "createdAt": -1 } },
+        { $match: { group: new Types.ObjectId(group), sessionCategorie: categorie } },
+        {
+            $group: {
+                _id: { day: "$day", startsAt: "$startsAt" },
+                doc: { $first: "$$ROOT" }
             },
-            // to project the docs ( if i need all the data)
-            // {
-            //     $project: {
-            //         docs: 1
-            //     }
-            // }
-            {
-                $replaceRoot : {
-                    newRoot :  "$doc"
-                }
+        },
+        // to project the docs ( if i need all the data)
+        // {
+        //     $project: {
+        //         docs: 1
+        //     }
+        // }
+        {
+            $replaceRoot: {
+                newRoot: "$doc"
             }
-        ])  
-}   
+        }
+    ])
+}
 
-module.exports = model("Session", Session) 
+module.exports = model("Session", Session)
 

@@ -3,4 +3,7 @@
 ~~~error handling for teacher and parent => ~done 
 
 
---- les devoirs  ( we will add a planning categorie Examen ...)
+--- les devoirs  ( we will add a planning categorie Examen ...) 
+--- first create template => create auto planning 
+
+---- ba3d l pas hedhi lezem en  va developper le refreshPlanning --> fih creation mta3 session manual eli tnajem t'implikili création mta3 templatets l 9odem .

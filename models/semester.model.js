@@ -25,11 +25,14 @@ const Semester = Schema(
             type: Boolean,
             default: true
         },
-        plannings : [{
-            type : Schema.Types.ObjectId,
-            ref : "Planning"
-        }]
-
+        // plannings: [{
+        //     type: Schema.Types.ObjectId,
+        //     ref: "Planning"
+        // }],
+        collegeYear: {
+            type: Schema.Types.ObjectId,
+            ref: "CollegeYear",
+        }
         // année universitaire
     },
     {

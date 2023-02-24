@@ -2,48 +2,198 @@ const Planning = require("../models/Planning.model")
 const Session = require("../models/session.model")
 const section = require("../models/section.model")
 const Semester = require("../models/semester.model")
+const { Types } = require("mongoose")
 
 
-exports.createInitialTemplate = async (req,res) => {
-    // l faza mta3 group else 3ana awel mara l group 3a ya9ra
+exports.createInitialTemplate = async (req, res) => {
+    //test if modified or not 
     try {
-        var tempSessions = await Session.getDistinctLatest(req.body.group , "template") 
-        console.log(tempSessions)
-        if(tempSessions.length !== 0){
-            return res.status(201).json(tempSessions)
-        }   
-        else {
-            const sessionTemplate = await Session.create(req.body.sessions)
-            for(s of sessionTemplate){
-                await s.save()
-            }
-            return res.status(201).json(sessionTemplate)
+        //sessions group semester default week = 1
+        var selectedSessions = []
+        for (var session of req.body.sessions) {
+            const existedSession = await Session.find(
+                {
+                    teacher: session.teacher,
+                    classroom: session.classroom,
+                    group: req.body.group,
+                    day: session.day,
+                    startsAt: session.startsAt,
+                    subject: session.subject,
+                    sessionType: session.sessionType,
+                    createdBy: session.createdBy
+                }
+            )
+            if (!existedSession.length) { selectedSessions.push(session) }
         }
-    }catch(e) {
+        const sessionTemplate = await Session.create(selectedSessions)
+        for (s of sessionTemplate) {
+            await s.save()
+        }
+        const tempSessions = await Session.getDistinctLatestSessionTemplate(req.body.group, "template")
+        const sessionsIds = tempSessions.map((element) => element._id)
+        const planning = await Planning.create({ ...req.body, sessions: sessionsIds, week: 1 })
+        await planning.save()
+        return res.status(201).json(planning)
+    } catch (e) {
+        console.log(e)
+        if (e.errors) {
+            return res.status(400).send({
+                error: "badRequest"
+            })
+        }
+        return res.status(500).send({
+            error: e.message,
+            message: "Server ERROR!"
+        })
+    }
+}
+
+
+exports.getTemplate = async (req, res) => {
+    try {
+        var tempSessions = await Session.getDistinctLatestSessionTemplate(req.params.groupId, "template")
+        if (tempSessions.length !== 0) return res.status(200).json({ tempSessions, found: true })
+        else return res.status(204).json({ found: false })
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : e.message,
-            message : "Server ERROR!"
+            error: e.message,
+            message: "Server ERROR!"
         })
     }
 }
 
 
 
-exports.createOneSession = async (req,res) => {
-try{
-    const sessionTemplate = await Session.create(req.body.sessions)
-    for(s of sessionTemplate){
-        await s.save()
+// exports.createOneSession = async (req, res) => {
+//     try {
+//         const sessionTemplate = await Session.create(req.body.sessions)
+//         for (s of sessionTemplate) {
+//             await s.save()
+//         }
+//         return res.status(201).json(sessionTemplate)
+//     } catch (e) {
+//         return res.status(500).send({
+//             error: e.message,
+//             message: "Server ERROR!"
+//         })
+//     }
+// }
+
+// create sessions manual => (if : séance déja fait ) ncreati planning 
+
+
+// Refresh planning
+exports.refreshPlanning = async (req, res) => {
+    // group w semester wel week ( --)
+    try {
+        const week = req.params.week
+        const groupId = req.params.groupId
+        const semesterId = req.params.semesterId
+        const planning = await Planning.findOne({ group: groupId, week: Number(week) + 1, semesterId: semesterId })
+        if (planning) {
+            var tempSessions = await Session.getDistinctLatestSessionTemplate(req.params.groupId, "template")
+            const sessionsIds = tempSessions.map((element) => element._id)
+            if (sessionsIds.length != 0) {
+                for (let tmpSession of tempSessions) {
+                    planning.sessions.push(tmpSession)
+                }
+            }
+            planning.save().then(data => {
+                return res.status(200).send({
+                    data,
+                    refreshed: true
+                })
+            }).catch(err => {
+                return res.status(400).send({
+                    error: err.message,
+                    message: "Some ERROR  occured while refreshing the template"
+                })
+            })
+        } else {
+            const tmpOnes = await Session.getDistinctLatestSessionTemplate(req.body.group, "template")
+            const sessionsIds = tmpOnes.map((element) => element._id)
+            const newPlanning = await Planning.create({ ...req.body, sessions: sessionsIds, week: Number(week) + 1 })
+            newPlanning.save().then(data => {
+                return res.status(201).send({
+                    data,
+                    refreshed: true
+                })
+            }).catch(err => {
+                return res.status(400).send({
+                    error: err.message,
+                    message: "Some error occured while refreshing the Planning"
+                })
+            })
+        }
+        // group , semester
+    } catch (e) {
+        return res.status(500).send({
+            error: e.message,
+            message: "Server ERROR!"
+        })
     }
-    return res.status(201).json(sessionTemplate)
-}catch(e) {
-    return res.status(500).send({
-        error : e.message,
-        message : "Server ERROR!"
-    })
 }
+
+
+
+
+// get planning By Group and week and semester
+exports.getPlanning = async (req, res) => {
+    // need aggregate to synchronise the modification
+    try {
+        // const planning = await Planning.aggregate(req.params.week, req.params.groupId, req.params.semesterId)
+        const planning = await Planning.aggregate([
+            {
+                $match: {
+                    week: Number(req.params.week),
+                    group: Types.ObjectId(req.params.groupId),
+                    semester: Types.ObjectId(req.params.semesterId)
+                }
+            },
+            {
+                $lookup: {
+                    from: 'sessions', // Name of the referenced collection
+                    localField: 'sessions',
+                    foreignField: '_id',
+                    as: 'sessionsData', // Field to store the populated data
+                }
+            },
+            // { $unwind: '$sessionsData' },
+            { $sort: { "createdAt": -1 } },
+            {
+                $group: {
+
+                    _id: { day: "$sessionsData.day", startsAt: "$sessionsData.startsAt" },
+                    doc: { $first: "$$ROOT" }
+                },
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$doc"
+                }
+            }
+        ])
+        if (!planning) {
+            return res.status(404).send({
+                message: "Planning of group " + req.params.groupId + " Not Found!",
+                error: "NotFound",
+                found: false
+            })
+        }
+        return res.status(200).send({
+            planning,
+            found: true
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: e.message,
+            message: "Server ERROR!"
+        })
+    }
 }
+
 
 
 
@@ -126,20 +276,6 @@ exports.getAll = async (req, res) => {
     }
 }
 
-
-
-//get template of last year of the group ** for semester **  and modify else create new one  
-
-/**get template service by group and semester (if semester is unique for every year 
-or we should add the year to select the right one )**/
-
-exports.getTemplate = async (req, res) => {
-    try {
-
-    } catch (e) {
-
-    }
-}
 
 
 exports.getById = async (req, res) => {
