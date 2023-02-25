@@ -17,7 +17,7 @@ exports.createInitialTemplate = async (req, res) => {
                     teacher: session.teacher,
                     classroom: session.classroom,
                     group: req.body.group,
-                    day: session.day, 
+                    day: session.day,
                     startsAt: session.startsAt,
                     subject: session.subject,
                     sessionType: session.sessionType,
@@ -57,9 +57,9 @@ exports.getTemplate = async (req, res) => {
         else return res.status(204).json({ found: false })
     } catch (e) {
         console.log(e)
-        if(e.errors) {
+        if (e.errors) {
             return res.status(400).json({//need test
-                error : "badRequest"
+                error: "badRequest"
             })
         }
         return res.status(500).send({
@@ -138,12 +138,12 @@ exports.refreshPlanning = async (req, res) => {
             ])
             const sessionsIds = tmpOnes.map((element) => element._id)
             console.log(sessionsIds)
-            const nextWeek = Number(week)+1
-            const newPlanning = await Planning.create({ 
-                group : groupId,
-                semester : semesterId,
+            const nextWeek = Number(week) + 1
+            const newPlanning = await Planning.create({
+                group: groupId,
+                semester: semesterId,
                 sessions: sessionsIds,
-                week: nextWeek 
+                week: nextWeek
             })
             newPlanning.save().then(data => {
                 return res.status(201).send({
@@ -193,7 +193,6 @@ exports.getPlanning = async (req, res) => {
             { $sort: { "createdAt": -1 } },
             {
                 $group: {
-
                     _id: { day: "$sessionsData.day", startsAt: "$sessionsData.startsAt" },
                     doc: { $first: "$$ROOT" }
                 },

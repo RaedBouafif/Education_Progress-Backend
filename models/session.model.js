@@ -70,13 +70,19 @@ Session.statics.getDistinctLatestSessionTemplate = async function (group, catego
     return await this.aggregate([
         { $sort: { "createdAt": -1 } },
         { $match: { group: new Types.ObjectId(group), sessionCategorie: categorie } },
-        
+
         // to project the docs ( if i need all the data)
         // {
         //     $project: {
         //         docs: 1
         //     }
         // }
+        {
+            $group: {
+                _id: { day: "$day", startsAt: "$startsAt" },
+                doc: { $first: "$$ROOT" }
+            },
+        },
         {
             $replaceRoot: {
                 newRoot: "$doc"
