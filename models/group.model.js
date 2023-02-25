@@ -7,7 +7,6 @@ const Group = Schema(
         groupName: {
             type: String,
             required: [true, "groupNameRequired"],
-            unique: true,
             trim: true
         },
         section: {
@@ -20,6 +19,5 @@ const Group = Schema(
         timestamps: true
     }
 )
-
-
+Group.index({ groupName: 1, section: 1}, { unique: true })
 module.exports = model("Group", Group)
