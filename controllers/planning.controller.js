@@ -17,7 +17,7 @@ exports.createInitialTemplate = async (req, res) => {
                     teacher: session.teacher,
                     classroom: session.classroom,
                     group: req.body.group,
-                    day: session.day,
+                    day: session.day, 
                     startsAt: session.startsAt,
                     subject: session.subject,
                     sessionType: session.sessionType,
@@ -104,7 +104,7 @@ exports.refreshPlanning = async (req, res) => {
             var tempSessions = await Session.getDistinctLatestSessionTemplate(req.params.groupId, "template")
             const sessionsIds = tempSessions.map((element) => element._id)
             if (sessionsIds.length != 0) {
-                for (let tmpSession of tempSessions) {
+                for (let tmpSession of sessionsIds) {
                     planning.sessions.push(tmpSession)
                 }
             }
@@ -139,7 +139,6 @@ exports.refreshPlanning = async (req, res) => {
             const sessionsIds = tmpOnes.map((element) => element._id)
             console.log(sessionsIds)
             const nextWeek = Number(week)+1
-            console.log({ ...req.body, sessions: sessionsIds, week: nextWeek })
             const newPlanning = await Planning.create({ 
                 group : groupId,
                 semester : semesterId,

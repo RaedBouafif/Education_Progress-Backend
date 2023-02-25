@@ -9,15 +9,7 @@ const Planning = require('../models/Planning.model')
 // Create a new Template Session
 exports.createTemplateSession = async (req,res) => {
     try {
-        // if (req.body.sessionCategorie == "Manual"){
-        //     if(!req.body.week){
-        //         return res.status(400).send({
-        //             error: "Bad Request!",
-        //             message : "Week Required!"
-        //         })
-        //     }
-        // }
-        const session = await Session.create(req.body)
+        const session = await Session.create({...req.body, sessionCategorie : "template"})
         session.save().then( data => {
             return res.status(201).send({
                 data,
@@ -112,7 +104,6 @@ exports.createManualSession = async (req,res) => {
         and i have the current week and the current semester and the current group
         and an added attribute in the request called numberOfWeeks 
         *************************/
-
         const {
             teacher,
             classroom,
@@ -126,42 +117,64 @@ exports.createManualSession = async (req,res) => {
             createdBy,
             week,
             semesterId,
-            numberOfWeeks
+
         } = req.body
         // i gonna test only on numberOfWekks and semester and the week is sent or not because the others are in the catch
-        if (!week || !semester || !numberOfWeeks) {
+        if ( !week || !semesterId ) {
             return res.status(400).send({
                 error : "BadRequest"
             })
         }
-        if (numberOfWeeks > 0 ){
-            // in case planning that we should create after numberOfWeeks is allready created ( in case that this is the second manual Session in the same week) 
-            const weekTarget = week + numberOfWeeks
-            const checkPlanningExist = await Planning.findOne({ week: weekTarget, semester : semesterId, group : group })
-            if ( checkPlanningExist ){
-                
+        const newSession = await Session.create({
+            teacher : teacher,
+            classroom : classroom,
+            subject : subject,
+            group : group,
+            day : day,
+            startsAt : startsAt,
+            endsAt : endsAt,
+            sessionType : sessionType,
+            sessionCategorie : "manual",
+            createdBy : createdBy
+        })
+        await newSession.save()
+        // next week
+        const nextWeek = Number(week) + 1
+        const date = new Date()
+        if ( (date.getDay() > day) || (date.getDay() == day && date.getHours() > startsAt) ){
+            const ExistingPlanniung = await Planning.findOne({week : nextWeek , semester : semesterId , group : group})
+            if (ExistingPlanniung){
+                ExistingPlanniung.sessions.push(newSession._id)
+                await ExistingPlanniung.save()
+                return res.status(200).send({
+                    ExistingPlanniung,
+                    creatred : true
+                })
+            }else{
+                const newPlanning = await Planning.create({
+                    week : nextWeek,
+                    group : group,
+                    semester : semesterId,
+                    sessions : [newSession.id]
+                })
+                await newPlanning.save()
+                return res.status(200).send({
+                    newPlanning,
+                    created : true
+                })
             }
-        }
-        // if (req.body.sessionCategorie == "Manual"){
-        //     if(!req.body.week){
-        //         return res.status(400).send({
-        //             error: "Bad Request!",
-        //             message : "Week Required!"
-        //         })
-        //     }
-        // }
-        const session = await Session.create(req.body)
-        session.save().then( data => {
-            return res.status(201).send({
-                data,
+        }else {
+            const currentPlanning = await Planning.findOneAndUpdate(
+                { week : week , semester : semesterId , group : group },
+                { $push: { sessions: newSession._id } },
+                { new: true, runValidators : true},
+            )
+            await currentPlanning.save()
+            return res.status(200).send({
+                currentPlanning,
                 created : true
             })
-        }).catch( err => {
-            return res.status(400).send({
-                error : err.message,
-                message : " Some Error occured while creating the Session!"
-            })
-        })
+        }
     }catch(e) {
         // Required handling
         console.log(e)
