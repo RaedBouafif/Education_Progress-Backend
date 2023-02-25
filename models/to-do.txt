@@ -7,3 +7,5 @@
 --- first create template => create auto planning 
 
 ---- ba3d l pas hedhi lezem en  va developper le refreshPlanning --> fih creation mta3 session manual eli tnajem t'implikili création mta3 templatets l 9odem .
+
+--- my last pushed work --> trait both cases : sessions mazel majech wa9tha wzayehda manual www session fet wa9tha w zedtha bel bel weeks mte3ha 

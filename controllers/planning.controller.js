@@ -8,6 +8,7 @@ const { Types } = require("mongoose")
 exports.createInitialTemplate = async (req, res) => {
     //test if modified or not 
     try {
+        //Initialize my Template and create an Initial Planning
         //sessions group semester default week = 1
         var selectedSessions = []
         for (var session of req.body.sessions) {
@@ -87,10 +88,13 @@ exports.getTemplate = async (req, res) => {
 
 // create sessions manual => (if : séance déja fait ) ncreati planning 
 
+//------------------------------------------------------------Plannning--------------------------------------------------------------
 
 // Refresh planning
 exports.refreshPlanning = async (req, res) => {
-    // group w semester wel week ( --)
+    //Valid for refreshing With creation of a new planning 
+    //Valid for refreshing With an existing planning  (Still working...)
+    // fel front ki bech naffichi el sessions mte3i ba3d marefreshit el planning bech nparkouri ken nel9a session manula fel wa9t nafsou m3a session template ====> n'affichi el manual
     try {
         const week = req.params.week
         const groupId = req.params.groupId
@@ -116,9 +120,32 @@ exports.refreshPlanning = async (req, res) => {
                 })
             })
         } else {
-            const tmpOnes = await Session.getDistinctLatestSessionTemplate(req.body.group, "template")
+            console.log(req.params)
+            const tmpOnes = await Session.aggregate([
+                { $sort: { "createdAt": -1 } },
+                { $match: { group: new Types.ObjectId(groupId) } },
+                {
+                    $group: {
+                        _id: { day: "$day", startsAt: "$startsAt" },
+                        doc: { $first: "$$ROOT" }
+                    },
+                },
+                {
+                    $replaceRoot: {
+                        newRoot: "$doc"
+                    }
+                }
+            ])
             const sessionsIds = tmpOnes.map((element) => element._id)
-            const newPlanning = await Planning.create({ ...req.body, sessions: sessionsIds, week: Number(week) + 1 })
+            console.log(sessionsIds)
+            const nextWeek = Number(week)+1
+            console.log({ ...req.body, sessions: sessionsIds, week: nextWeek })
+            const newPlanning = await Planning.create({ 
+                group : groupId,
+                semester : semesterId,
+                sessions: sessionsIds,
+                week: nextWeek 
+            })
             newPlanning.save().then(data => {
                 return res.status(201).send({
                     data,
@@ -131,7 +158,6 @@ exports.refreshPlanning = async (req, res) => {
                 })
             })
         }
-        // group , semester
     } catch (e) {
         return res.status(500).send({
             error: e.message,
