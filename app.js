@@ -11,10 +11,11 @@ const classroomRouter = require("./routers/classroom.router")
 const groupRouter = require("./routers/group.router")
 const sectionRouter = require("./routers/section.router")
 const plannigRouter = require("./routers/planning.router")
-const semesterRouter = require("./routers/semester.router")
-// const sessionRouter = require("./routers/session.router")
-
+const sessionRouter = require("./routers/session.router")
 const subjectRouter = require("./routers/subject.router")
+const semesterRouter = require("./routers/semester.router")
+const collegeYearRouter = require("./routers/collegeYear.router")
+
 
 const { base } = require("./models/session.model")
 var app = express()
@@ -41,7 +42,8 @@ app.use(`${baseURL}/section`, sectionRouter)
 app.use(`${baseURL}/group`, groupRouter)
 app.use(`${baseURL}/planning`, plannigRouter)
 app.use(`${baseURL}/semester`, semesterRouter)
-// app.use(`${baseURL}/session`, sessionRouter)
+app.use(`${baseURL}/session`, sessionRouter)
+app.use(`${baseURL}/collegeYear`, collegeYearRouter)
 
 
 mongoose.set('strictQuery', true)
