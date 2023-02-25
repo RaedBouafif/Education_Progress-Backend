@@ -10,7 +10,7 @@ const Planning = require('../models/Planning.model')
 exports.createTemplateSession = async (req,res) => {
     try {
         const session = await Session.create({...req.body, sessionCategorie : "template"})
-        session.save().then( data => {
+        session.save().then( data => { 
             return res.status(201).send({
                 data,
                 created : true

@@ -78,6 +78,12 @@ Session.statics.getDistinctLatestSessionTemplate = async function (group, catego
         //     }
         // }
         {
+            $group: {
+                _id: { day: "$day", startsAt: "$startsAt" },
+                doc: { $first: "$$ROOT" }
+            },
+        },
+        {
             $replaceRoot: {
                 newRoot: "$doc"
             }
