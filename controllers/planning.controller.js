@@ -21,6 +21,11 @@ exports.createInitialTemplate = async (req,res) => {
         }
     }catch(e) {
         console.log(e)
+        if(e.errors) {
+            return res.status(400).json({//need test
+                error : "badRequest"
+            })
+        }
         return res.status(500).send({
             error : e.message,
             message : "Server ERROR!"

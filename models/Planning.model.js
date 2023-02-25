@@ -36,7 +36,6 @@ const Planning = Schema(
             type : Boolean,
             default : true
         }
-
     },
     {
         timestamps: true
