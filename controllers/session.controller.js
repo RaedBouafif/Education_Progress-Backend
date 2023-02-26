@@ -117,7 +117,6 @@ exports.createManualSession = async (req,res) => {
             createdBy,
             week,
             semesterId,
-
         } = req.body
         // i gonna test only on numberOfWekks and semester and the week is sent or not because the others are in the catch
         if ( !week || !semesterId ) {

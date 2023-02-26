@@ -3,19 +3,19 @@ const mongoose = require("mongoose")
 
 const CollegeYear = mongoose.Schema(
     {
-        year : {
-            type : String,
-            required : [true , "yearRequired"]
+        year: {
+            type: String,
+            required: [true, "yearRequired"]
         },
-        semesters : [
+        semesters: [
             {
-                type : mongoose.Schema.Types.ObjectId,
-                ref : "Semester"
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Semester"
             }
         ],
-        active : {
-            type : Boolean,
-            default : true
+        active: {
+            type: Boolean,
+            default: true
         }
     }
 )

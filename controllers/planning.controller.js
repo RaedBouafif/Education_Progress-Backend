@@ -17,7 +17,7 @@ exports.createInitialTemplate = async (req, res) => {
                     teacher: session.teacher,
                     classroom: session.classroom,
                     group: req.body.group,
-                    day: session.day, 
+                    day: session.day,
                     startsAt: session.startsAt,
                     subject: session.subject,
                     sessionType: session.sessionType,
@@ -57,9 +57,9 @@ exports.getTemplate = async (req, res) => {
         else return res.status(204).json({ found: false })
     } catch (e) {
         console.log(e)
-        if(e.errors) {
+        if (e.errors) {
             return res.status(400).json({//need test
-                error : "badRequest"
+                error: "badRequest"
             })
         }
         return res.status(500).send({
@@ -101,29 +101,37 @@ exports.refreshPlanning = async (req, res) => {
         const semesterId = req.params.semesterId
         const planning = await Planning.findOne({ group: groupId, week: Number(week) + 1, semesterId: semesterId })
         if (planning) {
-            var tempSessions = await Session.getDistinctLatestSessionTemplate(req.params.groupId, "template")
-            const sessionsIds = tempSessions.map((element) => element._id)
-            if (sessionsIds.length != 0) {
-                for (let tmpSession of sessionsIds) {
-                    planning.sessions.push(tmpSession)
+            const planningPopulated = await planning.populate("sessions")
+            console.log(planning)
+            if (!planningPopulated.sessions.find( element => element.sessionCategorie === 'template')){
+                var tempSessions = await Session.getDistinctLatestSessionTemplate(req.params.groupId, "template")
+                const sessionsIds = tempSessions.map((element) => element._id)
+                if (sessionsIds.length != 0) {
+                    for (let tmpSession of sessionsIds) {
+                        planning.sessions.push(tmpSession)
+                    }
                 }
+                planning.save().then(data => {
+                    return res.status(200).send({
+                        data,
+                        refreshed: true
+                    })
+                }).catch(err => {
+                    return res.status(400).send({
+                        error: err.message,
+                        message: "Some ERROR  occured while refreshing the template"
+                    })
+                })
             }
-            planning.save().then(data => {
-                return res.status(200).send({
-                    data,
-                    refreshed: true
-                })
-            }).catch(err => {
-                return res.status(400).send({
-                    error: err.message,
-                    message: "Some ERROR  occured while refreshing the template"
-                })
+            return res.status(200).send({
+                planningPopulated,
+                message : "Planning allready Refreshed!"
             })
         } else {
             console.log(req.params)
             const tmpOnes = await Session.aggregate([
                 { $sort: { "createdAt": -1 } },
-                { $match: { group: new Types.ObjectId(groupId) } },
+                { $match: { group: new Types.ObjectId(groupId) , sessionCategorie : "template"} },
                 {
                     $group: {
                         _id: { day: "$day", startsAt: "$startsAt" },
@@ -138,12 +146,12 @@ exports.refreshPlanning = async (req, res) => {
             ])
             const sessionsIds = tmpOnes.map((element) => element._id)
             console.log(sessionsIds)
-            const nextWeek = Number(week)+1
-            const newPlanning = await Planning.create({ 
-                group : groupId,
-                semester : semesterId,
+            const nextWeek = Number(week) + 1
+            const newPlanning = await Planning.create({
+                group: groupId,
+                semester: semesterId,
                 sessions: sessionsIds,
-                week: nextWeek 
+                week: nextWeek
             })
             newPlanning.save().then(data => {
                 return res.status(201).send({
@@ -166,6 +174,29 @@ exports.refreshPlanning = async (req, res) => {
 }
 
 
+// {
+//     $match: {
+//         week: Number(req.params.week),
+//         group: Types.ObjectId(req.params.groupId),
+//         semester: Types.ObjectId(req.params.semesterId)
+//     }
+// },
+// {
+//     $lookup: {
+//         from: 'sessions', // Name of the referenced collection
+//         localField: 'sessions',
+//         foreignField: '_id',
+//         as: 'sessionsData', // Field to store the populated data
+//     }
+// },
+// { $unwind: '$sessionsData' },
+// { $sort: { "sessionsData.createdAt": -1 } },
+// {
+//     $group: {
+//         _id: { day: "$sessionsData.day", startsAt: "$sessionsData.startsAt" },
+//         session: { $first: "$sessionsData" },
+//     },
+// },
 
 
 // get planning By Group and week and semester
@@ -189,18 +220,17 @@ exports.getPlanning = async (req, res) => {
                     as: 'sessionsData', // Field to store the populated data
                 }
             },
-            // { $unwind: '$sessionsData' },
-            { $sort: { "createdAt": -1 } },
+            { $unwind: '$sessionsData' },
+            { $sort: { "sessionsData.createdAt": -1 } },
             {
                 $group: {
-
                     _id: { day: "$sessionsData.day", startsAt: "$sessionsData.startsAt" },
-                    doc: { $first: "$$ROOT" }
+                    session: { $first: "$sessionsData" }
                 },
             },
             {
                 $replaceRoot: {
-                    newRoot: "$doc"
+                    newRoot: "$session"
                 }
             }
         ])
