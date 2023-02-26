@@ -13,11 +13,20 @@ const Group = Schema(
             type: Schema.Types.ObjectId,
             ref: "Section",
             required: [true, "sectionRequired"]
+        },
+        collegeYear: {
+            type: Schema.Types.ObjectId,
+            ref: "CollegeYear",
+            required: [true, "collegeYearRequired"]
         }
+        , students: [{
+            type: Schema.Types.ObjectId,
+            ref: "Student",
+        }]
     },
     {
         timestamps: true
     }
 )
-Group.index({ groupName: 1, section: 1}, { unique: true })
+Group.index({ groupName: 1, section: 1, collegeYear: 1 }, { unique: true })
 module.exports = model("Group", Group)

@@ -189,17 +189,17 @@ exports.getPlanning = async (req, res) => {
                     as: 'sessionsData', // Field to store the populated data
                 }
             },
-            // { $unwind: '$sessionsData' },
-            { $sort: { "createdAt": -1 } },
+            { $unwind: '$sessionsData' },
+            { $sort: { "sessionsData.createdAt": -1 } },
             {
                 $group: {
                     _id: { day: "$sessionsData.day", startsAt: "$sessionsData.startsAt" },
-                    doc: { $first: "$$ROOT" }
+                    session: { $first: "$sessionsData" },
                 },
             },
             {
                 $replaceRoot: {
-                    newRoot: "$doc"
+                    newRoot: "$session"
                 }
             }
         ])
