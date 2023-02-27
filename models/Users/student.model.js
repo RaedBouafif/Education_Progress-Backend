@@ -45,6 +45,10 @@ const Student = mongoose.Schema(
         parent: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Parent'
+        },
+        group: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Group"
         }
     },
     {

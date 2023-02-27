@@ -1,4 +1,4 @@
-const { createStudent, login, updateStudent, deleteStudent, findOneStudent, findAllStudents, findOneStudentWithParent, findAllStudentsWithParent} = require("../../controllers/Users/student.controller")
+const { createStudent, login, updateStudent, deleteStudent, findOneStudent, findAllStudents, findOneStudentWithParent, findAllStudentsWithParent, graduatedStudent} = require("../../controllers/Users/student.controller")
 const Router = require('express').Router()
 
 //get
@@ -6,6 +6,7 @@ Router.route("/getById/:studentId").get(findOneStudent)
 Router.route("/getByIdWithParent/:studentId").get(findOneStudentWithParent)
 Router.route("/getAll").get(findAllStudents)
 Router.route("/getAllWithParent").get(findAllStudentsWithParent)
+Router.route("/graduated/:studentId/:groupId").get(graduatedStudent)
 //post
 Router.route("/create").post(createStudent)
 Router.route("/login").post(login)

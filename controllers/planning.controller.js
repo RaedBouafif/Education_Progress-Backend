@@ -225,7 +225,7 @@ exports.getPlanning = async (req, res) => {
             {
                 $group: {
                     _id: { day: "$sessionsData.day", startsAt: "$sessionsData.startsAt" },
-                    session: { $first: "$sessionsData" }
+                    session: { $first: "$sessionsData" },
                 },
             },
             {

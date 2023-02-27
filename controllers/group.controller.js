@@ -7,15 +7,22 @@ exports.create = async (req, res) => {
         return res.status(201).json(group);
     } catch (e) {
         console.log(e);
-        if (e.keyValue?.groupName)
+        if (e.code === 11000) {
             return res.status(409).json({
-                error: "conflitGroupName",
-                message: "group name already used",
+                error: "conflictGroup",
+                message: "group already used in this year",
             });
+        }
+        else if (e.errors?.collegeYear?.properties?.message === "collegeYearRequired") {
+            return res.status(400).json({
+                error: "collegeYearRequired",
+            });
+        }
         else if (e.errors?.groupName?.properties?.message === "groupNameRequired") {
             return res.status(400).json({
                 error: "groupNameRequired",
             });
+
         } else if (e.errors?.section?.properties?.message === "sectionRequired") {
             return res.status(400).json({
                 error: "sectionRequired",
@@ -36,7 +43,7 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
     try {
-        const groups = await GroupModel.find({}).populate("section");
+        const groups = await GroupModel.find({}).populate("section").populate("students");
         return groups.length
             ? res.status(200).json({ found: true, groups })
             : res.status(204).json({ found: false });
@@ -51,7 +58,7 @@ exports.getAll = async (req, res) => {
 exports.getById = async (req, res) => {
     try {
         const { groupId } = req.params;
-        const group = await GroupModel.findById(groupId).populate("section");
+        const group = await GroupModel.findById(groupId).populate("section").populate("students");
         return group
             ? res.status(200).json({ found: true, group })
             : res.status(404).json({ found: false });
@@ -80,11 +87,12 @@ exports.update = async (req, res) => {
     }
     catch (e) {
         console.log(e);
-        if (e.keyValue?.groupName)
+        if (e.code === 11000) {
             return res.status(409).json({
-                error: "conflitGroupName",
-                message: "group name already used",
+                error: "conflictGroup",
+                message: "group already used in this year",
             });
+        }
         else if (e.errors?.section?.properties?.message || e.errors?.groupName?.properties?.message) {
             return res.status(400).json({
                 error: "badRequest",
@@ -116,4 +124,4 @@ exports.deleteById = async (req, res) => {
         });
     }
 
-} 
+}
