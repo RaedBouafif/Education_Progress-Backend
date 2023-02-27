@@ -40,6 +40,6 @@ Router.route("/delete/:studentId").delete(deleteStudent);
 Router.route("/savePresence").post(saveStudentPresence);
 Router.route("/getAbsence").get(getStudentAbsence);
 Router.route("/getPresence").get(getStudentPresence);
-Router.route("/justifyAbsence").get(justifyStudentAbsence);
+Router.route("/justifyAbsence/:absenceId").get(justifyStudentAbsence);
 
 module.exports = Router;

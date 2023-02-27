@@ -8,8 +8,7 @@ const StudentAbsence = require("../models/studentAbsence.model")
 exports.saveStudentPresence = async (req, res) => {
     try {
         //{sessionId : "1215qsd" , groupId :"15564qsd" , students : [ids] }
-        const { sessionId, groupId } = req.params
-        const { students } = req.body //sent only present students 
+        const { students, sessionId, groupId } = req.body //sent only present students 
         if (!sessionId || !groupId)
             return res.status(400).json({
                 error: "badRequired",
