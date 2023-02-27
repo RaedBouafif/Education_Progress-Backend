@@ -14,10 +14,8 @@ const StudentAbsence = Schema(
             ref: "Session",
             required: [true, "sessionRequired"]
         },
-        date : {
-            type : Date
-        },
-        justified: {
+        //createdAt can identify the week
+        justified: { // justified by admin
             type: Boolean,
             default: false
         }

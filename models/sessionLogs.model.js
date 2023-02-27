@@ -3,56 +3,56 @@ const { Schema, model } = require('mongoose')
 
 const SessionLogsSchema = Schema(
     {
-        sessionId : {
-            type : Schema.Types.ObjectId,
-            ref : "Session",
-            required : [true, "SessionRequired"]
+        sessionId: {
+            type: Schema.Types.ObjectId,
+            ref: "Session",
+            required: [true, "SessionRequired"]
         },
-        startedAt : {
-            type : Date
+        startedAt: {
+            type: Date
         },
-        endedAt : {
-            type : Date
+        endedAt: {
+            type: Date
         },
-        Rates : [
+        rates: [
             {
-                idStudent : {
-                    type : Schema.Types.ObjectId
+                idStudent: {
+                    type: Schema.Types.ObjectId
                 },
-                studentName : {
-                    type : String
+                studentName: {
+                    type: String
                 },
-                value : {
-                    type : Number,
-                    min : [0, "InvalidRate"],
-                    max : [5, "InvalidRate"]
+                value: {
+                    type: Number,
+                    min: [0, "InvalidRate"],
+                    max: [5, "InvalidRate"]
                 }
             }
         ],
-        Reports : [
+        reports: [
             {
-                idStudent : {
-                    type : String
+                idStudent: {
+                    type: String
                 },
-                studentName : {
-                    type : String
+                studentName: {
+                    type: String
                 },
-                justifiedReports : {
-                    type : Boolean,
-                    default : false
+                justifiedReports: {
+                    type: Boolean,
+                    default: false
                 }
             }
         ],
-        canceled : {
-            type : Boolean,
-            default : false
+        canceled: {
+            type: Boolean,
+            default: false
         },
-        modifiedBy : {
-            type : String
+        modifiedBy: {
+            type: String
         }
     }, {
-        timestamp : true,
-    }
+    timestamp: true,
+}
 )
 
-module.exports = model("SessionLogs",SessionLogsSchema)
+module.exports = model("SessionLogs", SessionLogsSchema)
