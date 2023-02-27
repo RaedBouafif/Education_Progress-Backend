@@ -1,8 +1,5 @@
 const { Schema, model } = require("mongoose")
 
-
-
-
 const teacherAbsence = Schema(
     {
         teacher: {
@@ -14,6 +11,9 @@ const teacherAbsence = Schema(
             type: Schema.Types.ObjectId,
             ref: "Session",
             required: [true, "sessionRequired"]
+        },
+        date : {
+            type : Date
         },
         justified: {
             type: Boolean,

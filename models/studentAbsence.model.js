@@ -14,6 +14,9 @@ const StudentAbsence = Schema(
             ref: "Session",
             required: [true, "sessionRequired"]
         },
+        date : {
+            type : Date
+        },
         justified: {
             type: Boolean,
             default: false

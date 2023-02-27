@@ -10,28 +10,28 @@ exports.createInitialTemplate = async (req, res) => {
     try {
         //Initialize my Template and create an Initial Planning
         //sessions group semester default week = 1
-        var selectedSessions = []
-        for (var session of req.body.sessions) {
-            const existedSession = await Session.find(
-                {
-                    teacher: session.teacher,
-                    classroom: session.classroom,
-                    group: req.body.group,
-                    day: session.day,
-                    startsAt: session.startsAt,
-                    subject: session.subject,
-                    sessionType: session.sessionType,
-                    createdBy: session.createdBy
-                }
-            )
-            if (!existedSession.length) { selectedSessions.push(session) }
-        }
-        const sessionTemplate = await Session.create(selectedSessions)
+        // var selectedSessions = []
+        // for (var session of req.body.sessions) {
+        //     const existedSession = await Session.find(
+        //         {
+        //             teacher: session.teacher,
+        //             classroom: session.classroom,
+        //             group: req.body.group,
+        //             day: session.day,
+        //             startsAt: session.startsAt,
+        //             subject: session.subject,
+        //             sessionType: session.sessionType,
+        //             createdBy: session.createdBy
+        //         }
+        //     )
+        //     if (!existedSession.length) { selectedSessions.push(session) }
+        // }
+        const sessionTemplate = await Session.create(req.body.sessions)
         for (s of sessionTemplate) {
             await s.save()
         }
-        const tempSessions = await Session.getDistinctLatestSessionTemplate(req.body.group, "template")
-        const sessionsIds = tempSessions.map((element) => element._id)
+        // const tempSessions = await Session.getDistinctLatestSessionTemplate(req.body.group, "template")
+        const sessionsIds = sessionTemplate.map((element) => element._id)
         const planning = await Planning.create({ ...req.body, sessions: sessionsIds, week: 1 })
         await planning.save()
         return res.status(201).json(planning)

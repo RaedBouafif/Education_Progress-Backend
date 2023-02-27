@@ -19,6 +19,9 @@ const StudentPresence = Schema(
         },
         dateLeave: {//memorization
             type: Date,
+        },
+        date  : {
+            type : Date
         }
     },
     {

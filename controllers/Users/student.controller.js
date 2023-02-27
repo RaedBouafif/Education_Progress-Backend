@@ -30,7 +30,12 @@ exports.createStudent = async (req, res) => {
         });
         student
             .save()
-            .then((data) => {
+            .then(async (data) => {
+                const group = await Group.findOneAndUpdate(
+                    groupId,
+                    { $push : {students : new Types.ObjectId(data._id)}},
+                    {new : true , runValidators : true}
+                )
                 return res.status(201).send({
                     _id: data._id,
                     firstName: data.firstName,
@@ -40,7 +45,8 @@ exports.createStudent = async (req, res) => {
                     parent: data.parent,
                     group: data.group,
                 });
-            })
+            }
+            )
             .catch((err) => {
                 if (err.keyValue?.username) {
                     return res.status(409).json({
@@ -54,6 +60,7 @@ exports.createStudent = async (req, res) => {
                     });
                 }
             });
+
     } catch (e) {
         res.status(500).send({
             error: e.message,
@@ -349,14 +356,24 @@ exports.updateStudent = async (req, res) => {
     }
 };
 
-exports.permuteStudentGroup = async (req, res) => {
+exports.permutationStudent = async (req, res) => {
     try {
-        const { studentId, toGroupId } = req.params;
+        const { studentId, groupId } = req.params;
         const student = await Student.findByIdAndUpdate(
             studentId,
-            { group: toGroupId },
-            { new: true, runValidators: true }
+            { group: groupId },
+            { new: false, runValidators: true }
         ).populate({ path: "group", select: { groupName: 1 } });
+        const RemovedStduentFromOldGroup = await Group.findByIdAndUpdate(
+            student.group._id,
+            { $pull : { students : studentId }},
+            { new : true, runValidators : true }
+        )
+        const group = await Group.findByIdAndUpdate(
+            groupId,
+            { $push : {students : new Types.ObjectId(studentId)} },
+            { new : true, runValidators : true}
+        )
         return student
             ? res.status(200).json({
                 updated: true,
@@ -373,7 +390,7 @@ exports.permuteStudentGroup = async (req, res) => {
     }
 };
 
-exports.graduatedStudent = async (req,res) => {
+exports.graduationStudent = async (req,res) => {
     try{
         const { studentId, groupId } = req.params
         const student = await Student.findByIdAndUpdate(

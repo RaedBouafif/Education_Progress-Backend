@@ -1,12 +1,23 @@
-const { createStudent, login, updateStudent, deleteStudent, findOneStudent, findAllStudents, findOneStudentWithParent, findAllStudentsWithParent, graduatedStudent} = require("../../controllers/Users/student.controller")
-const Router = require('express').Router()
+const { createStudent,
+        login,
+        updateStudent,
+        deleteStudent,
+        findOneStudent,
+        findAllStudents,
+        findOneStudentWithParent,
+        findAllStudentsWithParent, 
+        graduationStudent,
+        permutationStudent
+    } = require("../../controllers/Users/student.controller")
 
+const Router = require('express').Router()
 //get
 Router.route("/getById/:studentId").get(findOneStudent)
 Router.route("/getByIdWithParent/:studentId").get(findOneStudentWithParent)
 Router.route("/getAll").get(findAllStudents)
 Router.route("/getAllWithParent").get(findAllStudentsWithParent)
-Router.route("/graduated/:studentId/:groupId").get(graduatedStudent)
+Router.route("/graduated/:studentId/:groupId").get(graduationStudent)
+Router.route("/permutation/:studentId/:groupId").get(permutationStudent)
 //post
 Router.route("/create").post(createStudent)
 Router.route("/login").post(login)

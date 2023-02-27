@@ -66,11 +66,9 @@ const Session = Schema(
 
 // Session.index({ teacher : 1, group : 1, startsAt : 1}, {unique : true})
 Session.statics.getDistinctLatestSessionTemplate = async function (group, categorie) {
-
     return await this.aggregate([
         { $sort: { "createdAt": -1 } },
         { $match: { group: new Types.ObjectId(group), sessionCategorie: categorie } },
-
         // to project the docs ( if i need all the data)
         // {
         //     $project: {
