@@ -14,15 +14,13 @@ const StudentPresence = Schema(
             ref: "Session",
             required: [true, "sessionRequired"]
         },
-        dateEntry: {//memorization
+        dateEntry: {
             type: Date,
         },
-        dateLeave: {//memorization
+        dateLeave: {
             type: Date,
         },
-        date  : {
-            type : Date
-        }
+        //createdDate to know in which week this session
     },
     {
         timestamps: true
