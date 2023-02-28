@@ -32,9 +32,9 @@ exports.createStudent = async (req, res) => {
             .save()
             .then(async (data) => {
                 const group = await Group.findOneAndUpdate(
-                    groupId,
-                    { $push : {students : new Types.ObjectId(data._id)}},
-                    {new : true , runValidators : true}
+                    req.body.groupId,
+                    { $push: { students: new Types.ObjectId(data._id) } },
+                    { new: true, runValidators: true }
                 )
                 return res.status(201).send({
                     _id: data._id,
@@ -366,13 +366,13 @@ exports.permutationStudent = async (req, res) => {
         ).populate({ path: "group", select: { groupName: 1 } });
         const RemovedStduentFromOldGroup = await Group.findByIdAndUpdate(
             student.group._id,
-            { $pull : { students : studentId }},
-            { new : true, runValidators : true }
+            { $pull: { students: studentId } },
+            { new: true, runValidators: true }
         )
         const group = await Group.findByIdAndUpdate(
             groupId,
-            { $push : {students : new Types.ObjectId(studentId)} },
-            { new : true, runValidators : true}
+            { $push: { students: new Types.ObjectId(studentId) } },
+            { new: true, runValidators: true }
         )
         return student
             ? res.status(200).json({
@@ -390,32 +390,32 @@ exports.permutationStudent = async (req, res) => {
     }
 };
 
-exports.graduationStudent = async (req,res) => {
-    try{
+exports.graduationStudent = async (req, res) => {
+    try {
         const { studentId, groupId } = req.params
         const student = await Student.findByIdAndUpdate(
             studentId,
-            { group : groupId},
-            { new : true, runValidators : true}
-        ).populate( {path : "group" , select : {groupName : 1}})
+            { group: groupId },
+            { new: true, runValidators: true }
+        ).populate({ path: "group", select: { groupName: 1 } })
         const group = await Group.findByIdAndUpdate(
             groupId,
-            { $push : {students : new Types.ObjectId(studentId)} },
-            { new : true, runValidators : true}
+            { $push: { students: new Types.ObjectId(studentId) } },
+            { new: true, runValidators: true }
         )
         return student ?
             res.status(200).send({
-                updated :true,
+                updated: true,
                 student
             })
             :
             res.status(404).send({
-                updated : false
+                updated: false
             })
-    }catch(e) {
+    } catch (e) {
         return res.status(500).send({
-            error : e.error,
-            message : "Server ERROR!"
+            error: e.error,
+            message: "Server ERROR!"
         })
     }
 }

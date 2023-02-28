@@ -26,6 +26,11 @@ const StudentPresence = Schema(
         timestamps: true
     }
 )
+//must add index with only date(using createdAt) student and session
+//+ error handling for unique
+StudentPresence.virtual('createdAtDate').get(function () {
+    return this.createdAt.toISOString().substr(0, 10)
+})
 
-
+StudentPresence.index({ student: 1, session: 1, createdAtDate: 1 }, { unique: true })
 module.exports = model("StudentPresence", StudentPresence)
