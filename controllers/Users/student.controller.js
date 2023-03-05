@@ -32,7 +32,7 @@ exports.createStudent = async (req, res) => {
             .save()
             .then(async (data) => {
                 const group = await Group.findOneAndUpdate(
-                    groupId,
+                    req.body.groupId,
                     { $push : {students : new Types.ObjectId(data._id)}},
                     {new : true , runValidators : true}
                 )

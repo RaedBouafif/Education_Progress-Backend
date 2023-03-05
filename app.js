@@ -16,6 +16,7 @@ const subjectRouter = require("./routers/subject.router")
 const semesterRouter = require("./routers/semester.router")
 const collegeYearRouter = require("./routers/collegeYear.router")
 const teacherAbsenceRouter = require("./routers/teacherAbsence.router")
+const sessionLogsRouter = require("./routers/sessionLogs.router")
 
 
 const { base } = require("./models/session.model")
@@ -46,6 +47,7 @@ app.use(`${baseURL}/semester`, semesterRouter)
 app.use(`${baseURL}/session`, sessionRouter)
 app.use(`${baseURL}/collegeYear`, collegeYearRouter)
 app.use(`${baseURL}/teacherAbsence`, teacherAbsenceRouter)
+app.use(`${baseURL}/sessionLogs` , sessionLogsRouter)
 
 
 mongoose.set('strictQuery', true)

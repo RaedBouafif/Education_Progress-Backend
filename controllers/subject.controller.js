@@ -270,7 +270,7 @@ exports.changeSubjectState = (req,res)  => {
                 })
             }
             return res.status(200).send({
-                subject,
+                subject,    
                 updated : true
             })
         }).catch(err => {

@@ -3,7 +3,7 @@ const { Schema, model } = require('mongoose')
 
 const SessionLogsSchema = Schema(
     {
-        sessionId: {
+        session: {
             type: Schema.Types.ObjectId,
             ref: "Session",
             required: [true, "SessionRequired"]
@@ -16,8 +16,9 @@ const SessionLogsSchema = Schema(
         },
         rates: [
             {
-                idStudent: {
-                    type: Schema.Types.ObjectId
+                studentId: {
+                    type: Schema.Types.ObjectId , 
+                    unique : true
                 },
                 studentName: {
                     type: String
@@ -31,11 +32,15 @@ const SessionLogsSchema = Schema(
         ],
         reports: [
             {
-                idStudent: {
-                    type: String
+                studentId: {
+                    type: Schema.Types.ObjectId,
+                    unique : true
                 },
                 studentName: {
                     type: String
+                },
+                description : {
+                    type : String
                 },
                 justifiedReports: {
                     type: Boolean,
@@ -50,9 +55,14 @@ const SessionLogsSchema = Schema(
         modifiedBy: {
             type: String
         }
-    }, {
-    timestamp: true,
-}
+    }, 
+    {
+        timestamp: true,
+    }
 )
+SessionLogsSchema.virtual('createdAtDate').get(function() {
+    return this.createdAt.toISOString().substr(0, 10)
+})
 
+SessionLogsSchema.index({ session : 1,  createdAtDate : 1 }  , {unique : true})
 module.exports = model("SessionLogs", SessionLogsSchema)

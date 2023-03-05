@@ -1,16 +1,15 @@
-const TeacherAbsence = require("../models/teacherAbsence")
+const TeacherAbsence = require("../models/teacherAbsence.model")
 const Teacher = require("../models/Users/teacher.model")
 const Session = require("../models/session.model")
 const e = require("cors")
 
 exports.saveAbsence = async (req,res) => {
     try{
-        const { sessionId , teacherId } = req.body
+        const { session , teacher } = req.body
         const absence = await TeacherAbsence.create(
             {
-                teacher : teacherId,
-                session : sessionId,
-                date : new Date()
+                teacher : teacher,
+                session : session,
             }
         )
         absence.save().then( data => {
@@ -21,7 +20,7 @@ exports.saveAbsence = async (req,res) => {
         }).catch( err => {
             if (err.kind == 'ObjectId' || err.name == 'NotFound'){
                 return res.status(404).send({
-                    error : "Teacher with id : " +teacherId+ " or Session with id : " +sessionId+ " Not Found!",
+                    error : "Teacher with id : " +teacher+ " or Session with id : " +session+ " Not Found!",
                     saved : false
                 })
             }
@@ -32,6 +31,11 @@ exports.saveAbsence = async (req,res) => {
         })
 
     }catch(e) {
+        if (e.code == "11000"){
+            return res.status(400).send({
+                error : "Absence allready exists , we cannot insert it"
+            })
+        }
         return res.status(500).send({
             error : e.message,
             message : "Server ERROR!"
@@ -97,6 +101,32 @@ exports.getTeacherAbsencesByYear = async (req,res) => {
             {
                 teacher : teacherId,
                 $where : () => { return this.date.getFullYear() === year}
+            })
+        return absences ?
+            res.status(200).send({
+                found : true,
+                absences
+            })
+            :
+            res.status(404).send({
+                found : false,
+                message : "Teacher with id " +teacherId+ " Not Found!"
+            })
+    }catch(e) {
+        return res.status(500).send({
+            error : e.message,
+            message : "Server ERROR!"
+        })
+    }
+}
+
+// get all Teacher Absences by teacherId and semester
+exports.getTeacherAbsencesByYear = async (req,res) => {
+    try{
+        const absences = await TeacherAbsence.find(
+            {
+                teacher : req.body.teacher,
+                createdAt : { $gte : new Date(req.body.dateBegin) , $lte : new Date(req.body.dateEnd)}
             })
         return absences ?
             res.status(200).send({

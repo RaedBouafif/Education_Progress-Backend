@@ -12,9 +12,6 @@ const teacherAbsence = Schema(
             ref: "Session",
             required: [true, "sessionRequired"]
         },
-        date : {
-            type : Date
-        },
         justified: {
             type: Boolean,
             default: false
@@ -24,6 +21,12 @@ const teacherAbsence = Schema(
         timestamps: true
     }
 )
+
+teacherAbsence.virtual('createdAtDate').get(function() {
+    return this.createdAt.toISOString().substr(0, 10)
+})
+ 
+teacherAbsence.index({ teacher : 1 , session : 1,  createdAtDate : 1 }  , {unique : true})
 
 
 module.exports = model("TeacherAbsence", teacherAbsence)
