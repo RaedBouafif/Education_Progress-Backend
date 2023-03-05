@@ -1,6 +1,15 @@
-const { createAdmin, findAllAdmins, findOneAdmin, deleteAdmin, login, updateAdmin } = require('../../controllers/Users/admin.controller')
-
-const Router = require('express').Router()
+const {
+    createAdmin,
+    findAllAdmins,
+    findOneAdmin,
+    deleteAdmin,
+    login,
+    updateAdmin,
+    welcome,
+    logout,
+} = require("../../controllers/Users/admin.controller");
+const authMiddleWare = require("../../middlewares/auth");
+const Router = require("express").Router();
 
 //post
 Router.route("/create").post(createAdmin);
@@ -13,4 +22,7 @@ Router.route("/update/:adminId").put(updateAdmin);
 //delete
 Router.route("/delete/:adminId").delete(deleteAdmin);
 
-module.exports = Router 
+Router.route("/welcome").get(authMiddleWare, welcome);
+Router.route("/logout").get(logout);
+
+module.exports = Router;

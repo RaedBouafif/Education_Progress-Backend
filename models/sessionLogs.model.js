@@ -50,9 +50,10 @@ const SessionLogsSchema = Schema(
         modifiedBy: {
             type: String
         }
-    }, {
-    timestamp: true,
-}
+    },
+    {
+        timestamp: true,
+    }
 )
 
 module.exports = model("SessionLogs", SessionLogsSchema)

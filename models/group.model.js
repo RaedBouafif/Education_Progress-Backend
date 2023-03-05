@@ -18,8 +18,8 @@ const Group = Schema(
             type: Schema.Types.ObjectId,
             ref: "CollegeYear",
             required: [true, "collegeYearRequired"]
-        }
-        , students: [{
+        },
+        students: [{
             type: Schema.Types.ObjectId,
             ref: "Student",
         }]

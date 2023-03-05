@@ -3,6 +3,7 @@ require("dotenv").config()
 const connectDB = require('./config/dbConnect')
 const cors = require("cors")
 const mongoose = require('mongoose')
+const cookieParser = require("cookie-parser")
 const parentRouter = require("./routers/Users/parent.router")
 const studentRouter = require("./routers/Users/student.router")
 const teacherRouter = require("./routers/Users/teacher.router")
@@ -20,12 +21,12 @@ const teacherAbsenceRouter = require("./routers/teacherAbsence.router")
 
 const { base } = require("./models/session.model")
 var app = express()
-
+app.use(cookieParser())
 app.use(express.json())
 app.use(cors(
     {
         credentials: true,
-        origin: 'http://localhost:4000',
+        origin: 'http://localhost:3000',
         optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
     }
 ))

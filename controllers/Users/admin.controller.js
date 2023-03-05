@@ -5,257 +5,289 @@ const generateToken = require('../../functions/generateToken')
 
 
 //Create a new Admin
-exports.createAdmin = async (req,res) => {
-    try{
-        const {username , password , role} = req.body
-        if(!username || !password || !role){
+exports.createAdmin = async (req, res) => {
+    try {
+        const { username, password, role } = req.body
+        if (!username || !password || !role) {
             return res.status(400).send({
-                error : 'Bad Request!'
+                error: 'Bad Request!'
             })
         }
-        if (req.body.password.length < 6){
+        if (req.body.password.length < 6) {
             return res.status(400).send({
-                error : "password Length should be >= 6"
+                error: "password Length should be >= 6"
             })
         }
         const encryptedPassword = await bcrypt.hash(password, 10)
         const admin = new Admin({
-            username : username || null,
-            password : encryptedPassword || null,
-            role : role || null
+            username: username || null,
+            password: encryptedPassword || null,
+            role: role || null
         })
-        admin.save().then( data => {
+        admin.save().then(data => {
             return res.status(201).send({
-                _id : data._id,
-                username : data.username,
-                role : data.role
+                _id: data._id,
+                username: data.username,
+                role: data.role
             })
-        }).catch( err => {
-            if (err.keyValue?.username){
+        }).catch(err => {
+            if (err.keyValue?.username) {
                 return res.status(409).json({
-                    error : "conflict Username!",
-                    message : "username already exist"
+                    error: "conflict Username!",
+                    message: "username already exist"
                 })
-            }else{
+            } else {
                 return res.status(400).send({
-                    error : err.message,
-                    message : "Student cannot be inserted!"
+                    error: err.message,
+                    message: "Student cannot be inserted!"
                 })
             }
         })
-    }catch(e) {
+    } catch (e) {
         res.status(500).send({
-            error : e.message,
-            message : "Server error!"
+            error: e.message,
+            message: "Server error!"
         })
     }
 }
 
 //Retrieve all Admins
-exports.findAllAdmins = (req,res) => {
-    try{    
-        Admin.find({},{password : 0}).then(admins => {
-            if (admins.length == 0){
+exports.findAllAdmins = (req, res) => {
+    try {
+        Admin.find({}, { password: 0 }).then(admins => {
+            if (admins.length == 0) {
                 return res.status(204).send({
-                    message : "There is no admins in database!",
-                    found : false
+                    message: "There is no admins in database!",
+                    found: false
                 })
             }
-            return res.status(200).send({admins, found: true})
-            }).catch(err => {
-                return res.status(400).send({
-                error : err.message,
-                message : "Some error occured while retrieving all admins!"
+            return res.status(200).send({ admins, found: true })
+        }).catch(err => {
+            return res.status(400).send({
+                error: err.message,
+                message: "Some error occured while retrieving all admins!"
             })
         })
-    }catch(e) {
+    } catch (e) {
         return res.status(500).send({
-            error : e.message,
-            message : "Server error!"
+            error: e.message,
+            message: "Server error!"
         })
     }
 }
 
 
 //Retrieve Admin by Id 
- exports.findOneAdmin = (req,res) => {
-    try{
-        if (!req.params.adminId){
+exports.findOneAdmin = (req, res) => {
+    try {
+        if (!req.params.adminId) {
             return res.status(400).send({
-                error : "Admin id is required!"
+                error: "Admin id is required!"
             })
         }
-        Admin.findById(req.params.adminId, {password : 0}).then(admin => {
-            if (admin.length == 0){
+        Admin.findById(req.params.adminId, { password: 0 }).then(admin => {
+            if (admin.length == 0) {
                 return res.status(404).send({
-                    message : "Admin with the id:" + req.params.adminId + "not found!",
-                    found : false
+                    message: "Admin with the id:" + req.params.adminId + "not found!",
+                    found: false
                 })
             }
             return res.status(200).send({
                 admin,
-                found : true
+                found: true
             })
         }).catch(err => {
-            if (err.kind === "ObjectId" ){
+            if (err.kind === "ObjectId") {
                 return res.status(404).send({
-                    error : "Admin not found with id: "+req.params.adminId
+                    error: "Admin not found with id: " + req.params.adminId
                 })
             }
             return res.status(400).send({
-                error : "Some Error while finding admin with id" + req.params.adminId
+                error: "Some Error while finding admin with id" + req.params.adminId
             })
         })
-    }catch(e) {
+    } catch (e) {
         res.status(500).send({
-            error : e.message,
-            message : "Server error!"
+            error: e.message,
+            message: "Server error!"
         })
-    } 
- }
+    }
+}
 
 
 
- // Delete an Admin with the specified adminId
+// Delete an Admin with the specified adminId
 
- exports.deleteAdmin = (req,res) => {
-    try{
-        if(!req.params.adminId){
+exports.deleteAdmin = (req, res) => {
+    try {
+        if (!req.params.adminId) {
             return res.status(400).send({
-                error : "Bad Request!"
+                error: "Bad Request!"
             })
         }
-        const { adminId } = req.params 
-        Admin.findByIdAndRemove(adminId).then( admin => {
-            if (!admin){
+        const { adminId } = req.params
+        Admin.findByIdAndRemove(adminId).then(admin => {
+            if (!admin) {
                 return res.status(404).send({
-                    message : "student not found with id " + adminId,
-                    deleted : false
+                    message: "student not found with id " + adminId,
+                    deleted: false
                 })
             }
             return res.status(200).send({
-                message : "Student deleted Successfully!!",
-                deleted : true
+                message: "Student deleted Successfully!!",
+                deleted: true
             })
         }).catch(err => {
-            if ( err.kind === "ObjectId" || err.name === 'NotFound'){
+            if (err.kind === "ObjectId" || err.name === 'NotFound') {
                 return res.status(404).send({
                     error: "Student not found with id" + adminId
                 })
             }
             return res.status(400).send({
-                error : "Some Error occured while finding student with id"+ adminId
+                error: "Some Error occured while finding student with id" + adminId
             })
         })
-    }catch(e) {
+    } catch (e) {
         return res.status(500).send({
-            error : e.message,
-            message : "Server error!"
+            error: e.message,
+            message: "Server error!"
         })
     }
- }
+}
 
 
- //login for the Admin
- exports.login = async (req,res) => {
-    try{
+//login for the Admin
+exports.login = async (req, res) => {
+    try {
         const { username, password } = req.body
-        if (!username || !password){    
+        if (!username || !password) {
             return res.status(400).send({
-                error : "Credentials required!"
+                error: "Credentials required!"
             })
         }
-        Admin.findOne({username}).then( async (admin) => {
-            const encryptedPassword = await (bcrypt.compare(password,admin.password))
-            console.log(encryptedPassword)
-            if (admin && encryptedPassword){
+        Admin.findOne({ username }).then(async (admin) => {
+            const encryptedPassword = await (bcrypt.compare(password, admin.password))
+            if (admin && encryptedPassword) {
                 const token = generateToken({
-                    username : admin.username ,
-                    role : admin.role
+                    username: admin.username,
+                    role: admin.role
                 }, '3d')
-                return res.status(200).json({logged : true , token})
-            }else {
-                return res.status(404).json({logged : false})
+                res.cookie("tck", token, {
+                    httpOnly: true,
+                    sameSite: "Strict",
+                    secure: true,
+                    maxAge: 365 * 24 * 60 * 60 * 1000
+                })
+                return res.status(200).json({ logged: true })
+            } else {
+                return res.status(404).json({ logged: false })
             }
         }).catch(err => {
-            if (err.kind === 'ObjectId' || err.name == "NotFound"){
+            if (err.kind === 'ObjectId' || err.name == "NotFound") {
                 return res.status(404).send({
-                    error : "Admin with username:" + username + " not found!"
+                    error: "Admin with username:" + username + " not found!"
                 })
             }
             console.log(err.message)
-            return res.status(400).send({
-                error : "Some error occured while admin attempting to Log in!"
+            return res.status(404).send({
+                error: "NotFound"
             })
         })
-    }catch(e) {
+    } catch (e) {
         return res.status(500).send({
-            error : e.message,
-            message : "Server error!"
+            error: e.message,
+            message: "Server error!"
         })
     }
 }
 
 // update Admin by adminId
-exports.updateAdmin = async (req,res) => {
-    try{
-        if (!req.params.adminId){
+exports.updateAdmin = async (req, res) => {
+    try {
+        if (!req.params.adminId) {
             return res.status(400).send({
-                error : "Bad Request"
+                error: "Bad Request"
             })
         }
-        if (req.body.password){
-            if (req.body.password.length < 6){
+        if (req.body.password) {
+            if (req.body.password.length < 6) {
                 return res.status(400).send({
-                    error : "password Length should be >= 6"
+                    error: "password Length should be >= 6"
                 })
-            }else{
+            } else {
                 req.body.password = await bcrypt.hash(req.body.password, 10)
             }
         }
         // assuming that the request body have the same database attributes name
-        Admin.findByIdAndUpdate(req.params.adminId, req.body, {new : true, runValidators : true, fields : {password : 0}}).then( admin => {
-            if (admin.length == 0){
+        Admin.findByIdAndUpdate(req.params.adminId, req.body, { new: true, runValidators: true, fields: { password: 0 } }).then(admin => {
+            if (admin.length == 0) {
                 return res.status(404).send({
-                    message : "Admin with id: " +req.params.adminId + " not found",
-                    updated : false
+                    message: "Admin with id: " + req.params.adminId + " not found",
+                    updated: false
                 })
             }
             return res.status(200).send({
                 admin,
-                updated : true
+                updated: true
             })
         }).catch(err => {
-            if (err.kind === 'ObjectId' || err.name === 'NotFound'){
+            if (err.kind === 'ObjectId' || err.name === 'NotFound') {
                 return res.status(404).send({
-                    error : "Admin with id: " +req.params.adminId + " not found"
+                    error: "Admin with id: " + req.params.adminId + " not found"
                 })
             }
-            if (err.keyValue?.username){
+            if (err.keyValue?.username) {
                 return res.status(409).send({
-                    error : "Conflict username",
-                    message : "Username already exist!"
+                    error: "Conflict username",
+                    message: "Username already exist!"
                 })
             }
-            if (err.name === 'ValidationError'){
+            if (err.name === 'ValidationError') {
                 return res.status(409).send({
-                    error : "Conflict role",
-                    message : "The role given cannot be inserted!"
+                    error: "Conflict role",
+                    message: "The role given cannot be inserted!"
                 })
             }
             console.log(err.name)
             return res.status(400).send({
-                error : "Some Error occured while updating the admin with id : "+ req.params.adminId
+                error: "Some Error occured while updating the admin with id : " + req.params.adminId
             })
         })
-    }catch (e) {
+    } catch (e) {
         return res.status(500).send({
-            error : e.message,
-            message : "Server error!"
+            error: e.message,
+            message: "Server error!"
         })
     }
 }
 
 
-   
+
+exports.welcome = async (req, res) => {
+    try {
+        return res.status(200).json({
+            data: req.body.decodedToken
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
+exports.logout = async (req, res) => {
+    try {
+        res.clearCookie('tck')
+        return res.status(200).json({ success: true })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
 
