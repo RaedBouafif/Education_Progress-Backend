@@ -16,6 +16,7 @@ const {
     justifyStudentAbsence,
     saveStudentPresence,
 } = require("../../controllers/studentPresence.controller");
+const upload = require('../../middlewares/upload')
 
 const Router = require("express").Router();
 
@@ -28,6 +29,7 @@ Router.route("/getAllWithParent").get(findAllStudentsWithParent);
 Router.route("/graduated/:studentId/:groupId").get(graduationStudent);
 Router.route("/permutation/:studentId/:groupId").get(permutationStudent);
 //post
+//upload.single('image'), 
 Router.route("/create").post(createStudent);
 Router.route("/login").post(login);
 //put

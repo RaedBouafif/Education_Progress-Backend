@@ -5,7 +5,8 @@ const generateToken = require("./../../functions/generateToken.js");
 
 exports.createParent = async (req, res) => {
   try {
-    const { firstName, lastName, email, tel, password } = req.body
+    console.log(req.body)
+    const { firstName, lastName, email, tel, password, gender, adresse, birth, file} = req.body
     if (!firstName || !lastName || !email || !tel || !password)
       return res.status(400).json({
         error: "badRequest",
@@ -16,11 +17,15 @@ exports.createParent = async (req, res) => {
       });
     const encryptedPassword = await bcrypt.hash(password, 10);
     const parent = await ParentModel.create({
-      firstName,
-      lastName,
-      email,
-      tel,
+      firstName : firstName,
+      lastName : lastName,
+      email : email,
+      tel : tel,
       password: encryptedPassword,
+      gender : gender,
+      adresse : adresse,
+      birth : birth,
+      image : file || null
     });
     await parent.save();
     return res.status(201).json({
@@ -28,7 +33,11 @@ exports.createParent = async (req, res) => {
       firstName: parent.firstName,
       latName: parent.lastName,
       email: parent.email,
-      tel: parent.tel
+      tel: parent.tel,
+      gender : parent.gender,
+      adresse : parent.adresse,
+      birth : parent.birth,
+      image : parent.image
     });
   } catch (e) {
     console.log(e);

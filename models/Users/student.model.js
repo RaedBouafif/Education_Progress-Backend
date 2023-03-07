@@ -1,6 +1,22 @@
 const mongoose = require("mongoose")
 
 
+const imageSchema = mongoose.Schema(
+    {
+        name: {
+            type: String,
+        },
+        data: {
+            type: String,
+        },
+        active: {
+            type: Boolean,
+            default: true
+        }
+    }
+)
+
+
 const Student = mongoose.Schema(
     {
         firstName: {
@@ -49,6 +65,9 @@ const Student = mongoose.Schema(
         group: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Group"
+        },
+        image : {
+            type : imageSchema
         }
     },
     {
@@ -57,4 +76,8 @@ const Student = mongoose.Schema(
 )
 
 
-module.exports = mongoose.model("Student", Student)
+module.exports = 
+{
+    Student : mongoose.model("Student", Student),
+    Image : mongoose.model("Image", imageSchema )
+}

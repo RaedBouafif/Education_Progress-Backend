@@ -1,4 +1,4 @@
-const Student = require("../../models/Users/student.model");
+const {Student , Image} = require("../../models/Users/student.model");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
 const Parent = require("../../models/Users/parent.model");
@@ -18,6 +18,14 @@ exports.createStudent = async (req, res) => {
                 error: "password Length should be >= 6",
             });
         }
+        const image = {}
+        if (req.file) {
+            const base64Image = req.file.buffer.toString('base64')
+            image = new Image({
+                name : req.file.originalname, // or req.file.name ( need test )
+                data : base64Image
+            })
+        }
         const encryptedPassword = await bcrypt.hash(req.body.password, 10);
         const student = new Student({
             firstName: req.body.firstName || null,
@@ -27,14 +35,15 @@ exports.createStudent = async (req, res) => {
             birth: req.body.birth || null,
             parent: new Types.ObjectId(req.body.idParent || null),
             group: new Types.ObjectId(req.body.groupId || null),
+            image : image
         });
         student
             .save()
             .then(async (data) => {
-                const group = await Group.findOneAndUpdate(
+                const group = await Group.findOneAndUpdate( //findByIdAndUpdate
                     req.body.groupId,
-                    { $push : {students : new Types.ObjectId(data._id)}},
-                    {new : true , runValidators : true}
+                    { $push: { students: new Types.ObjectId(data._id) } },
+                    { new: true, runValidators: true }
                 )
                 return res.status(201).send({
                     _id: data._id,
@@ -366,13 +375,13 @@ exports.permutationStudent = async (req, res) => {
         ).populate({ path: "group", select: { groupName: 1 } });
         const RemovedStduentFromOldGroup = await Group.findByIdAndUpdate(
             student.group._id,
-            { $pull : { students : studentId }},
-            { new : true, runValidators : true }
+            { $pull: { students: studentId } },
+            { new: true, runValidators: true }
         )
         const group = await Group.findByIdAndUpdate(
             groupId,
-            { $push : {students : new Types.ObjectId(studentId)} },
-            { new : true, runValidators : true}
+            { $push: { students: new Types.ObjectId(studentId) } },
+            { new: true, runValidators: true }
         )
         return student
             ? res.status(200).json({
@@ -390,32 +399,32 @@ exports.permutationStudent = async (req, res) => {
     }
 };
 
-exports.graduationStudent = async (req,res) => {
-    try{
+exports.graduationStudent = async (req, res) => {
+    try {
         const { studentId, groupId } = req.params
         const student = await Student.findByIdAndUpdate(
             studentId,
-            { group : groupId},
-            { new : true, runValidators : true}
-        ).populate( {path : "group" , select : {groupName : 1}})
+            { group: groupId },
+            { new: true, runValidators: true }
+        ).populate({ path: "group", select: { groupName: 1 } })
         const group = await Group.findByIdAndUpdate(
             groupId,
-            { $push : {students : new Types.ObjectId(studentId)} },
-            { new : true, runValidators : true}
+            { $push: { students: new Types.ObjectId(studentId) } },
+            { new: true, runValidators: true }
         )
         return student ?
             res.status(200).send({
-                updated :true,
+                updated: true,
                 student
             })
             :
             res.status(404).send({
-                updated : false
+                updated: false
             })
-    }catch(e) {
+    } catch (e) {
         return res.status(500).send({
-            error : e.error,
-            message : "Server ERROR!"
+            error: e.error,
+            message: "Server ERROR!"
         })
     }
 }

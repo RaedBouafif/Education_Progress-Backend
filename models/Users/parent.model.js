@@ -58,7 +58,23 @@ const Parent = mongoose.Schema(
             },
             unique: true
         },
+        gender : {
+            type : String,
+            enum : ["Male", "Female"],
+            required : [true , "genderRequired"]
+        },
+        adresse : {
+            type : String,
+            required : [true , "adresseRequired"]
+        },
+        birth : {
+            type : String,
+            required : [true, "birthRequired"]
+        },
         students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
+        image : {
+            type : String
+        }
     }
     ,
     {

@@ -15,24 +15,33 @@ exports.saveStudentPresence = async (req, res) => {
                 message: !sessionId ? "session ID required required" : "group ID required required"
             })
         if (students.length) {
-            const data = students.map((element) => { element.session = sessionId; return element })
+            const data = students.map((element) => { return { student: element, session: sessionId } })
             console.log(data)
             const sessionPresence = await StudentPresence.create(data)
-            await sessionPresence.save()
+            for (var s of sessionPresence) {
+                await s.save()
+            }
         }
         const group = await GroupModel.findById(groupId)
         var absentStudent = group.students.filter((element) => students.map((std) => std._id).indexOf(element) === -1)
         console.log(absentStudent)
         if (absentStudent.length) {
-            absentStudent = absentStudent.map((element) => { element.session = sessionId; return element })
+            absentStudent = absentStudent.map((element) => { return { student: element, session: sessionId } })
             absentStudent = await StudentAbsence.create(absentStudent)
-            await sessionPresence.save()
+            for (var s of absentStudent) {
+                await s.save()
+            }
         }
         return res.status(201).json({
             absentStudent
         })
     } catch (e) {
         console.log(e)
+        if (e.code === 11000) {
+            return res.status(409).json({
+                error: "conflict",
+            })
+        }
         return res.status(500).json({
             error: "serverSideError"
         })
@@ -42,7 +51,7 @@ exports.saveStudentPresence = async (req, res) => {
 exports.getStudentPresence = async (req, res) => {
     // select using request body dropdown with semester date begin date end
     try {
-        const sessionPresence = await StudentPresence.find({ ...req.body, createdAt: { $gte: new Date(beginDate), $lte: new Date(endDate) } })
+        const sessionPresence = await StudentPresence.find({ ...req.body, createdAt: { $gte: new Date(req.body.beginDate), $lte: new Date(req.body.endDate) } })
             .populate({ path: "student", select: { password: 0 } })
             .populate({ path: "session", populate: [{ path: "subject" }, { path: "teacher" }], })
         return sessionPresence.length
@@ -65,7 +74,7 @@ exports.getStudentAbsence = async (req, res) => {
     //select using request body , session , student , justified)
     //dropdown with semester dateBegin dateEnd
     try {
-        const absence = await StudentAbsence.find({ ...req.body, createdAt: { $gte: new Date(beginDate), $lte: new Date(endDate) } })
+        const absence = await StudentAbsence.find({ ...req.body, createdAt: { $gte: new Date(req.body.beginDate), $lte: new Date(req.body.endDate) } })
             .populate({ path: "student", select: { password: 0 } })
             .populate({ path: "session", populate: [{ path: "subject" }, { path: "teacher", select: { password: 0 } }], })
         return absence.length
@@ -92,7 +101,7 @@ exports.justifyStudentAbsence = async (req, res) => {
             if (absence.justified) {
                 return res.status(200).json({
                     updated: true,
-                    message: "alreadyJustified"
+                    message: "absence has already justified"
                 })
             }
             else {

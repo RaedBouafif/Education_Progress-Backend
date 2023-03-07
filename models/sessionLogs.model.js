@@ -55,7 +55,7 @@ const SessionLogsSchema = Schema(
         modifiedBy: {
             type: String
         }
-    }, 
+    },
     {
         timestamp: true,
     }
