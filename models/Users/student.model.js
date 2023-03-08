@@ -1,22 +1,6 @@
 const mongoose = require("mongoose")
 
 
-const imageSchema = mongoose.Schema(
-    {
-        name: {
-            type: String,
-        },
-        data: {
-            type: String,
-        },
-        active: {
-            type: Boolean,
-            default: true
-        }
-    }
-)
-
-
 const Student = mongoose.Schema(
     {
         firstName: {
@@ -58,17 +42,29 @@ const Student = mongoose.Schema(
             type: Date,
             required: [true, "birthRequired"]
         },
+        gender: {
+            type: String,
+            enum: ["Male", "Female"],
+            required: [true, "genderRequired"]
+        },
         parent: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Parent'
+        },
+        adresse: {
+            type: String
         },
         group: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Group"
         },
-        image : {
-            type : imageSchema
-        }
+        image: {
+            type: String
+        },
+        tel: {
+            type: String,
+            trim: true,
+        },
     },
     {
         timestamps: true
@@ -76,8 +72,4 @@ const Student = mongoose.Schema(
 )
 
 
-module.exports = 
-{
-    Student : mongoose.model("Student", Student),
-    Image : mongoose.model("Image", imageSchema )
-}
+module.exports = mongoose.model("Student", Student)

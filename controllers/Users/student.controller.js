@@ -1,4 +1,4 @@
-const {Student , Image} = require("../../models/Users/student.model");
+const Student = require("../../models/Users/student.model");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
 const Parent = require("../../models/Users/parent.model");
@@ -18,14 +18,6 @@ exports.createStudent = async (req, res) => {
                 error: "password Length should be >= 6",
             });
         }
-        const image = {}
-        if (req.file) {
-            const base64Image = req.file.buffer.toString('base64')
-            image = new Image({
-                name : req.file.originalname, // or req.file.name ( need test )
-                data : base64Image
-            })
-        }
         const encryptedPassword = await bcrypt.hash(req.body.password, 10);
         const student = new Student({
             firstName: req.body.firstName || null,
@@ -33,18 +25,22 @@ exports.createStudent = async (req, res) => {
             username: req.body.username || null,
             password: encryptedPassword || null,
             birth: req.body.birth || null,
+            gender: req.body.gender || null,
             parent: new Types.ObjectId(req.body.idParent || null),
-            group: new Types.ObjectId(req.body.groupId || null),
-            image : image
+            // group: new Types.ObjectId(req.body.groupId || null),
+            image: req.body.file || null,
+            adresse: req.body.adresse || null,
+            tel: req.body.tel || null
         });
         student
             .save()
             .then(async (data) => {
-                const group = await Group.findOneAndUpdate( //findByIdAndUpdate
-                    req.body.groupId,
-                    { $push: { students: new Types.ObjectId(data._id) } },
-                    { new: true, runValidators: true }
-                )
+                // updating groupe
+                // const group = await Group.findOneAndUpdate( //findByIdAndUpdate
+                //     req.body.groupId,
+                //     { $push: { students: new Types.ObjectId(data._id) } },
+                //     { new: true, runValidators: true }
+                // )
                 return res.status(201).send({
                     _id: data._id,
                     firstName: data.firstName,
@@ -52,14 +48,16 @@ exports.createStudent = async (req, res) => {
                     username: data.username,
                     birth: data.birth,
                     parent: data.parent,
-                    group: data.group,
+                    // group: data.group,
+                    image: data.image,
+                    tel: data.tel
                 });
             }
             )
             .catch((err) => {
                 if (err.keyValue?.username) {
                     return res.status(409).json({
-                        error: "conflict Username!",
+                        error: "conflictUsername",
                         message: "username already exist",
                     });
                 } else {
@@ -71,17 +69,23 @@ exports.createStudent = async (req, res) => {
             });
 
     } catch (e) {
+        console.log(e)
         res.status(500).send({
-            error: e.message,
+            error: "serverSideError",
             message: "Server error!",
         });
     }
 };
 
+const PAGE_LIMIT = 10
+
 //Retrieve all students
-exports.findAllStudents = (req, res) => {
+exports.findAllStudents = async (req, res) => {
     try {
-        Student.find({}, { password: 0 })
+        const totalStudents = await Student.countDocuments();
+        const totalPages = Math.ceil(totalStudents / PAGE_LIMIT);
+        const { offset } = req.query
+        Student.find(req.body, { password: 0 }).populate({ path: "group", populate: { path: "section" } }).skip(offset * 10).limit(PAGE_LIMIT)
             .then((students) => {
                 if (students.length == 0) {
                     return res.status(204).send({
@@ -89,7 +93,7 @@ exports.findAllStudents = (req, res) => {
                         found: false,
                     });
                 }
-                return res.status(200).send({ students, found: true });
+                return res.status(200).send({ students, found: true, totalPages });
             })
             .catch((err) => {
                 return res.status(400).send({
@@ -98,6 +102,7 @@ exports.findAllStudents = (req, res) => {
                 });
             });
     } catch (e) {
+        console.log(e)
         return res.status(500).send({
             error: e.message,
             message: "Server error!",
