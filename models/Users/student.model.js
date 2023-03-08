@@ -60,7 +60,11 @@ const Student = mongoose.Schema(
         },
         image: {
             type: String
-        }
+        },
+        tel: {
+            type: String,
+            trim: true,
+        },
     },
     {
         timestamps: true

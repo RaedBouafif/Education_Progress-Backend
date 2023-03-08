@@ -77,10 +77,15 @@ exports.createStudent = async (req, res) => {
     }
 };
 
+const PAGE_LIMIT = 10
+
 //Retrieve all students
-exports.findAllStudents = (req, res) => {
+exports.findAllStudents = async (req, res) => {
     try {
-        Student.find({}, { password: 0 })
+        const totalStudents = await Student.countDocuments();
+        const totalPages = Math.ceil(totalStudents / PAGE_LIMIT);
+        const { offset } = req.query
+        Student.find(req.body, { password: 0 }).populate({ path: "group", populate: { path: "section" } }).skip(offset * 10).limit(PAGE_LIMIT)
             .then((students) => {
                 if (students.length == 0) {
                     return res.status(204).send({
@@ -88,7 +93,7 @@ exports.findAllStudents = (req, res) => {
                         found: false,
                     });
                 }
-                return res.status(200).send({ students, found: true });
+                return res.status(200).send({ students, found: true, totalPages });
             })
             .catch((err) => {
                 return res.status(400).send({
@@ -97,6 +102,7 @@ exports.findAllStudents = (req, res) => {
                 });
             });
     } catch (e) {
+        console.log(e)
         return res.status(500).send({
             error: e.message,
             message: "Server error!",
