@@ -40,7 +40,12 @@ exports.createParent = async (req, res) => {
       image : parent.image
     });
   } catch (e) {
-    console.log(e);
+    if (e.code === 11000) {
+      console.log(e);
+      return res.status(409).send({
+        error : "BadRequest"
+      })
+    }
     if (e.keyValue?.email)
       res.status(409).json({
         error: "conflictEmail",
