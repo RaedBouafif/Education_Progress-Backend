@@ -68,12 +68,15 @@ const Parent = mongoose.Schema(
             required : [true , "adresseRequired"]
         },
         birth : {
-            type : String,
+            type : Date,
             required : [true, "birthRequired"]
         },
         students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
         image : {
             type : String
+        },
+        note : {
+            String
         }
     }
     ,

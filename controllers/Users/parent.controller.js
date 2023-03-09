@@ -2,6 +2,8 @@ const ParentModel = require("./../../models/Users/parent.model.js");
 const StudentModel = require("./../../models/Users/student.model")
 const bcrypt = require("bcryptjs");
 const generateToken = require("./../../functions/generateToken.js");
+require("dotenv").config();
+
 
 exports.createParent = async (req, res) => {
   try {
@@ -67,9 +69,24 @@ exports.createParent = async (req, res) => {
 
 exports.getAllParents = async (req, res) => {
   try {
-    const parents = await ParentModel.find({}, { password: 0 })
-    return parents.length ? res.status(200).json({ parents, found: true }) :
-      res.status(204).json({ found: false, message: "noParents" })
+    const numberOfParents = await ParentModel.countDocuments()
+    const totalPages = Math.ceil(numberOfParents / process.env.PAGE_LIMIT)
+    const { offset } = req.query
+    const parents = await ParentModel.find( req.body, { password: 0 }).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+    return parents.length ?
+      res.status(200).json(
+      {
+        countDocs : numberOfParents,
+        parents,
+        found: true
+      })
+      :
+      res.status(204).json(
+      { 
+        countDocs : numberOfParents,
+        found: false,
+        message: "noParents"
+      })
   } catch {
     return res.status(500).json({ error: "serverSideError" });
   }

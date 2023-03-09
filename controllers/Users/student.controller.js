@@ -4,6 +4,8 @@ const generateToken = require("../../functions/generateToken");
 const Parent = require("../../models/Users/parent.model");
 const Group = require("../../models/group.model")
 const { Types } = require("mongoose");
+require("dotenv").config();
+
 
 //Create a new student
 exports.createStudent = async (req, res) => {
@@ -77,15 +79,14 @@ exports.createStudent = async (req, res) => {
     }
 };
 
-const PAGE_LIMIT = 10
 
 //Retrieve all students
 exports.findAllStudents = async (req, res) => {
     try {
         const totalStudents = await Student.countDocuments();
-        const totalPages = Math.ceil(totalStudents / PAGE_LIMIT);
+        const totalPages = Math.ceil(totalStudents / process.env.PAGE_LIMIT);
         const { offset } = req.query
-        Student.find(req.body, { password: 0 }).populate({ path: "group", populate: { path: "section" } }).skip(offset * 10).limit(PAGE_LIMIT)
+        Student.find(req.body, { password: 0 }).populate({ path: "group", populate: { path: "section" } }).skip(offset * 10).limit(process.env.PAGE_LIMIT)
             .then((students) => {
                 if (students.length == 0) {
                     return res.status(204).send({
