@@ -30,7 +30,8 @@ exports.createStudent = async (req, res) => {
             // group: new Types.ObjectId(req.body.groupId || null),
             image: req.body.file || null,
             adresse: req.body.adresse || null,
-            tel: req.body.tel || null
+            tel: req.body.tel || null,
+            note: req.body.note || null
         });
         student
             .save()
@@ -50,7 +51,8 @@ exports.createStudent = async (req, res) => {
                     parent: data.parent,
                     // group: data.group,
                     image: data.image,
-                    tel: data.tel
+                    tel: data.tel,
+                    note: data.note
                 });
             }
             )
@@ -70,7 +72,7 @@ exports.createStudent = async (req, res) => {
 
     } catch (e) {
         console.log(e)
-        res.status(500).send({
+        return res.status(500).send({
             error: "serverSideError",
             message: "Server error!",
         });
@@ -333,7 +335,7 @@ exports.updateStudent = async (req, res) => {
             fields: { password: 0 },
         })
             .then((student) => {
-                if (student.length == 0) {
+                if (!student) {
                     return res.status(404).send({
                         message: "Student with id: " + req.params.studentId + " not found",
                         updated: false,
@@ -345,6 +347,7 @@ exports.updateStudent = async (req, res) => {
                 });
             })
             .catch((err) => {
+                console.log(err)
                 if (err.kind === "ObjectId" || err.name === "NotFound") {
                     return res.status(404).send({
                         error: "Student with id: " + req.params.studentId + " not found",

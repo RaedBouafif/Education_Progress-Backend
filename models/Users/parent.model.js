@@ -8,24 +8,12 @@ const Parent = mongoose.Schema(
             type: String,
             trim: true,
             required: [true, "nameRequired"],
-            validate: {
-                validator: (value) => {
-                    return /^[A-Za-z]+$/.test(value.trim())
-                },
-                message: "invalidLastName",
-            },
             minLength: [2, "shortName"],
         },
         lastName: {
             type: String,
             trim: true,
             required: [true, "lastNameRequired"],
-            validate: {
-                validator: (value) => {
-                    return /^[A-Za-z]+$/.test(value.trim())
-                },
-                message: "invalidLastName"
-            },
             minLength: [2, "shortLastName"],
         },
         email: {
@@ -58,22 +46,22 @@ const Parent = mongoose.Schema(
             },
             unique: true
         },
-        gender : {
-            type : String,
-            enum : ["Male", "Female"],
-            required : [true , "genderRequired"]
+        gender: {
+            type: String,
+            enum: ["Male", "Female"],
+            required: [true, "genderRequired"]
         },
-        adresse : {
-            type : String,
-            required : [true , "adresseRequired"]
+        adresse: {
+            type: String,
+            required: [true, "adresseRequired"]
         },
-        birth : {
-            type : String,
-            required : [true, "birthRequired"]
+        birth: {
+            type: String,
+            required: [true, "birthRequired"]
         },
         students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
-        image : {
-            type : String
+        image: {
+            type: String
         }
     }
     ,
