@@ -72,31 +72,282 @@ exports.createParent = async (req, res) => {
   }
 };
 
+
+//get All parents with filtering
 exports.getAllParents = async (req, res) => {
   try {
-    const numberOfParents = await ParentModel.countDocuments()
-    const totalPages = Math.ceil(numberOfParents / process.env.PAGE_LIMIT)
     const { offset } = req.query
-    const parents = await ParentModel.find( req.body, { password: 0 }).skip( offset * 10).limit(process.env.PAGE_LIMIT)
-    return parents.length ?
-      res.status(200).json(
-      {
-        countDocs : numberOfParents,
-        parents,
-        found: true
-      })
-      :
-      res.status(204).json(
-      { 
-        countDocs : numberOfParents,
-        found: false,
-        message: "noParents"
-      })
+    if (Object.keys(req.body).length === 0){
+      console.log("dqsdqs")
+      const numberOfParents = await ParentModel.countDocuments()
+      // const totalPages = Math.ceil(numberOfParents / process.env.PAGE_LIMIT)
+      if (numberOfParents === 0){
+        return res.status(204).json({
+          countDocs : numberOfParents,
+          found: false,
+          message: "noParents"
+        })
+      }else{
+        const parents = await ParentModel.find( {},{ password: 0 }).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+        return parents.length ?
+          res.status(200).json(
+            {
+              countDocs : numberOfParents,
+              parents,
+              found: true
+            })
+            :
+            res.status(204).json(
+            { 
+              countDocs : numberOfParents,
+              found: false,
+              message: "noParents"
+            })
+      }
+    }else{
+      // req.body is not empty => i have a filter
+      const fieldKeys = Object.keys(req.body)
+      console.log(fieldKeys.length)
+      if (fieldKeys.length === 3){
+        // if (req.body.firstName && req.body.lastName && req.body.tel){
+          const filter = {
+            firstName : { $regex: req.body.firstName, $options : 'i' },
+            lastName : { $regex: req.body.lastName, $options : 'i' },
+            tel : { $regex: req.body.tel, $options : 'i' }
+          }
+          const numberOfParents = await ParentModel.countDocuments(filter)
+          if (numberOfParents === 0 ){
+            return res.status(204).send({
+              countDocs : numberOfParents,
+              found : false,
+              message : "NoParents",
+            })
+          }else{
+            const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+            return (parents.length > 0) ? 
+              res.status(200).send({
+                countDocs : numberOfParents,
+                found : true,
+                parents
+              })
+              :
+              res.status(204).send({
+                countDocs : numberOfParents,
+                found : false,
+                message : "NoParents",
+            })
+          }
+              // }else{
+              //   return res.status(400).send({
+              //     error: "BadRequest",
+              //     message : "We cannot filter with a non valid attribute"
+              //   })
+              // }
+            // }else if (fieldKeys.length === 2 ){
+            //   let firstNameCheck = false
+            //   let lastNameCheck = false
+            //   let telCheck = false
+            //   if (req.body.firstName){
+            //     firstNameCheck = true
+            //   }
+            //   if (req.body.lastName){
+            //     lastNameCheck = true
+            //   }
+            //   if (req.body.tel){
+            //     telCheck = true
+            //   }
+            //   if ( (firstNameCheck && lastNameCheck) ){
+            //     //firstName and lastName
+            //     const filter = {
+            //       firstName : { $regex: req.body.firstName, $options : 'i' },
+            //       lastName : { $regex: req.body.lastName, $options : 'i' }
+            //     }
+            //     const numberOfParents = await ParentModel.countDocuments(filter)
+            //     if (numberOfParents === 0) {
+            //       res.status(204).send({
+            //         countDocs : numberOfParents,
+            //         found : false,
+            //         message : "NoParents",
+            //       })
+            //     }else{
+            //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+            //       return (parents.length > 0) ? 
+            //         res.status(200).send({
+            //           countDocs : numberOfParents,
+            //           found : true,
+            //           parents
+            //         })
+            //         :
+            //         res.status(204).send({
+            //           countDocs : numberOfParents,
+            //           found : false,
+            //           message : "NoParents",
+            //       })
+            //     }
+            //   }else if ( (firstNameCheck && telCheck) ){
+            //     //firstName and tel
+            //     const filter = {
+            //       firstName : { $regex: req.body.firstName, $options : 'i' },
+            //       tel : { $regex: req.body.tel, $options : 'i' }
+            //     }
+            //     const numberOfParents = await ParentModel.countDocuments(filter)
+            //     if (numberOfParents === 0) {
+            //       res.status(204).send({
+            //         countDocs : numberOfParents,
+            //         found : false,
+            //         message : "NoParents",
+            //       })
+            //     }else{
+            //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+            //       return (parents.length > 0) ? 
+            //         res.status(200).send({
+            //           countDocs : numberOfParents,
+            //           found : true,
+            //           parents
+            //         })
+            //         :
+            //         res.status(204).send({
+            //           countDocs : numberOfParents,
+            //           found : false,
+            //           message : "NoParents",
+            //       })
+            //     }
+            //   } else if ( (telCheck && lastNameCheck) ){
+            //     //lastName and tel
+            //     const filter = {
+            //       tel : { $regex: req.body.tel, $options : 'i' },
+            //       lastName : { $regex: req.body.lastName, $options : 'i' }
+            //     }
+            //     const numberOfParents = await ParentModel.countDocuments(filter)
+            //     if (numberOfParents === 0) {
+            //       res.status(204).send({
+            //         countDocs : numberOfParents,
+            //         found : false,
+            //         message : "NoParents",
+            //       })
+            //     }else{
+            //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+            //       return (parents.length > 0) ? 
+            //         res.status(200).send({
+            //           countDocs : numberOfParents,
+            //           found : true,
+            //           parents
+            //         })
+            //         :
+            //         res.status(204).send({
+            //           countDocs : numberOfParents,
+            //           found : false,
+            //           message : "NoParents",
+            //       })
+            //     }
+            //   }else {
+            //     return res.status(400).send({
+            //       error : "BadRequest",
+            //       message : "We cannot filter with an non existing attribute"
+            //     })
+            //   }
+            // }else if (fieldKeys.length === 1 ){
+            //   // firstName filter
+            //   if (req.body.firstName){
+            //     const filter ={
+            //       firstName : { $regex: req.body.firstName, $options : 'i' }
+            //     }
+            //     const numberOfParents = await ParentModel.countDocuments(filter) 
+            //     if (numberOfParents === 0) {
+            //       res.status(204).send({
+            //         countDocs : numberOfParents,
+            //         found : false,
+            //         message : "NoParents",
+            //       })
+            //     }else{
+            //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+            //       return (parents.length > 0) ? 
+            //         res.status(200).send({
+            //           countDocs : numberOfParents,
+            //           found : true,
+            //           parents
+            //         })
+            //         :
+            //         res.status(204).send({
+            //           countDocs : numberOfParents,
+            //           found : false,
+            //           message : "NoParents",
+            //       })
+            //     }
+            //   } else if (req.body.lastName){
+            //      // lastName filter
+            //      const filter ={
+            //       lastName : { $regex: req.body.lastName, $options : 'i' }
+            //     }
+            //     const numberOfParents = await ParentModel.countDocuments(filter) 
+            //     if (numberOfParents === 0) {
+            //       res.status(204).send({
+            //         countDocs : numberOfParents,
+            //         found : false,
+            //         message : "NoParents",
+            //       })
+            //     }else{
+            //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+            //       return (parents.length > 0) ? 
+            //         res.status(200).send({
+            //           countDocs : numberOfParents,
+            //           found : true,
+            //           parents
+            //         })
+            //         :
+            //         res.status(204).send({
+            //           countDocs : numberOfParents,
+            //           found : false,
+            //           message : "NoParents",
+            //       })
+            //     }
+            //   }else if (req.body.tel) {
+            //      // tel filter
+            //     const filter ={
+            //       lastName : { $regex: req.body.lastName, $options : 'i' }
+            //     }
+            //     const numberOfParents = await ParentModel.countDocuments(filter) 
+            //     if (numberOfParents === 0) {
+            //       res.status(204).send({
+            //         countDocs : numberOfParents,
+            //         found : false,
+            //         message : "NoParents",
+            //       })
+            //     }else{
+            //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
+            //       return (parents.length > 0) ? 
+            //         res.status(200).send({
+            //           countDocs : numberOfParents,
+            //           found : true,
+            //           parents
+            //         })
+            //         :
+            //         res.status(204).send({
+            //           countDocs : numberOfParents,
+            //           found : false,
+            //           message : "NoParents",
+            //       })
+            //     }
+      }else {
+        return res.status(400).send({
+          error : "BadRequest",
+          message: "We cannot filter with an non valid Attribute"
+        })
+      }
+      // }else{
+      //   return res.status(400).send({
+      //     error : "BadRequest"
+      //   })
+      // }
+    }
   } catch {
     return res.status(500).json({ error: "serverSideError" });
   }
 }
 
+
+
+//getparent by id
 exports.getParentById = async (req, res) => {
   try {
     if (!req.params.parentId)
@@ -210,5 +461,127 @@ exports.updateParent = async (req, res) => {
     }
   }
 };
+
+exports.deleteParent = (req, res) => {
+  try {
+      if (!req.params.parentId) {
+          return res.status(400).send({
+              error: "Bad Request!",
+          });
+      }
+      const { parentId } = req.params;
+      ParentModel.findByIdAndRemove(parentId)
+          .then((parent) => {
+              if (!parent) {
+                  return res.status(404).send({
+                      message: "Parent not found with id " + parentId,
+                      deleted: false,
+                  });
+              }
+              return res.status(200).send({
+                  message: "Parent deleted Successfully!!",
+                  deleted: true,
+              });
+          })
+          .catch((err) => {
+              if (err.kind === "ObjectId" || err.name === "NotFound") {
+                  return res.status(404).send({
+                      error: "Parent not found with id" + parentId,
+                  });
+              }
+              return res.status(400).send({
+                  error: "Some Error occured while finding parent with id" + parentId,
+              });
+          });
+  } catch (e) {
+      return res.status(500).send({
+          error: e.message,
+          message: "Server error!",
+      });
+  }
+};
+
+
+// exports.filterParents = async (req,res) => {
+//   try{
+//     const fieldKeys = Object.keys(req.body)
+//     if (fieldKeys.length === 3){
+//       const filteredParents = await ParentModel.find({
+//          firstName : { $regex: req.body.firstName, $options : 'i' },
+//          lastName : { $regex: req.body.lastName, $options : 'i' },
+//          tel : { $regex: req.body.tel, $options : 'i' }
+//       }, {password : 0})
+//       return (filteredParents.length > 0) ? 
+//         res.status(200).send({
+//           found : true,
+//           filteredParents
+//         })
+//         :
+//         res.status(204).send({
+//           found : false,
+//           message : "NoParents",
+//         })
+//     }else if (fieldKeys.length === 2 ){
+//       let firstNameCheck = false
+//       let lastNameCheck = false
+//       let telCheck = false
+//       if (req.body.firstName){
+//         firstNameCheck = true
+//       }
+//       if (req.body.lastName){
+//         lastNameCheck = true
+//       }
+//       if (req.body.tel){
+//         telCheck = true
+//       }
+//       if ( (firstNameCheck && lastNameCheck) ){
+//         console.log("first and last")
+//       }else if ( (firstNameCheck && telCheck) ){
+//         console.log("first and tel")
+//       } else if ( (telCheck && lastNameCheck) ){
+//         console.log(" last and tel")
+//       }
+//       const filteredParents = await ParentModel.find({
+//          att_1 : { $regex: req.body.fieldKeys[0], $options : 'i' },
+//          att_2 : { $regex: req.body.fieldKeys[1], $options : 'i' }
+//       }, {password : 0})
+//       return (filteredParents.length > 0) ? 
+//         res.status(200).send({
+//           found : true,
+//           filteredParents
+//         })
+//         :
+//         res.status(204).send({
+//           found : false,
+//           message : "NoParents",
+//         })
+//     }else if (fieldKeys.length === 1 ){
+//       let att_1 = fieldKeys[0]
+//       const filteredParents = await ParentModel.find({
+//          att_1 : { $regex: req.body.fieldKeys[0], $options : 'i' }
+//       }, {password : 0})
+//       return (filteredParents.length > 0) ? 
+//         res.status(200).send({
+//           found : true,
+//           filteredParents
+//         })
+//         :
+//         res.status(204).send({
+//           found : false,
+//           message : "NoParents",
+//         })
+//     }else{
+//       return res.status(400).send({
+//         error : "BadRequest"
+//       })
+//     }
+
+//   }catch(e) {
+//     console.log(e.message)
+//     return res.status(500).send({
+//       error : "Server Error!"
+//     })
+//   }
+// }
 
 
