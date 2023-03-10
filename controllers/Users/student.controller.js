@@ -84,17 +84,22 @@ const PAGE_LIMIT = 10
 //Retrieve all students
 exports.findAllStudents = async (req, res) => {
     try {
-        const totalStudents = await Student.countDocuments();
-        const totalPages = Math.ceil(totalStudents / PAGE_LIMIT);
-        const { offset } = req.query
-        Student.find(req.body, { password: 0 }).populate({ path: "group", populate: { path: "section" } }).skip(offset * 10).limit(PAGE_LIMIT)
+        const { offset, group, section, name, absence } = req.query
+        var filter = {}
+        if (name) filter["name"] = name
+        if (absence) filter["absence"] = absence
+        Student.find(filter, { password: 0 }).populate({ path: "group", populate: { path: "section" } })
             .then((students) => {
-                if (students.length == 0) {
+                if (!students) {
                     return res.status(204).send({
                         message: "There is no students in the database!",
                         found: false,
                     });
                 }
+                if (group) students = students.filter((element) => element.group?.groupName === group)
+                if (section) students = students.filter((element) => element.group?.section?._id == section)
+                var totalPages = Math.ceil(students.length / PAGE_LIMIT);
+                students = students.slice(offset * 10, (offset * 10) + PAGE_LIMIT)
                 return res.status(200).send({ students, found: true, totalPages });
             })
             .catch((err) => {

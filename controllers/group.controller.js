@@ -43,7 +43,7 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
     try {
-        const groups = await GroupModel.find({}).populate("section").populate("students");
+        const groups = await GroupModel.find({}).distinct("groupName").populate("students");
         return groups.length
             ? res.status(200).json({ found: true, groups })
             : res.status(204).json({ found: false });
