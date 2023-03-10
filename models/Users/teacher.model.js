@@ -9,24 +9,12 @@ const Teacher = mongoose.Schema(
             type: String,
             trim: true,
             required: [true, "nameRequired"],
-            validate: {
-                validator: (value) => {
-                    return /^[A-Za-z]+$/.test(value.trim())
-                },
-                message: "invalidLastName",
-            },
             minLength: [2, "shortName"],
         },
         lastName: {
             type: String,
             trim: true,
             required: [true, "lastNameRequired"],
-            validate: {
-                validator: (value) => {
-                    return /^[A-Za-z]+$/.test(value.trim())
-                },
-                message: "invalidLastName"
-            },
             minLength: [2, "shortLastName"],
         },
         password: {

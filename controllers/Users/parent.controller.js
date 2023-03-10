@@ -58,6 +58,11 @@ exports.createParent = async (req, res) => {
         error: "conflictTel",
         message: "Tel already used",
       });
+    else if (e.error?.email ) {
+      res.status(400).send({
+        error : "InvalidEmail"
+      })
+    }
     else {
       console.log(e);
       return res.status(500).json({
