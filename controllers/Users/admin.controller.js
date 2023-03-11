@@ -7,8 +7,8 @@ const generateToken = require('../../functions/generateToken')
 //Create a new Admin
 exports.createAdmin = async (req, res) => {
     try {
-        const { username, password, role } = req.body
-        if (!username || !password || !role) {
+        const { username, password, role, firstName, lastName, tel, email, gender, adresse, birth, file, note } = req.body
+        if (!username || !password || !role || !firstName || !lastName || !tel || !email || !birth ) {
             return res.status(400).send({
                 error: 'Bad Request!'
             })
@@ -20,31 +20,58 @@ exports.createAdmin = async (req, res) => {
         }
         const encryptedPassword = await bcrypt.hash(password, 10)
         const admin = new Admin({
-            username: username || null,
-            password: encryptedPassword || null,
-            role: role || null
+            username: username,
+            password: encryptedPassword,
+            role: role,
+            firstName : firstName,
+            lastName: lastName,
+            tel: tel,
+            email : email,
+            birth: birth,
+            gender : gender || null,
+            adresse : adresse || null,
+            image : file || null,
+            note : note  || null
         })
         admin.save().then(data => {
             return res.status(201).send({
-                _id: data._id,
-                username: data.username,
-                role: data.role
+               created : true
             })
         }).catch(err => {
+            if ( err.code === 11000) {
+                return res.status(409).send({
+                  error : "BadRequest"
+                })
+            }
             if (err.keyValue?.username) {
                 return res.status(409).json({
-                    error: "conflict Username!",
+                    error: "conflictUsername",
                     message: "username already exist"
                 })
-            } else {
+            }else if ( err.keyValue?.tel) {
+                return res.status(409).json({
+                    error :"conflictTel",
+                    message : "Phone number already exist"
+                })
+            } else if (err.keyValue?.email){
+                return res.status(409).send({
+                    error :"conflictEmail",
+                    message: "Email already exist"
+                })
+            } else if ( err.error?.email){
+                return res.status(400).send({
+                    error : "InvalidEmail"
+                })
+            }
+            else {
                 return res.status(400).send({
                     error: err.message,
-                    message: "Student cannot be inserted!"
+                    message: "Admin cannot be inserted!"
                 })
             }
         })
     } catch (e) {
-        res.status(500).send({
+        return res.status(500).send({
             error: e.message,
             message: "Server error!"
         })
@@ -219,7 +246,7 @@ exports.updateAdmin = async (req, res) => {
             }
         }
         // assuming that the request body have the same database attributes name
-        Admin.findByIdAndUpdate(req.params.adminId, req.body, { new: true, runValidators: true, fields: { password: 0 } }).then(admin => {
+        Admin.findByIdAndUpdate(req.params.adminId, req.body, { new: true, runValidators: true, fields: { password: 0, image : 0 } }).then(admin => {
             if (admin.length == 0) {
                 return res.status(404).send({
                     message: "Admin with id: " + req.params.adminId + " not found",
@@ -227,7 +254,6 @@ exports.updateAdmin = async (req, res) => {
                 })
             }
             return res.status(200).send({
-                admin,
                 updated: true
             })
         }).catch(err => {
@@ -238,7 +264,19 @@ exports.updateAdmin = async (req, res) => {
             }
             if (err.keyValue?.username) {
                 return res.status(409).send({
-                    error: "Conflict username",
+                    error: "conflictUsername",
+                    message: "Username already exist!"
+                })
+            }
+            if (err.keyValue?.email) {
+                return res.status(409).send({
+                    error: "conflictEmail",
+                    message: "Username already exist!"
+                })
+            }
+            if (err.keyValue?.tel) {
+                return res.status(409).send({
+                    error: "conflictTel",
                     message: "Username already exist!"
                 })
             }
