@@ -44,12 +44,13 @@ const Teacher = mongoose.Schema(
                     return /^\+?\d+$/.test(value.trim())
                 },
                 message: "invalidTel"
-            }
+            },
+            unique: true
         },
         gender: {
             type: String,
             enum: {
-                values: ["femme", "homme"],
+                values: ["Male", "Female"],
                 message: "invalidGenderEnum"
             },
             required: [true, "genderRequired"]
@@ -63,6 +64,19 @@ const Teacher = mongoose.Schema(
             required: [true, "maritalStatusRequired"]
         },
         subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: "Subject" }],
+        note: {
+            type: String
+        },
+        image: {
+            type: String
+        },
+        adresse: {
+            type: String
+        },
+        birth: {
+            type: Date,
+            required: [true, "birthRequired"]
+        }
     },
     {
         timestamps: true

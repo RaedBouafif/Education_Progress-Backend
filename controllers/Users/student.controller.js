@@ -52,7 +52,6 @@ exports.createStudent = async (req, res) => {
                     birth: data.birth,
                     parent: data.parent,
                     // group: data.group,
-                    image: data.image,
                     tel: data.tel,
                     note: data.note
                 });
@@ -81,24 +80,31 @@ exports.createStudent = async (req, res) => {
     }
 };
 
-
+const PAGE_LIMIT = 10
 //Retrieve all students
 exports.findAllStudents = async (req, res) => {
     try {
-        const totalStudents = await Student.countDocuments();
-        const totalPages = Math.ceil(totalStudents / process.env.PAGE_LIMIT);
-        const { offset } = req.query
-        Student.find(req.body, { password: 0 }).populate({ path: "group", populate: { path: "section" } }).skip(offset * 10).limit(process.env.PAGE_LIMIT)
+        const { offset, group, section, firstName, lastName, absence } = req.query
+        var filter = {}
+        if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
+        if (lastName) filter["lastName"] = { $regex: lastName, $options: 'i' }
+        // if (absence) filter["absence"] = absence
+        Student.find(filter, { password: 0 }).populate({ path: "group", populate: { path: "section" } })
             .then((students) => {
-                if (students.length == 0) {
+                if (!students) {
                     return res.status(204).send({
                         message: "There is no students in the database!",
                         found: false,
                     });
                 }
+                if (group) students = students.filter((element) => element.group?.groupName === group)
+                if (section) students = students.filter((element) => element.group?.section?._id == section)
+                var totalPages = Math.ceil(students.length / PAGE_LIMIT);
+                students = students.slice(offset * PAGE_LIMIT, (offset * PAGE_LIMIT) + PAGE_LIMIT)
                 return res.status(200).send({ students, found: true, totalPages });
             })
             .catch((err) => {
+                console.log(err)
                 return res.status(400).send({
                     error: err.message,
                     message: "Some error occured while retrieving all students!",
@@ -343,7 +349,6 @@ exports.updateStudent = async (req, res) => {
                     });
                 }
                 return res.status(200).send({
-                    student,
                     updated: true,
                 });
             })
