@@ -8,7 +8,7 @@ require("dotenv").config();
 exports.createParent = async (req, res) => {
   try {
     console.log(req.body)
-    const { firstName, lastName, email, tel, password, gender, adresse, birth, file} = req.body
+    const { firstName, lastName, email, tel, password, gender, adresse, birth, file, note} = req.body
     if (!firstName || !lastName || !email || !tel || !password)
       return res.status(400).json({
         error: "badRequest",
@@ -27,19 +27,12 @@ exports.createParent = async (req, res) => {
       gender : gender,
       adresse : adresse,
       birth : birth,
-      image : file || null
+      image : file || null,
+      note : note || null
     });
     await parent.save();
     return res.status(201).json({
-      _id: parent._id,
-      firstName: parent.firstName,
-      latName: parent.lastName,
-      email: parent.email,
-      tel: parent.tel,
-      gender : parent.gender,
-      adresse : parent.adresse,
-      birth : parent.birth,
-      image : parent.image
+      created : true
     });
   } catch (e) {
     if (e.code === 11000) {
@@ -419,22 +412,24 @@ exports.updateParent = async (req, res) => {
       return res.status(400).json({
         error: "badRequest",
       });
-    if (req.body.password?.length < 6)
-      return res.status(400).json({
-        error: "passwordMinLength",
-      });
-    if (req.body.password)
-      req.body.password = await bcrypt.hash(req.body.password, 10)
+      if (req.body.password) {
+        if (req.body.password.length < 6) {
+            return res.status(400).send({
+                error: "password Length should be >= 6"
+            })
+        } else {
+            req.body.password = await bcrypt.hash(req.body.password, 10)
+        }
+    }
     if (req.body.email)
       req.body.email = req.body.email.toLowerCase().trim()
     const newParent = await ParentModel.findByIdAndUpdate(req.params.parentId, req.body, {
       new: true,
       runValidators: true,
-      fields: { password: 0 }
+      fields: { password: 0, image:0 }
     });
     if (newParent)
       return res.status(200).json({
-        newParent,
         found: true,
       });
     else
