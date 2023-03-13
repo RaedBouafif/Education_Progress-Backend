@@ -55,13 +55,16 @@ const Parent = mongoose.Schema(
             type: String,
             required: [true, "adresseRequired"]
         },
-        birth: {
-            type: String,
-            required: [true, "birthRequired"]
+        birth : {
+            type : Date,
+            required : [true, "birthRequired"]
         },
         students: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
-        image: {
-            type: String
+        image : {
+            type : String
+        },
+        note : {
+            String
         }
     }
     ,

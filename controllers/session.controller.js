@@ -25,8 +25,8 @@ exports.createTemplateSession = async (req, res) => {
         // Required handling
         console.log(e)
         if (e.code === 11000) {
-            return res.status(400).send({
-                error: "Bad Request!!!!"
+            return res.status(409).send({
+                error: "BadRequest"
             })
         } else if (e.errors?.teacher?.properties.message === 'teacherRequired') {
             return res.status(400).send({

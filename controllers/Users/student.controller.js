@@ -4,6 +4,8 @@ const generateToken = require("../../functions/generateToken");
 const Parent = require("../../models/Users/parent.model");
 const Group = require("../../models/group.model")
 const { Types } = require("mongoose");
+require("dotenv").config();
+
 
 //Create a new student
 exports.createStudent = async (req, res) => {
@@ -50,7 +52,6 @@ exports.createStudent = async (req, res) => {
                     birth: data.birth,
                     parent: data.parent,
                     // group: data.group,
-                    image: data.image,
                     tel: data.tel,
                     note: data.note
                 });
@@ -80,14 +81,14 @@ exports.createStudent = async (req, res) => {
 };
 
 const PAGE_LIMIT = 10
-
 //Retrieve all students
 exports.findAllStudents = async (req, res) => {
     try {
-        const { offset, group, section, name, absence } = req.query
+        const { offset, group, section, firstName, lastName, absence } = req.query
         var filter = {}
-        if (name) filter["name"] = name
-        if (absence) filter["absence"] = absence
+        if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
+        if (lastName) filter["lastName"] = { $regex: lastName, $options: 'i' }
+        // if (absence) filter["absence"] = absence
         Student.find(filter, { password: 0 }).populate({ path: "group", populate: { path: "section" } })
             .then((students) => {
                 if (!students) {
@@ -99,10 +100,11 @@ exports.findAllStudents = async (req, res) => {
                 if (group) students = students.filter((element) => element.group?.groupName === group)
                 if (section) students = students.filter((element) => element.group?.section?._id == section)
                 var totalPages = Math.ceil(students.length / PAGE_LIMIT);
-                students = students.slice(offset * 10, (offset * 10) + PAGE_LIMIT)
+                students = students.slice(offset * PAGE_LIMIT, (offset * PAGE_LIMIT) + PAGE_LIMIT)
                 return res.status(200).send({ students, found: true, totalPages });
             })
             .catch((err) => {
+                console.log(err)
                 return res.status(400).send({
                     error: err.message,
                     message: "Some error occured while retrieving all students!",
@@ -347,7 +349,6 @@ exports.updateStudent = async (req, res) => {
                     });
                 }
                 return res.status(200).send({
-                    student,
                     updated: true,
                 });
             })
@@ -360,7 +361,7 @@ exports.updateStudent = async (req, res) => {
                 }
                 if (err.keyValue?.username) {
                     return res.status(409).send({
-                        error: "Conflict username",
+                        error: "ConflictUsername",
                         message: "Username already exist!",
                     });
                 }
