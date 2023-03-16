@@ -3,8 +3,12 @@ const SemesterModel = require("../models/semester.model")
 
 exports.create = async (req, res) => {
     try {
-        const semester = await SemesterModel.create(req.body)
-        return res.status(201).json(semester)
+        const semester1 = await SemesterModel.create(req.body.semester1)
+        const semester2 = await SemesterModel.create(req.body.semester2)
+        return res.status(201).json(
+            {   semester1,
+                semester2
+        })
     } catch (e) {
         console.log(e)
         if (e.keyValue?.dateBegin)

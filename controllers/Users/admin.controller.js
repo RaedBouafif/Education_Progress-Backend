@@ -34,10 +34,14 @@ exports.createAdmin = async (req, res) => {
             note : note  || null
         })
         admin.save().then(data => {
-            return res.status(201).send({
-               created : true
-            })
+            if (data){
+                console.log(data)
+                return res.status(201).send({
+                    created : true
+                 })
+            }
         }).catch(err => {
+            console.log(err.message)
             if ( err.code === 11000) {
                 return res.status(409).send({
                   error : "BadRequest"
@@ -186,6 +190,7 @@ exports.deleteAdmin = (req, res) => {
 //login for the Admin
 exports.login = async (req, res) => {
     try {
+        console.log(req.body)
         const { username, password } = req.body
         if (!username || !password) {
             return res.status(400).send({
@@ -194,6 +199,7 @@ exports.login = async (req, res) => {
         }
         Admin.findOne({ username }).then(async (admin) => {
             const encryptedPassword = await (bcrypt.compare(password, admin.password))
+            console.log(encryptedPassword)
             if (admin && encryptedPassword) {
                 const token = generateToken({
                     username: admin.username,

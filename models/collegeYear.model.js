@@ -5,7 +5,8 @@ const CollegeYear = mongoose.Schema(
     {
         year: {
             type: String,
-            required: [true, "yearRequired"]
+            required: [true, "yearRequired"],
+            unique : true
         },
         semesters: [
             {
@@ -13,6 +14,9 @@ const CollegeYear = mongoose.Schema(
                 ref: "Semester"
             }
         ],
+        note : {
+
+        },
         active: {
             type: Boolean,
             default: true
