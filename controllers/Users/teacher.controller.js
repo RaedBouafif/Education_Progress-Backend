@@ -1,5 +1,5 @@
 const TeacherModel = require("../../models/Users/teacher.model");
-const SubjectModel = require("../../models/subject.model");
+const { Subject } = require("../../models/subject.model");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
 const { Schema } = require("mongoose");
@@ -31,6 +31,11 @@ exports.create = async (req, res) => {
             birth
         });
         await teacher.save();
+        if (subjects) {
+            for (var id_subject of subjects?.split(",")) {
+                await Subject.findByIdAndUpdate(id_subject, { $push: { teachers: teacher._id } }, { runValidators: true, new: true })
+            }
+        }
         return res.status(201).json({
             _id: teacher._id,
             firstName: teacher.firstName,
@@ -96,16 +101,23 @@ exports.getTeacherById = async (req, res) => {
 const PAGE_LIMIT = 12
 exports.getAllTeachers = async (req, res) => {
     try {
-        const { offset } = req.query
-        const nbrDocs = await TeacherModel.countDocuments()
-        const totalPages = Math.ceil(nbrDocs / PAGE_LIMIT)
-        const teachers = await TeacherModel.find({}, { password: 0 }).populate(
+        var { offset, firstName, lastName, subject, absence } = req.query
+        var filter = {}
+        if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
+        if (lastName) filter["lastName"] = { $regex: lastName, $options: 'i' }
+        console.log(filter)
+        var teachers = await TeacherModel.find(filter, { password: 0 }).sort({ createdAt: -1 }).populate(
             "subjects"
-        ).skip(offset * PAGE_LIMIT).limit(PAGE_LIMIT)
+        )
+        console.log(teachers.length)
+        if (subject) teachers = teachers.filter((element) => element.subjects?.find((sbj) => sbj._id == subject))
+        var totalPages = Math.ceil(teachers.length / PAGE_LIMIT);
+        teachers = teachers.slice(offset * PAGE_LIMIT, (offset * PAGE_LIMIT) + PAGE_LIMIT)
         return teachers?.length
             ? res.status(200).json({ teachers, found: true, totalPages })
             : res.status(204).json({ found: false });
-    } catch {
+    } catch (e) {
+        console.log(e)
         return res.status(500).json({ error: "serverSideError" });
     }
 };
@@ -197,19 +209,32 @@ exports.updateTeacher = async (req, res) => {
             req.body.subjects = req.body.subjects?.split(",")
         else
             req.body.subjects = null
-        const newTeacher = await TeacherModel.findByIdAndUpdate(
+        const oldTeacher = await TeacherModel.findByIdAndUpdate(
             req.params.teacherId,
             req.body,
             {
-                new: true,
+                new: false,
                 runValidators: true,
                 fields: { password: 0 },
             }
         );
-        if (newTeacher)
+        console.log(oldTeacher.subjects)
+        if (oldTeacher) {
+            if (req.body.subjects) {
+                const firstTable = req.body.subjects.filter((element) => oldTeacher.subjects.indexOf(element) === -1)
+                const secondTable = oldTeacher.subjects.filter((element) => req.body.subjects.indexOf(element) === -1)
+                for (var element of firstTable) {
+                    await Subject.findByIdAndUpdate(element, { $push: { teachers: oldTeacher._id } }, { runValidators: true, new: true })
+                }
+                for (var element of secondTable) {
+                    await Subject.findByIdAndUpdate(element, { $pull: { teachers: oldTeacher._id } }, { runValidators: true, new: true })
+                }
+            }
             return res.status(200).json({
                 found: true,
             });
+        }
+
         else
             return res.status(404).json({
                 found: false,
@@ -258,7 +283,7 @@ exports.addSubject = async (req, res) => {
             });
         const teacher = await TeacherModel.findById(teacherId);
         if (!teacher) return res.status(404).json({ teacherFound: false });
-        const subject = await SubjectModel.findById(subjectId);
+        const subject = await Subject.findById(subjectId);
         if (subject) {
             if (!teacher.subjects.find((element) => {
                 return element.toString() === subjectId

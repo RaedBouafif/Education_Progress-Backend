@@ -9,7 +9,7 @@ Router.route("/create").post(create)
 Router.route("/getAll").get(getAll)
 Router.route("/getById/:classroomId").get(getById)
 //---DELETE---//
-Router.route("/deleteById/:classroomId").delete(deleteById)
+Router.route("/delete/:classroomId").delete(deleteById)
 //---UPDATE---//
 Router.route("/update/:classroomId").put(update)
 

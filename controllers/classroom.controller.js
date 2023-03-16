@@ -38,7 +38,7 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
     try {
-        const classrooms = await ClassroomModel.find({});
+        const classrooms = await ClassroomModel.find({})
         return classrooms.length
             ? res.status(200).json({ found: true, classrooms })
             : res.status(204).json({ found: false });

@@ -89,7 +89,7 @@ exports.findAllStudents = async (req, res) => {
         if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
         if (lastName) filter["lastName"] = { $regex: lastName, $options: 'i' }
         // if (absence) filter["absence"] = absence
-        Student.find(filter, { password: 0 }).populate({ path: "group", populate: { path: "section" } })
+        Student.find(filter, { password: 0 }).sort({ createdAt: -1 }).populate({ path: "group", populate: { path: "section" } })
             .then((students) => {
                 if (!students) {
                     return res.status(204).send({

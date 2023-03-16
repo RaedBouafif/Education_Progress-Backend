@@ -7,12 +7,20 @@ const Classroom = mongoose.Schema(
             type: String,
             required: [true, "classroomNameRequired"],
             unique: true,
-            trim: true
+            trim: true,
+            lowercase: true
         },
         type: {
             type: String,
             enum: ["TP", "COUR"],
             default: "COUR"
+        },
+        nbrPlace: {
+            type: Number,
+        },
+        active: {
+            type: Boolean,
+            default: true
         }
     },
     {
