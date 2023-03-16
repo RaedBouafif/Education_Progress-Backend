@@ -11,7 +11,6 @@ const Semester = Schema(
         dateBegin: {
             type: Date,
             required: [true, "dateBeginRequired"],
-            unique: true
         },
         dateEnd: {
             type: Date,
