@@ -86,7 +86,7 @@ exports.findAllSubjects = (req, res) => {
 
 exports.findAllSubjectsWithTeachers = (req, res) => {
     try {
-        Subject.find({}).populate({ path: "teachers", select: { image: 1 } }).then(subjects => {
+        Subject.find({}).populate({ path: "teachers", select: { image: 1, firstName: 1, lastName: 1 } }).then(subjects => {
             if (subjects.length === 0) {
                 return res.status(204).send({
                     message: "There is no subjects in the database!",
