@@ -1,4 +1,4 @@
-const { createSection , findAllSections , findSectionByName, changeSectionState, addSubject, removeSubject, updateSection } = require('../controllers/section.controller')
+const { createSection , findAllSections , findSectionByName, changeSectionState, addSubject, removeSubject, updateSection, deleteById } = require('../controllers/section.controller')
 const Router = require('express').Router()
 
 //post
@@ -11,5 +11,9 @@ Router.route("/removeSubject/:sectionName/:subjectId").get(removeSubject)
 //put
 Router.route("/changeState/:sectionName").put(changeSectionState)
 Router.route("/update/:sectionId").post(updateSection)
+
+//delete 
+Router.route("/delete/:sectionId").delete(deleteById)
+
 
 module.exports = Router
