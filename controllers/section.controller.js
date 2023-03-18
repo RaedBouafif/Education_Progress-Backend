@@ -1,3 +1,4 @@
+const sectionModel = require('../models/section.model')
 const Section = require('../models/section.model')
 const { Subject } = require('../models/subject.model')
 
@@ -39,7 +40,7 @@ exports.createSection = (req, res) => {
 // get All sections
 exports.findAllSections = (req, res) => {
     try {
-        Section.find({}).then(sections => {
+        Section.find({}).populate("subjects").then(sections => {
             if (!sections) {
                 return res.status(204).send({
                     message: "There is no Sections in the database!!",
@@ -139,6 +140,26 @@ exports.changeSectionState = (req, res) => {
         return res.status(500).send({
             error: e.message,
             message: "Server ERROR!"
+        })
+    }
+}
+
+
+exports.deleteById = async (req, res) => {
+    try {
+        const { sectionId } = req.params
+        const section = await sectionModel.findByIdAndDelete(sectionId)
+        if (section)
+            return res.status(200).json({
+                found: true, section
+            });
+        else
+            return res.status(404).json({
+                found: false,
+            });
+    } catch (e) {
+        return res.status(500).json({
+            error: "serverSideError"
         })
     }
 }

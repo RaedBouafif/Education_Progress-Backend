@@ -8,7 +8,7 @@ const Section = Schema(
             type: String,
             required: [true, "sectionNameRequired"],
             unique: true,
-            trim : true
+            trim: true
         },
         subjects: [{ type: Schema.Types.ObjectId, ref: "Subject" }],
         active: {
