@@ -1,35 +1,44 @@
+const { default: mongoose } = require('mongoose')
 const Section = require('../models/section.model')
 const { Subject } = require('../models/subject.model')
+const { Types } = require('mongoose')
+
 
 
 //create a new section
-exports.createSection = (req, res) => {
+exports.createSection = async (req, res) => {
     try {
-        const { sectionName, active } = req.body
-        if (!sectionName) {
+        console.log(req.body)
+        if (!req.body.sectionName) {
             return res.status(400).send({
                 error: "Bad Request!"
             })
         }
-        const section = new Section({
-            sectionName: sectionName,
-            active: active
+        const section = await Section.create({
+            sectionName : req.body.sectionName,
+            subjects : req?.body?.subjects?.split(',') || null
         })
         section.save().then(data => {
             res.status(201).send(data)
         }).catch(err => {
-            if (err.keyValue?.sectionName) {
-                return res.status(409).send({
-                    error: "Bad Credentials!",
-                    message: "Section with name " + sectionName + " allready exists!"
-                })
-            }
             return res.status(400).send({
                 error: err.message,
                 message: "Some error occured while creating the section"
             })
         })
     } catch (e) {
+        if (e.keyValue?.sectionName) {
+            return res.status(409).send({
+                error: "BadCredentials",
+                message: "Section with name " + req.body.sectionName + " allready exists!"
+            })
+        }
+        if (e.code === 11000){
+            return res.status(409).send({
+                error: "BadRequest",
+                message: "Section with name " + req.body.sectionName + " allready exists!"
+            })
+        }
         return res.status(500).send({
             error: "Server ERROR!"
         })
@@ -293,6 +302,51 @@ exports.removeSubject = async (req, res) => {
         return res.status(500).send({
             error: e.message,
             message: "Server ERROR!"
+        })
+    }
+}
+
+
+//Update section
+exports.updateSection = async (req,res) => {
+   
+    try{
+        if (!req.params.sectionId){
+            return res.status(400).send({
+                error :"BadRequest"
+            })
+        }
+        if (!req.body){
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        if (req.body.subjects){
+            req.body.subjects = req.body.subjects?.split(",")
+        }
+        else{
+            req.body.subjects = null
+        }
+        const updatedSection = await Section.findByIdAndUpdate(req.params.sectionId, req.body, { new : true, runValidators : true})
+        if (!updatedSection) {
+            return res.status(404).send({
+                error : "NotFound"  
+            })
+        }
+        return res.status(200).json(
+            updatedSection
+        )
+    }catch(e) {       
+        console.log(e)
+        if (e.keyValue?.sectionName) {
+            return res.status(409).send({
+                error: "BadCredentials",
+                message: "Section with name " + req.body.sectionName + " allready exists!"
+            })
+        }
+        return res.status(500).send({
+            error : e.message,
+            message : "Server Error!"
         })
     }
 }
