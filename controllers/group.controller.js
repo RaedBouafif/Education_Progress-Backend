@@ -55,6 +55,19 @@ exports.getAll = async (req, res) => {
     }
 };
 
+exports.getAllGroups = async (req, res) => {
+    try {
+        const groups = await GroupModel.find({}).populate("students").populate("section");
+        return groups.length
+            ? res.status(200).json({ found: true, groups })
+            : res.status(204).json({ found: false });
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({
+            error: "serverSideError",
+        });
+    }
+};
 exports.getById = async (req, res) => {
     try {
         const { groupId } = req.params;
