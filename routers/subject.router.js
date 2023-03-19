@@ -10,9 +10,9 @@ Router.route("/getByName/:subjectName").get(findSubjectByName)
 Router.route("/create").post(createSubject)
 
 //delete
-Router.route("/delete/:subjectName").delete(deleteSubject)
+Router.route("/delete/:subjectId").delete(deleteSubject)
 //put
-Router.route("/update/:subjectName").put(updateSubject)
+Router.route("/update/:subjectId").put(updateSubject)
 Router.route("/changeState").put(changeSubjectState)
 
 module.exports = Router 
