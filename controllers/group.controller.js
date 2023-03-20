@@ -2,8 +2,9 @@ const GroupModel = require("../models/group.model");
 
 exports.create = async (req, res) => {
     try {
-        const group = await GroupModel.create(req.body);
+        var group = await GroupModel.create(req.body);
         await group.save();
+        group = await group.populate("section")
         return res.status(201).json(group);
     } catch (e) {
         console.log(e);
@@ -57,7 +58,8 @@ exports.getAll = async (req, res) => {
 
 exports.getAllGroups = async (req, res) => {
     try {
-        const groups = await GroupModel.find({}).populate("students").populate("section");
+        const { collegeYearId } = req.params
+        const groups = await GroupModel.find({ collegeYear: collegeYearId }).populate("students").populate("section").populate("collegeYear");
         return groups.length
             ? res.status(200).json({ found: true, groups })
             : res.status(204).json({ found: false });
