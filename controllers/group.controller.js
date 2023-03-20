@@ -1,5 +1,5 @@
 const GroupModel = require("../models/group.model");
-
+const StudentModel = require("../models/Users/student.model")
 exports.create = async (req, res) => {
     try {
         var group = await GroupModel.create(req.body);
@@ -139,4 +139,57 @@ exports.deleteById = async (req, res) => {
         });
     }
 
+}
+
+
+exports.addStudent = async (req, res) => {
+    try {
+        const { studentId, groupId } = req.params
+        const group = await GroupModel.findById(groupId)
+        if (!group) return res.status(404).json({
+            error: "groupNotFound"
+        })
+        const student = await StudentModel.findByIdAndUpdate(studentId, { group: group._id }, { runValidators: true, new: true })
+        if (!student) return res.status(404).json({
+            error: "studentNotFound"
+        })
+        if (group.students?.find((element) => element == studentId)) return res.status(409).json({ error: "studentConflict" })
+        group.students.push(studentId)
+        await group.save()
+        return res.status(201).json({
+            success: true
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
+
+exports.deleteStudent = async (req, res) => {
+    try {
+        const { studentId, groupId } = req.params
+        const group = await GroupModel.findById(groupId)
+        if (!group) return res.status(404).json({
+            error: "groupNotFound"
+        })
+        const student = await StudentModel.findByIdAndUpdate(studentId, { group: null }, { runValidators: true, new: true })
+        if (!student) return res.status(404).json({
+            error: "studentNotFound"
+        })
+        if (!group.students?.find((element) => element == studentId)) return res.status(404).json({ error: "studentNotInGroup" })
+        group.students = group.students.filter((element) => element != studentId)
+        await group.save()
+        return res.status(200).json({
+            success: true
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
 }
