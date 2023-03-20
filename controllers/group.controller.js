@@ -3,7 +3,7 @@ const  { Types } = require('mongoose')
 exports.create = async (req, res) => {
     try {
         const group = await GroupModel.create(req.body);
-        await group.save().populate("section");
+        await group.save();
         return res.status(201).json(group);
     } catch (e) {
         console.log(e);
@@ -63,6 +63,20 @@ exports.getAll = async (req, res) => {
     }
 };
 
+exports.getAllGroups = async (req, res) => {
+    try {
+        const { collegeYearId } = req.params
+        const groups = await GroupModel.find({ collegeYear: collegeYearId }).populate("students").populate("section").populate("collegeYear");
+        return groups.length
+            ? res.status(200).json({ found: true, groups })
+            : res.status(204).json({ found: false });
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({
+            error: "serverSideError",
+        });
+    }
+};
 exports.getById = async (req, res) => {
     try {
         const { groupId } = req.params;
