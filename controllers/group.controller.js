@@ -1,9 +1,9 @@
 const GroupModel = require("../models/group.model");
-
+const  { Types } = require('mongoose')
 exports.create = async (req, res) => {
     try {
         const group = await GroupModel.create(req.body);
-        await group.save();
+        await group.save().populate("section");
         return res.status(201).json(group);
     } catch (e) {
         console.log(e);
@@ -43,7 +43,15 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
     try {
-        const groups = await GroupModel.find({}).distinct("groupName").populate("students");
+        if (!req.params.yearId) {
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        const groups = await GroupModel.find({ collegeYear : new Types.ObjectId(req.params.yearId)})
+        .populate("collegeYear")
+        .populate("section")
+        .populate("students")
         return groups.length
             ? res.status(200).json({ found: true, groups })
             : res.status(204).json({ found: false });

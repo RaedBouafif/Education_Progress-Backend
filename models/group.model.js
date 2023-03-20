@@ -22,7 +22,10 @@ const Group = Schema(
         students: [{
             type: Schema.Types.ObjectId,
             ref: "Student",
-        }]
+        }],
+        note : {
+            type : String
+        }
     },
     {
         timestamps: true
