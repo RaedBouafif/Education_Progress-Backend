@@ -1,9 +1,23 @@
 const GroupModel = require("../models/group.model");
+const StudentModel = require("../models/Users/student.model")
 const  { Types } = require('mongoose')
 exports.create = async (req, res) => {
     try {
-        const group = await GroupModel.create(req.body);
+        const group = await GroupModel.create({
+            groupName : req.body.groupName,
+            section : req.body.section,
+            collegeYear : req.body.collegeYear,
+            students : req.body.students?.split(',') || null,
+            note : req.body.note || null
+        });
         await group.save();
+        if (req.body.students){
+            req.body.students = req.body.students.split(',')
+            req.body.students.forEach( async (element) => {
+                await StudentModel.findByIdAndUpdate(Types.ObjectId(element), { group : group._id} , {runValidators : true, new : true})
+            })
+        }
+        console.log(group)
         return res.status(201).json(group);
     } catch (e) {
         console.log(e);
@@ -97,9 +111,8 @@ exports.update = async (req, res) => {
     try {
         const { groupId } = req.params
         const group = await GroupModel.findByIdAndUpdate(groupId,
-            {
-                groupName: req.body.groupName
-            },
+            req.body
+            ,
             {
                 new: true,
                 runValidators: true
@@ -146,4 +159,57 @@ exports.deleteById = async (req, res) => {
         });
     }
 
+}
+
+
+exports.addStudent = async (req, res) => {
+    try {
+        const { studentId, groupId } = req.params
+        const group = await GroupModel.findById(groupId)
+        if (!group) return res.status(404).json({
+            error: "groupNotFound"
+        })
+        const student = await StudentModel.findByIdAndUpdate(studentId, { group: group._id }, { runValidators: true, new: true })
+        if (!student) return res.status(404).json({
+            error: "studentNotFound"
+        })
+        if (group.students?.find((element) => element == studentId)) return res.status(409).json({ error: "studentConflict" })
+        group.students.push(studentId)
+        await group.save()
+        return res.status(201).json({
+            success: true
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
+
+exports.deleteStudent = async (req, res) => {
+    try {
+        const { studentId, groupId } = req.params
+        const group = await GroupModel.findById(groupId)
+        if (!group) return res.status(404).json({
+            error: "groupNotFound"
+        })
+        const student = await StudentModel.findByIdAndUpdate(studentId, { group: null }, { runValidators: true, new: true })
+        if (!student) return res.status(404).json({
+            error: "studentNotFound"
+        })
+        if (!group.students?.find((element) => element == studentId)) return res.status(404).json({ error: "studentNotInGroup" })
+        group.students = group.students.filter((element) => element != studentId)
+        await group.save()
+        return res.status(200).json({
+            success: true
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
 }

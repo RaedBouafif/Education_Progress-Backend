@@ -442,3 +442,40 @@ exports.graduationStudent = async (req, res) => {
         })
     }
 }
+
+
+
+//Retrieve all students with filter
+exports.findAllStudentsWithFilter = async (req, res) => {
+    try {
+        const { firstName , tel } = req.query
+        var filter = {}
+        if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
+        if (tel) filter["tel"] = { $regex : tel , $options : 'i' }
+        // if (absence) filter["absence"] = absence
+        Student.find(filter, { password: 0 }).sort({ createdAt: -1 })
+            .then((students) => {
+                if (!students) {
+                    return res.status(204).send({   
+                        message: "There is no students in the database!",
+                        found: false,
+                    });
+                }
+                console.log(students)
+                return res.status(200).send({ students, found: true });
+            })
+            .catch((err) => {
+                console.log(err)
+                return res.status(400).send({
+                    error: err.message,
+                    message: "Some error occured while retrieving all students!",
+                });
+            });
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: e.message,
+            message: "Server error!",
+        });
+    }
+};
