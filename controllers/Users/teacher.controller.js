@@ -340,3 +340,16 @@ exports.removeSubject = async (req, res) => {
         });
     }
 }
+
+
+exports.countDocsss = async (req, res) => {
+    try{
+        const countTeachers = await TeacherModel.countDocuments()
+        return res.status(200).send({number : countTeachers || 0})
+    }catch(e) {
+        console.log(e)
+        return res.status(500).send({
+            error : "Server Error!"
+        })
+    }
+}

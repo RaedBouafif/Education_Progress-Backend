@@ -479,3 +479,14 @@ exports.findAllStudentsWithFilter = async (req, res) => {
         });
     }
 };
+
+exports.countDocsss = async (req, res) => {
+    try{
+        const countStudents = await Student.countDocuments()
+        return res.status(200).send({number : countStudents || 0})
+    }catch(e) {
+        return res.status(500).send({
+            error : "Server Error!"
+        })
+    }
+}

@@ -7,6 +7,7 @@ const {
     updateAdmin,
     welcome,
     logout,
+    countDocsss
 } = require("../../controllers/Users/admin.controller");
 const authMiddleWare = require("../../middlewares/auth");
 const Router = require("express").Router();
@@ -24,5 +25,6 @@ Router.route("/delete/:adminId").delete(deleteAdmin);
 
 Router.route("/welcome").get(authMiddleWare, welcome);
 Router.route("/logout").get(logout);
+Router.route("/count").get(countDocsss)
 
 module.exports = Router;

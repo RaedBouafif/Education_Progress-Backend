@@ -9,7 +9,8 @@ const {
     findAllStudentsWithParent,
     graduationStudent,
     permutationStudent,
-    findAllStudentsWithFilter
+    findAllStudentsWithFilter,
+    countDocsss
 } = require("../../controllers/Users/student.controller");
 const {
     getStudentAbsence,
@@ -45,5 +46,6 @@ Router.route("/savePresence").post(saveStudentPresence);
 Router.route("/getAbsence").get(getStudentAbsence);
 Router.route("/getPresence").get(getStudentPresence);
 Router.route("/justifyAbsence/:absenceId").get(justifyStudentAbsence);
+Router.route("/count").get(countDocsss)
 
 module.exports = Router;

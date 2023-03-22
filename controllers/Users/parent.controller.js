@@ -32,7 +32,8 @@ exports.createParent = async (req, res) => {
     });
     await parent.save();
     return res.status(201).json({
-      created : true
+      created : true,
+      parent
     });
   } catch (e) {
     if (e.code === 11000) {
@@ -426,11 +427,12 @@ exports.updateParent = async (req, res) => {
     const newParent = await ParentModel.findByIdAndUpdate(req.params.parentId, req.body, {
       new: true,
       runValidators: true,
-      fields: { password: 0, image:0 }
+      fields: { password: 0 }
     });
     if (newParent)
       return res.status(200).json({
         found: true,
+        newParent
       });
     else
       return res.status(404).json({
@@ -578,5 +580,16 @@ exports.deleteParent = (req, res) => {
 //     })
 //   }
 // }
+
+exports.countDocsss = async (req, res) => {
+  try{
+      const countParents = await ParentModel.countDocuments()
+      return res.status(200).send({number : countParents || 0})
+  }catch(e) {
+      return res.status(500).send({
+          error : "Server Error!"
+      })
+  }
+}
 
 

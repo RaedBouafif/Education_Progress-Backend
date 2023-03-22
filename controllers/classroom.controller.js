@@ -118,3 +118,15 @@ exports.update = async (req, res) => {
         }
     }
 }
+
+
+exports.countDocsss = async (req, res) => {
+    try{
+        const countClasses = await ClassroomModel.countDocuments()
+        return res.status(200).send({number : countClasses || 0})
+    }catch(e) {
+        return res.status(500).send({
+            error : "Server Error!"
+        })
+    }
+}

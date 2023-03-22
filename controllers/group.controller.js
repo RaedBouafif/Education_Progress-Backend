@@ -213,3 +213,15 @@ exports.deleteStudent = async (req, res) => {
         })
     }
 }
+
+
+exports.countDocsss = async (req, res) => {
+    try{
+        const countGroups = await GroupModel.countDocuments()
+        return res.status(200).send({number : countGroups || 0})
+    }catch(e) {
+        return res.status(500).send({
+            error : "Server Error!"
+        })
+    }
+}

@@ -5,7 +5,8 @@ const {
     login,
     getParentAndChildsById,
     getAllParents,
-    deleteParent
+    deleteParent,
+    countDocsss
 } = require("./../../controllers/Users/parent.controller");
 const upload = require("../../middlewares/upload")
 const Router = require("express").Router();
@@ -17,6 +18,7 @@ Router.route("/login").post(login);
 Router.route("/getById/:parentId").get( getParentById);
 Router.route("/getWithChildsById/:parentId").get(getParentAndChildsById);
 Router.route("/getAll").post(getAllParents);
+Router.route("/count").get(countDocsss)
 //put
 Router.route("/update/:parentId").put(updateParent);
 //delete

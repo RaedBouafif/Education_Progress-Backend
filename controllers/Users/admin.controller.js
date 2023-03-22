@@ -37,7 +37,8 @@ exports.createAdmin = async (req, res) => {
             if (data){
                 console.log(data)
                 return res.status(201).send({
-                    created : true
+                    created : true,
+                    admin
                  })
             }
         }).catch(err => {
@@ -252,7 +253,7 @@ exports.updateAdmin = async (req, res) => {
             }
         }
         // assuming that the request body have the same database attributes name
-        Admin.findByIdAndUpdate(req.params.adminId, req.body, { new: true, runValidators: true, fields: { password: 0, image : 0 } }).then(admin => {
+        Admin.findByIdAndUpdate(req.params.adminId, req.body, { new: true, runValidators: true, fields: { password: 0 } }).then(admin => {
             if (admin.length == 0) {
                 return res.status(404).send({
                     message: "Admin with id: " + req.params.adminId + " not found",
@@ -260,7 +261,8 @@ exports.updateAdmin = async (req, res) => {
                 })
             }
             return res.status(200).send({
-                updated: true
+                updated: true,
+                admin
             })
         }).catch(err => {
             if (err.kind === 'ObjectId' || err.name === 'NotFound') {
@@ -329,6 +331,17 @@ exports.logout = async (req, res) => {
         console.log(e)
         return res.status(500).json({
             error: "serverSideError"
+        })
+    }
+}
+
+exports.countDocsss = async (req, res) => {
+    try{
+        const countAdmin = await Admin.countDocuments()
+        return res.status(200).send({number : countAdmin || 0})
+    }catch(e) {
+        return res.status(500).send({
+            error : "Server Error!"
         })
     }
 }
