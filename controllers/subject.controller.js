@@ -2,6 +2,9 @@ const { default: mongoose } = require('mongoose')
 const { Subject } = require('../models/subject.model')
 const Section = require('../models/section.model')
 const TeacherModel = require("../models/Users/teacher.model");
+const Session = require("../models/session.model")
+const Template = require("../models/template.model")
+const { Types } = require("mongoose")
 
 
 
@@ -275,3 +278,54 @@ exports.changeSubjectState = (req, res) => {
         })
     }
 }
+
+
+
+//available teachers  => returns object.teachers to acced the teachers availalbe
+//need test after filling one session in planning
+exports.findAvailableTeachers = async (req, res) => {
+    try{
+        const subjectId = req.params.subjectId
+        const { startsAt , endsAt , day , collegeYear } = req.body
+        if ( !startsAt ||  !endsAt || !day || !collegeYear || !subjectId){
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        const teachersOfTheSubject = await Subject.findById( new Types.ObjectId(subjectId), 'subjectName teachers').populate({ path : "teachers" , select : { image : 0 , note : 0 , birth : 0 , maritalStatus : 0, password : 0}})
+        console.log(teachersOfTheSubject)
+        if (!teachersOfTheSubject){
+            return res.status(204).send({
+                error : "EmptyDataBase",
+                message : "There is no Teachers in Data base"
+            })
+        }else{
+            const teachersIds = []
+            for (let i = 0 ; i < teachersOfTheSubject.teachers.length ; i++){
+                teachersIds[i] = teachersOfTheSubject.teachers[i]._id
+            }
+            const OccupiedTeachers = await Template.find({ collegeYear : new Types.ObjectId(collegeYear) }, 'sessions')
+            .populate({ path : "sessions", match : { subject : new Types.ObjectId(subjectId) , startsAt : startsAt , endsAt : endsAt , day : day}})
+            if (!OccupiedTeachers){
+                return res.status(200).send({
+                    teachersOfTheSubject
+                })
+            }else{
+                for (let x = 0 ; x < OccupiedTeachers.sessions.length ; x++){
+                    const index = teachersIds.indexOf(OccupiedTeachers.sessions.teacher) 
+                    if ( index > -1){
+                        teachersOfTheSubject.teachers.splice(index, 1)
+                    }
+                }
+                return res.status(200).send(teachersOfTheSubject)
+            } 
+        } 
+    }catch(e){
+        console.log(e.message)
+        return res.status(500).send({
+            error :"Server Error"
+        })
+    }
+}
+
+

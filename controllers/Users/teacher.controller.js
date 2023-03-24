@@ -221,8 +221,8 @@ exports.updateTeacher = async (req, res) => {
         console.log(oldTeacher.subjects)
         if (oldTeacher) {
             if (req.body.subjects) {
-                const firstTable = req.body.subjects.filter((element) => oldTeacher.subjects.indexOf(element) === -1)
-                const secondTable = oldTeacher.subjects.filter((element) => req.body.subjects.indexOf(element) === -1)
+                const firstTable = req.body.subjects.filter((element) => oldTeacher.subjects?.indexOf(element) === -1)
+                const secondTable = oldTeacher.subjects.filter((element) => req.body.subjects?.indexOf(element) === -1)
                 for (var element of firstTable) {
                     await Subject.findByIdAndUpdate(element, { $push: { teachers: oldTeacher._id } }, { runValidators: true, new: true })
                 }

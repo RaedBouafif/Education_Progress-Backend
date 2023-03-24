@@ -225,3 +225,37 @@ exports.countDocsss = async (req, res) => {
         })
     }
 }
+
+
+
+// return all the subjects assigned to the group given 
+// tested and woriking 
+exports.findAllAvailableSubjects = async (req,res) => {
+    try{
+        const groupId = req.params.groupId
+        if (!groupId){
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        const group = await GroupModel.findById(groupId , 'section')
+        .populate({ path : "section" , select : "subjects" , populate : { path : "subjects" , select : "subjectName"}})
+        if (!group){
+            return res.status(404).send({
+                error : "Group not found"
+            })
+        }else{
+            return res.status(200).send(group)
+        }
+    }catch(e) {
+        console.log(e)
+        if (e.code === 1100) {
+            return res.status(409).send({
+                error : "conflictFind"
+            })
+        }
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}

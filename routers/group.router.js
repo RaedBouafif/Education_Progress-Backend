@@ -1,4 +1,4 @@
-const { create, deleteById, getById, getAll, update, getAllGroups, addStudent, deleteStudent, countDocsss} = require("../controllers/group.controller")
+const { create, deleteById, getById, getAll, update, getAllGroups, addStudent, deleteStudent, countDocsss, findAllAvailableSubjects} = require("../controllers/group.controller")
 const Router = require("express").Router()
 
 
@@ -10,6 +10,7 @@ Router.route("/getAllGroups/:collegeYearId").get(getAllGroups)//get without dist
 Router.route("/getById/:groupId").get(getById)
 Router.route("/addStudent/:groupId/:studentId").get(addStudent)
 Router.route("/count").get(countDocsss)
+Router.route("/getAvailableSubjects/:groupId").get(findAllAvailableSubjects)
 //---DELETE---//
 Router.route("/deleteById/:groupId").delete(deleteById)
 Router.route("/deleteStudent/:groupId/:studentId").delete(deleteStudent)

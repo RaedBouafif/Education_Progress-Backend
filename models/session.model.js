@@ -36,15 +36,42 @@ const Session = Schema(
             type: Number,
             required: [true, "endsAtRequired"]
         },
+        startedAt: {
+            type: Date
+        },
+        endedAt: {
+            type: Date
+        },
+        rates: [
+            {
+                studentName: {
+                    type: String
+                },
+                value: {
+                    type: Number,
+                    min: [0, "InvalidRate"],
+                    max: [5, "InvalidRate"]
+                }
+            }
+        ],
+        reports: [
+            {
+                studentName: {
+                    type: String
+                },
+                description : {
+                    type : String
+                },
+                justifiedReports: {
+                    type: Boolean,
+                    default: false
+                }
+            }
+        ],
         sessionType: {
             type: String,
             required: [true, "sessionTypeRequired"],
             enum: ['TP', 'COUR']
-        },
-        sessionCategorie: {
-            type: String,
-            required: [true, "sessionCategorieRequired"],
-            enum: ['manual', 'template'],
         },
         active: {
             type: Boolean,
@@ -53,10 +80,17 @@ const Session = Schema(
         createdBy: {
             type: Schema.Types.ObjectId,
             ref: "Admin",
-            required: [true, "createdByRequired"]
         },
         modifiedBy: {
             type: String
+        },
+        canceled: {
+            type: Boolean,
+            default: false
+        },
+        delaid : {
+            type: Boolean,
+            default: false
         }
     },
     {
@@ -88,6 +122,8 @@ Session.statics.getDistinctLatestSessionTemplate = async function (group, catego
         }
     ])
 }
+
+Session.index({ classroom: 1, day: 1, startsAt: 1} , {unique : true})
 
 module.exports = model("Session", Session)
 
