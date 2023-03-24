@@ -33,7 +33,9 @@ exports.create = async (req, res) => {
         await teacher.save();
         if (subjects) {
             for (var id_subject of subjects?.split(",")) {
-                await Subject.findByIdAndUpdate(id_subject, { $push: { teachers: teacher._id } }, { runValidators: true, new: true })
+                var sbj = await Subject.findById(id_subject)
+                sbj.teachers.push(teacher._id)
+                await sbj.save()
             }
         }
         return res.status(201).json({
@@ -105,11 +107,9 @@ exports.getAllTeachers = async (req, res) => {
         var filter = {}
         if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
         if (lastName) filter["lastName"] = { $regex: lastName, $options: 'i' }
-        console.log(filter)
         var teachers = await TeacherModel.find(filter, { password: 0 }).sort({ createdAt: -1 }).populate(
             "subjects"
         )
-        console.log(teachers.length)
         if (subject) teachers = teachers.filter((element) => element.subjects?.find((sbj) => sbj._id == subject))
         var totalPages = Math.ceil(teachers.length / PAGE_LIMIT);
         teachers = teachers.slice(offset * PAGE_LIMIT, (offset * PAGE_LIMIT) + PAGE_LIMIT)
@@ -218,16 +218,24 @@ exports.updateTeacher = async (req, res) => {
                 fields: { password: 0 },
             }
         );
-        console.log(oldTeacher.subjects)
         if (oldTeacher) {
-            if (req.body.subjects) {
-                const firstTable = req.body.subjects.filter((element) => oldTeacher.subjects.indexOf(element) === -1)
-                const secondTable = oldTeacher.subjects.filter((element) => req.body.subjects.indexOf(element) === -1)
+            const firstTable = oldTeacher.subjects ? req.body.subjects?.filter((element) => oldTeacher.subjects?.indexOf(element) === -1) : req.body.subjects
+            const secondTable = req.body.subjects ? oldTeacher.subjects?.filter((element) => req.body.subjects?.indexOf(element.toString()) === -1) : oldTeacher.subjects
+            console.log(firstTable)
+            console.log(secondTable)
+            if (firstTable) {
                 for (var element of firstTable) {
-                    await Subject.findByIdAndUpdate(element, { $push: { teachers: oldTeacher._id } }, { runValidators: true, new: true })
+                    var sbj = await Subject.findById(element)
+                    sbj.teachers.push(oldTeacher._id.toString())
+                    await sbj.save()
                 }
+            }
+            if (secondTable) {
                 for (var element of secondTable) {
-                    await Subject.findByIdAndUpdate(element, { $pull: { teachers: oldTeacher._id } }, { runValidators: true, new: true })
+                    var sbj2 = await Subject.findById(element)
+                    console.log(sbj2)
+                    sbj2.teachers = sbj2.teachers.filter((tch) => tch != oldTeacher._id.toString())
+                    await sbj2.save()
                 }
             }
             return res.status(200).json({
@@ -343,13 +351,13 @@ exports.removeSubject = async (req, res) => {
 
 
 exports.countDocsss = async (req, res) => {
-    try{
+    try {
         const countTeachers = await TeacherModel.countDocuments()
-        return res.status(200).send({number : countTeachers || 0})
-    }catch(e) {
+        return res.status(200).send({ number: countTeachers || 0 })
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error!"
+            error: "Server Error!"
         })
     }
 }
