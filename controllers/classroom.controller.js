@@ -1,5 +1,7 @@
 const classroomModel = require("../models/classroom.model");
 const ClassroomModel = require("../models/classroom.model");
+const Template = require("../models/template.model")
+const  { Types } = require('mongoose')
 
 exports.create = async (req, res) => {
     try {
@@ -127,6 +129,52 @@ exports.countDocsss = async (req, res) => {
     }catch(e) {
         return res.status(500).send({
             error : "Server Error!"
+        })
+    }
+}
+
+
+//available classrooms in the date given
+//need test
+exports.findAvailableClassroms = async (req,res) => {
+    try{
+        const { startsAt, endsAt, day, collegeYear } = req.body
+        if (!startsAt || !endsAt || !day || !collegeYear){
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        //get all classrooms
+        const classrooms = ClassroomModel.findAll({})
+        if (!classrooms){
+            return res.status(400).send({
+                message : "NoClassrooms",
+                found: false
+            })
+        }else{
+            const classroomIds = []
+            for ( let i = 0 ; i < classrooms.length ; i++){
+                classroomIds[i] = classrooms[i]._id
+            }
+            const OccupiedClassrooms = await Template.find({collegeYear : new Types.ObjectId(collegeYear)}, 'sessions')
+            .populate({ $path : "sessions", match : { startsAt : startsAt , endsAt : endsAt , day: day }, select : { classroom : 1} })
+            if (!OccupiedClassrooms){
+                return res.status(200).send({ 
+                    classrooms
+                })
+            }else{
+                for (let x = 0 ; x < OccupiedClassrooms.sessions.length ; x++){
+                    const index = classroomIds.indexOf(OccupiedTeachers.sessions.classroom) 
+                    if ( index > -1){
+                        classrooms.splice(index, 1)
+                    }
+                }
+                return res.status(200).send(classrooms)
+            }
+        }
+    }catch(e){
+        return res.status(500).send({
+            error: "Server Error"
         })
     }
 }
