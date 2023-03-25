@@ -206,15 +206,15 @@ exports.deleteSubject = (req, res) => {
                 error: "Bad Request!"
             })
         }
-        Subject.findByIdAndDelete(subjectId).then( (subject) => {
+        Subject.findByIdAndDelete(subjectId).then((subject) => {
             if (!subject) {
                 return res.status(404).send({
                     message: "Subject with id " + subjectId + "Not found!",
                     deleted: false
                 })
             }
-            subject.teachers.forEach( async (teacher,index) => {
-                await TeacherModel.findByIdAndUpdate(teacher[index], { $pull : { $subjects :subject._id }}, { runValidators: true, new: true })
+            subject.teachers.forEach(async (teacher, index) => {
+                await TeacherModel.findByIdAndUpdate(teacher[index], { $pull: { $subjects: subject._id } }, { runValidators: true, new: true })
             })
             return res.status(200).send({
                 message: "Subject with the id " + subjectId + " Successfully deleted",
@@ -284,46 +284,36 @@ exports.changeSubjectState = (req, res) => {
 //available teachers  => returns object.teachers to acced the teachers availalbe
 //need test after filling one session in planning
 exports.findAvailableTeachers = async (req, res) => {
-    try{
+    try {
         const subjectId = req.params.subjectId
-        const { startsAt , endsAt , day , collegeYear } = req.body
-        if ( !startsAt ||  !endsAt || !day || !collegeYear || !subjectId){
+        const { startsAt, endsAt, day, collegeYear } = req.body
+        if (!startsAt || !endsAt || !day || !collegeYear || !subjectId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const teachersOfTheSubject = await Subject.findById( new Types.ObjectId(subjectId), 'subjectName teachers').populate({ path : "teachers" , select : { image : 0 , note : 0 , birth : 0 , maritalStatus : 0, password : 0}})
+        var teachersOfTheSubject = await Subject.findById(subjectId, 'subjectName teachers').populate({ path: "teachers", select: { image: 0, note: 0, birth: 0, maritalStatus: 0, password: 0 } })
         console.log(teachersOfTheSubject)
-        if (!teachersOfTheSubject){
+        if (!teachersOfTheSubject) {
             return res.status(204).send({
-                error : "EmptyDataBase",
-                message : "There is no Teachers in Data base"
+                error: "EmptyDataBase",
+                message: "There is no Teachers in Data base"
             })
-        }else{
-            const teachersIds = []
-            for (let i = 0 ; i < teachersOfTheSubject.teachers.length ; i++){
-                teachersIds[i] = teachersOfTheSubject.teachers[i]._id
+        } else {
+            teachersOfTheSubject = teachersOfTheSubject.teachers
+            var OccupiedTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
+                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, endsAt: endsAt, day: day } })
+            OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)).reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher) || []
+            if (!OccupiedTeachers.length) {
+                return res.status(200).json(teachersOfTheSubject)
+            } else {
+                return res.status(200).json(teachersOfTheSubject.filter((element) => OccupiedTeachers.indexOf(element._id) === -1))
             }
-            const OccupiedTeachers = await Template.find({ collegeYear : new Types.ObjectId(collegeYear) }, 'sessions')
-            .populate({ path : "sessions", match : { subject : new Types.ObjectId(subjectId) , startsAt : startsAt , endsAt : endsAt , day : day}})
-            if (!OccupiedTeachers){
-                return res.status(200).send({
-                    teachersOfTheSubject
-                })
-            }else{
-                for (let x = 0 ; x < OccupiedTeachers.sessions.length ; x++){
-                    const index = teachersIds.indexOf(OccupiedTeachers.sessions.teacher) 
-                    if ( index > -1){
-                        teachersOfTheSubject.teachers.splice(index, 1)
-                    }
-                }
-                return res.status(200).send(teachersOfTheSubject)
-            } 
-        } 
-    }catch(e){
-        console.log(e.message)
+        }
+    } catch (e) {
+        console.log(e)
         return res.status(500).send({
-            error :"Server Error"
+            error: "Server Error"
         })
     }
 }

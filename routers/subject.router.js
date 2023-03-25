@@ -5,10 +5,10 @@ const Router = require('express').Router()
 Router.route("/getAll").get(findAllSubjects)
 Router.route("/getAllDoc").get(findAllSubjectsWithTeachers)
 Router.route("/getByName/:subjectName").get(findSubjectByName)
-Router.route("/getAvailableTeachers/:subjectId").get(findAvailableTeachers)
 
 //post
 Router.route("/create").post(createSubject)
+Router.route("/getAvailableTeachers/:subjectId").post(findAvailableTeachers)
 
 //delete
 Router.route("/delete/:subjectId").delete(deleteSubject)

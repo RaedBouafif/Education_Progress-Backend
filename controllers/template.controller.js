@@ -43,8 +43,8 @@ exports.create = async (req, res) => {
 
 exports.addSessionToTemplate = async (req, res) => {
     try {
-        const { teacher, classroom, subject, group, day, startsAt, endsAt, sessionType, createdBy, modifiedBy, idTemplate } = req.body
-        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !endsAt || !sessionType || !createdBy || !modifiedBy || !idTemplate) {
+        const { teacher, classroom, subject, group, day, startsAt, endsAt, sessionType, idTemplate } = req.body
+        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !endsAt || !sessionType || !idTemplate) {
             return res.status(400).send({
                 error: "BadRequest"
             })
@@ -58,8 +58,6 @@ exports.addSessionToTemplate = async (req, res) => {
             startsAt: startsAt,
             endsAt: endsAt,
             sessionType: sessionType,
-            createdBy: createdBy,
-            modifiedBy: modifiedBy,
         })
         await session.save()
         if (session) {
@@ -90,7 +88,6 @@ exports.addSessionToTemplate = async (req, res) => {
         })
     }
 }
-
 exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
     const { group, collegeYear } = req.query
     if (!group || !collegeYear) {
@@ -100,9 +97,9 @@ exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
     }
     try {
         const template = await Template.findOne({ group: group, collegeYear: collegeYear }).sort({ createdAt: -1 })
-            .populate("sessions")
+            .populate({ path: "sessions", populate: [{ path: "teacher" }, { path: "subject" }, { path: "classroom" }] })
             .populate("collegeYear")
-            .populate("group")
+            .populate({ path: "group", populate: { path: "section" } })
         if (template) {
             return res.status(200).send(template)
         } else {
