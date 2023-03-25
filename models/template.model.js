@@ -1,32 +1,32 @@
-const { model, Schema} = require("mongoose")
+const { model, Schema } = require("mongoose")
 
 const Template = Schema({
-     group : {
-        type : Schema.Types.ObjectId,
-        ref : "Group",
-        required : [true, "groupRequired"],
-    },
-    collegeYear : {
+    group: {
         type: Schema.Types.ObjectId,
-        ref : "collegeYear",
-        required : [true, "collegeYearRequired"]
+        ref: "Group",
+        required: [true, "groupRequired"],
     },
-    sessions : [{
+    collegeYear: {
         type: Schema.Types.ObjectId,
-        ref : "Sessions",
+        ref: "CollegeYear",
+        required: [true, "collegeYearRequired"]
+    },
+    sessions: [{
+        type: Schema.Types.ObjectId,
+        ref: "Session",
     }],
-    active : {
-        type : Boolean,
-        default : true
+    active: {
+        type: Boolean,
+        default: true
     }
 },
-{
-    timestamps: true
-})
+    {
+        timestamps: true
+    })
 
 Template.index({ group: 1, collegeYear: 1 }, { unique: true })
 
 module.exports = model("Template", Template)
 
-                  
+
 

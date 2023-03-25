@@ -2,22 +2,25 @@ const Template = require("../models/template.model")
 const Session = require("../models/session.model")
 const section = require("../models/collegeYear.model")
 const Semester = require("../models/semester.model")
+const CollegeYearModel = require("../models/collegeYear.model")
+const GroupModel = require("../models/group.model")
+const SessionModel = require("../models/session.model")
 const { Types } = require("mongoose")
 const PlanningModel = require("../models/Planning.model")
 
 
-exports.create = async (req,res) => {
-    const { gorup , collegeYear, active } = req.body
-    if (!gorup || !collegeYear) {
+exports.create = async (req, res) => {
+    const { group, collegeYear, active } = req.body
+    if (!group || !collegeYear) {
         return res.status(400).send({
-            error : "BadRequest"
+            error: "BadRequest"
         })
     }
-    try{
+    try {
         const template = await Template.create({
-            group : group,
-            collegeYear : collegeYear,
-            active : active || null
+            group: group,
+            collegeYear: collegeYear,
+            active: active || null
         })
         await template.save()
         return (template) ?
@@ -26,120 +29,119 @@ exports.create = async (req,res) => {
             res.status(204).send({
                 created: false
             })
-    }catch(e){
-        if (e.code === 11000){
+    } catch (e) {
+        if (e.code === 11000) {
             return res.status(409).send({
-                error : "conflictTemplate"
+                error: "conflictTemplate"
             })
         }
         return res.status(500).send({
-            error : "BadRequest"
+            error: "BadRequest"
         })
     }
 }
 
-exports.addSessionToTemplate = async (req,res) => {
-    try{
+exports.addSessionToTemplate = async (req, res) => {
+    try {
         const { teacher, classroom, subject, group, day, startsAt, endsAt, sessionType, createdBy, modifiedBy, idTemplate } = req.body
-        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !endsAt || !sessionType || !createdBy || !modifiedBy || !idTemplate){
+        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !endsAt || !sessionType || !createdBy || !modifiedBy || !idTemplate) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
         const session = await Session.create({
-            teacher : teacher,
-            classroom : classroom,
-            subject : subject,
-            group : group,
-            day : day,
-            startsAt : startsAt,
-            endsAt : endsAt,
-            sessionType :sessionType,
-            createdBy : createdBy,
-            modifiedBy : modifiedBy,
+            teacher: teacher,
+            classroom: classroom,
+            subject: subject,
+            group: group,
+            day: day,
+            startsAt: startsAt,
+            endsAt: endsAt,
+            sessionType: sessionType,
+            createdBy: createdBy,
+            modifiedBy: modifiedBy,
         })
         await session.save()
-        if (session){
-            const updatedPlanning = await Template.findByIdAndUpdate(idTemplate, { $push: { sessions: session._id } }, {new : true, runValidators : true})
-            .populate("collegeYear")
-            .populate("sessions")
-            .populate("group")
-            if (updatedPlanning){
+        if (session) {
+            const updatedPlanning = await Template.findByIdAndUpdate(idTemplate, { $push: { sessions: session._id } }, { new: true, runValidators: true })
+                .populate("collegeYear")
+                .populate("sessions")
+                .populate("group")
+            if (updatedPlanning) {
                 return res.status(200).send({
                     updatedPlanning
                 })
-            }else{
+            } else {
                 return res.status(400).send({
                     error: "TemplateError",
-                    updated : false
+                    updated: false
                 })
             }
 
-        }else{
+        } else {
             return res.status(400).send({
-                error :"SessionError",
+                error: "SessionError",
                 created: false
             })
         }
-    }catch(e) {
+    } catch (e) {
         return res.status(500).send({
             error: "Server Error"
         })
     }
 }
 
-exports.getTemplatesByGroupAndCollegeYear = async (req,res) => {
+exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
     const { group, collegeYear } = req.query
-    if (!group || !collegeYear){
+    if (!group || !collegeYear) {
         return res.status(400).send({
-            error : "BadRequest"
+            error: "BadRequest"
         })
     }
-    try{
-        const templates = await Template.find({group : group, collegeYear : collegeYear}).sort({ createdAt: -1 })
-        .populate("sessions")
-        .populate("collegeYear")
-        .populate("group")
-        if (templates){
-            return res.status(200).send({
-                templates
-            })
-        }else{
+    try {
+        const template = await Template.findOne({ group: group, collegeYear: collegeYear }).sort({ createdAt: -1 })
+            .populate("sessions")
+            .populate("collegeYear")
+            .populate("group")
+        if (template) {
+            return res.status(200).send(template)
+        } else {
             return res.status(404).send({
-                found : false
+                found: false
             })
         }
-    }catch(e){
+    } catch (e) {
+        console.log(e)
         return res.status(500).send({
-            return : "Server Error"
+            return: "Server Error"
         })
     }
 }
 
-exports.getTemplatesByGroup = async (req,res) => {
+exports.getTemplatesByGroup = async (req, res) => {
     const { group, collegeYear } = req.query
-    if (!group || !collegeYear){
+    if (!group || !collegeYear) {
         return res.status(400).send({
-            error : "BadRequest"
+            error: "BadRequest"
         })
     }
-    try{
-        const templates = await Template.find({group : group}).sort({ createdAt: -1 })
-        .populate("sessions")
-        .populate("collegeYear")
-        .populate("group")
-        if (templates){
+    try {
+        const templates = await Template.find({ group: group }).sort({ createdAt: -1 })
+            .populate("sessions")
+            .populate("collegeYear")
+            .populate("group")
+        if (templates) {
             return res.status(200).send({
                 templates
             })
-        }else{
+        } else {
             return res.status(404).send({
-                found : false
+                found: false
             })
         }
-    }catch(e){
+    } catch (e) {
         return res.status(500).send({
-            return : "Server Error"
+            return: "Server Error"
         })
     }
 }

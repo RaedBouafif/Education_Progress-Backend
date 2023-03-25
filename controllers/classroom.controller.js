@@ -1,7 +1,7 @@
-const classroomModel = require("../models/classroom.model");
 const ClassroomModel = require("../models/classroom.model");
 const Template = require("../models/template.model")
-const  { Types } = require('mongoose')
+const SessionModel = require("../models/session.model")
+const { Types } = require('mongoose')
 
 exports.create = async (req, res) => {
     try {
@@ -56,7 +56,7 @@ exports.getAll = async (req, res) => {
 exports.deleteById = async (req, res) => {
     try {
         const { classroomId } = req.params
-        const classroom = await classroomModel.findByIdAndDelete(classroomId)
+        const classroom = await ClassroomModel.findByIdAndDelete(classroomId)
         if (classroom)
             return res.status(200).json({
                 found: true, classroom
@@ -123,12 +123,12 @@ exports.update = async (req, res) => {
 
 
 exports.countDocsss = async (req, res) => {
-    try{
+    try {
         const countClasses = await ClassroomModel.countDocuments()
-        return res.status(200).send({number : countClasses || 0})
-    }catch(e) {
+        return res.status(200).send({ number: countClasses || 0 })
+    } catch (e) {
         return res.status(500).send({
-            error : "Server Error!"
+            error: "Server Error!"
         })
     }
 }
@@ -136,43 +136,44 @@ exports.countDocsss = async (req, res) => {
 
 //available classrooms in the date given
 //need test
-exports.findAvailableClassroms = async (req,res) => {
-    try{
+exports.findAvailableClassroms = async (req, res) => {
+    try {
         const { startsAt, endsAt, day, collegeYear } = req.body
-        if (!startsAt || !endsAt || !day || !collegeYear){
+        if (!startsAt || !endsAt || !day || !collegeYear) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
         //get all classrooms
-        const classrooms = ClassroomModel.findAll({})
-        if (!classrooms){
+        const classrooms = ClassroomModel.find({})
+        if (!classrooms) {
             return res.status(400).send({
-                message : "NoClassrooms",
+                message: "NoClassrooms",
                 found: false
             })
-        }else{
+        } else {
             const classroomIds = []
-            for ( let i = 0 ; i < classrooms.length ; i++){
+            for (let i = 0; i < classrooms.length; i++) {
                 classroomIds[i] = classrooms[i]._id
             }
-            const OccupiedClassrooms = await Template.find({collegeYear : new Types.ObjectId(collegeYear)}, 'sessions')
-            .populate({ $path : "sessions", match : { startsAt : startsAt , endsAt : endsAt , day: day }, select : { classroom : 1} })
-            if (!OccupiedClassrooms){
-                return res.status(200).send({ 
+            const OccupiedClassrooms = await Template.find({ collegeYear: new Types.ObjectId(collegeYear) }, 'sessions')
+                .populate({ path: "sessions", match: { startsAt: startsAt, endsAt: endsAt, day: day }, select: { classroom: 1 } })
+            if (!OccupiedClassrooms || !OccupiedClassrooms.sessions) {
+                return res.status(200).send({
                     classrooms
                 })
-            }else{
-                for (let x = 0 ; x < OccupiedClassrooms.sessions.length ; x++){
-                    const index = classroomIds.indexOf(OccupiedTeachers.sessions.classroom) 
-                    if ( index > -1){
+            } else {
+                for (let x = 0; x < OccupiedClassrooms.sessions.length; x++) {
+                    const index = classroomIds.indexOf(OccupiedTeachers.sessions.classroom)
+                    if (index > -1) {
                         classrooms.splice(index, 1)
                     }
                 }
                 return res.status(200).send(classrooms)
             }
         }
-    }catch(e){
+    } catch (e) {
+        console.log(e)
         return res.status(500).send({
             error: "Server Error"
         })

@@ -1,20 +1,20 @@
 const GroupModel = require("../models/group.model");
 const StudentModel = require("../models/Users/student.model")
-const  { Types } = require('mongoose')
+const { Types } = require('mongoose')
 exports.create = async (req, res) => {
     try {
         const group = await GroupModel.create({
-            groupName : req.body.groupName,
-            section : req.body.section,
-            collegeYear : req.body.collegeYear,
-            students : req.body.students?.split(',') || null,
-            note : req.body.note || null
+            groupName: req.body.groupName,
+            section: req.body.section,
+            collegeYear: req.body.collegeYear,
+            students: req.body.students?.split(',') || null,
+            note: req.body.note || null
         });
         await group.save();
-        if (req.body.students){
+        if (req.body.students) {
             req.body.students = req.body.students.split(',')
-            req.body.students.forEach( async (element) => {
-                await StudentModel.findByIdAndUpdate(Types.ObjectId(element), { group : group._id} , {runValidators : true, new : true})
+            req.body.students.forEach(async (element) => {
+                await StudentModel.findByIdAndUpdate(Types.ObjectId(element), { group: group._id }, { runValidators: true, new: true })
             })
         }
         console.log(group)
@@ -59,13 +59,13 @@ exports.getAll = async (req, res) => {
     try {
         if (!req.params.yearId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const groups = await GroupModel.find({ collegeYear : new Types.ObjectId(req.params.yearId)})
-        .populate("collegeYear")
-        .populate("section")
-        .populate("students")
+        const groups = await GroupModel.find({ collegeYear: new Types.ObjectId(req.params.yearId) })
+            .populate("collegeYear")
+            .populate("section")
+            .populate("students")
         return groups.length
             ? res.status(200).json({ found: true, groups })
             : res.status(204).json({ found: false });
@@ -80,7 +80,7 @@ exports.getAll = async (req, res) => {
 exports.getAllGroups = async (req, res) => {
     try {
         const { collegeYearId } = req.params
-        const groups = await GroupModel.find({ collegeYear: collegeYearId }).populate("students").populate("section").populate("collegeYear");
+        const groups = await GroupModel.find({ collegeYear: collegeYearId }).populate("students").populate({ path: "section", populate: { path: "subjects", select: { image: 0 } } }).populate("collegeYear");
         return groups.length
             ? res.status(200).json({ found: true, groups })
             : res.status(204).json({ found: false });
@@ -216,12 +216,12 @@ exports.deleteStudent = async (req, res) => {
 
 
 exports.countDocsss = async (req, res) => {
-    try{
+    try {
         const countGroups = await GroupModel.countDocuments()
-        return res.status(200).send({number : countGroups || 0})
-    }catch(e) {
+        return res.status(200).send({ number: countGroups || 0 })
+    } catch (e) {
         return res.status(500).send({
-            error : "Server Error!"
+            error: "Server Error!"
         })
     }
 }
@@ -230,28 +230,28 @@ exports.countDocsss = async (req, res) => {
 
 // return all the subjects assigned to the group given 
 // tested and woriking 
-exports.findAllAvailableSubjects = async (req,res) => {
-    try{
+exports.findAllAvailableSubjects = async (req, res) => {
+    try {
         const groupId = req.params.groupId
-        if (!groupId){
+        if (!groupId) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
-        const group = await GroupModel.findById(groupId , 'section')
-        .populate({ path : "section" , select : "subjects" , populate : { path : "subjects" , select : "subjectName"}})
-        if (!group){
+        const group = await GroupModel.findById(groupId, 'section')
+            .populate({ path: "section", select: "subjects", populate: { path: "subjects", select: "subjectName" } })
+        if (!group) {
             return res.status(404).send({
-                error : "Group not found"
+                error: "Group not found"
             })
-        }else{
+        } else {
             return res.status(200).send(group)
         }
-    }catch(e) {
+    } catch (e) {
         console.log(e)
         if (e.code === 1100) {
             return res.status(409).send({
-                error : "conflictFind"
+                error: "conflictFind"
             })
         }
         return res.status(500).send({
