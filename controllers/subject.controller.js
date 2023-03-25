@@ -279,6 +279,36 @@ exports.changeSubjectState = (req, res) => {
     }
 }
 
+// [
+//     {
+//         sessions : [
+//             {
+//             teacherName : 
+//             teacherId ; 
+//             },
+//             {
+
+
+//             },
+//         {
+
+//         },
+//         {
+
+//         }
+    
+//         ]
+//     },
+//     {
+
+//     },
+//     {
+
+//     },
+//     {
+
+//     }
+// ]
 
 
 //available teachers  => returns object.teachers to acced the teachers availalbe

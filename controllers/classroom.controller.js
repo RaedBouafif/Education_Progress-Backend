@@ -145,7 +145,7 @@ exports.findAvailableClassroms = async (req, res) => {
             })
         }
         //get all classrooms
-        const classrooms = ClassroomModel.find({})
+        const classrooms = await ClassroomModel.find({})
         if (!classrooms) {
             return res.status(400).send({
                 message: "NoClassrooms",
@@ -158,18 +158,29 @@ exports.findAvailableClassroms = async (req, res) => {
             }
             const OccupiedClassrooms = await Template.find({ collegeYear: new Types.ObjectId(collegeYear) }, 'sessions')
                 .populate({ path: "sessions", match: { startsAt: startsAt, endsAt: endsAt, day: day }, select: { classroom: 1 } })
-            if (!OccupiedClassrooms || !OccupiedClassrooms.sessions) {
-                return res.status(200).send({
-                    classrooms
+            if (!OccupiedClassrooms){
+                return res.status(400).send({
+                    message : "College Year does not exist"
                 })
-            } else {
-                for (let x = 0; x < OccupiedClassrooms.sessions.length; x++) {
-                    const index = classroomIds.indexOf(OccupiedTeachers.sessions.classroom)
-                    if (index > -1) {
-                        classrooms.splice(index, 1)
+            }else{
+                const sessions = OccupiedClassrooms.map( (element,index) => {
+                    return element.sessions
+                })
+                if (sessions.length === 0){
+                    return res.status(200).send(classrooms)
+                }else{
+                    var finalArray= []
+                    for ( let i = 0 ; i < sessions.length ; i++){
+                        var x1 = classrooms.filter( (element) => element._id != sessions[i].classroom)
+                        finalArray =  [...finalArray, x1]
                     }
+                    const distinctClassrooms = finalArray.filter(function(obj, index, self) {
+                        return index === self.findIndex(function(o) {
+                          return JSON.stringify(o) === JSON.stringify(obj);
+                        });
+                      });
+                    return res.status(200).send(distinctClassrooms)
                 }
-                return res.status(200).send(classrooms)
             }
         }
     } catch (e) {

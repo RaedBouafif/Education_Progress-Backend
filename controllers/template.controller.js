@@ -100,9 +100,9 @@ exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
     }
     try {
         const template = await Template.findOne({ group: group, collegeYear: collegeYear }).sort({ createdAt: -1 })
-            .populate("sessions")
+            .populate({ path : "sessions" , populate : { path : "teacher"} , populate : { path : "subject"} , populate : { path : "classroom"}})
             .populate("collegeYear")
-            .populate("group")
+            .populate({ path : "group" , populate : { path : "section"}})
         if (template) {
             return res.status(200).send(template)
         } else {
