@@ -323,7 +323,6 @@ exports.findAvailableTeachers = async (req, res) => {
             })
         }
         var teachersOfTheSubject = await Subject.findById(subjectId, 'subjectName teachers').populate({ path: "teachers", select: { image: 0, note: 0, birth: 0, maritalStatus: 0, password: 0 } })
-        console.log(teachersOfTheSubject)
         if (!teachersOfTheSubject) {
             return res.status(204).send({
                 error: "EmptyDataBase",
@@ -333,11 +332,19 @@ exports.findAvailableTeachers = async (req, res) => {
             teachersOfTheSubject = teachersOfTheSubject.teachers
             var OccupiedTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
                 .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, endsAt: endsAt, day: day } })
-            OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)).reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher) || []
+            OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
+            if (OccupiedTeachers.length > 1) {
+                OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
+            }
+            else if (OccupiedTeachers.length === 1) {
+                OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]
+            }
+            console.log(teachersOfTheSubject)
+            console.log(OccupiedTeachers)
             if (!OccupiedTeachers.length) {
                 return res.status(200).json(teachersOfTheSubject)
             } else {
-                return res.status(200).json(teachersOfTheSubject.filter((element) => OccupiedTeachers.indexOf(element._id) === -1))
+                return res.status(200).json(teachersOfTheSubject.filter((element) => OccupiedTeachers.indexOf(element._id.toString()) === -1))
             }
         }
     } catch (e) {
