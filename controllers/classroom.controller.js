@@ -1,6 +1,6 @@
 const ClassroomModel = require("../models/classroom.model");
 const Template = require("../models/template.model")
-const SessionModel = require("../models/session.model")
+const Session = require("../models/session.model")
 const { Types } = require('mongoose')
 
 exports.create = async (req, res) => {
@@ -134,65 +134,105 @@ exports.countDocsss = async (req, res) => {
 }
 
 
-//available classrooms in the date given
-//need test
-exports.findAvailableClassroms = async (req, res) => {
-    try {
+
+
+
+exports.findAvailableClassroms = async (req,res) => {
+    try{
         const { startsAt, endsAt, day, collegeYear } = req.body
-        if (!startsAt || !endsAt || !day || !collegeYear) {
+        if (!startsAt || !endsAt || !day || !collegeYear){
             return res.status(400).send({
-                error: "BadRequest"
+                error : "BadRequest"
             })
         }
-        //get all classrooms
         const classrooms = await ClassroomModel.find({})
-        if (!classrooms) {
+        if(!classrooms){
             return res.status(400).send({
-                message: "NoClassrooms",
-                found: false
+                error : "NoClassrooms"
             })
-        } else {
-            const classroomIds = []
-            for (let i = 0; i < classrooms.length; i++) {
-                classroomIds[i] = classrooms[i]._id
-            }
-            const OccupiedClassrooms = await Template.find({ collegeYear: new Types.ObjectId(collegeYear) }, 'sessions')
-                .populate({ path: "sessions", match: { startsAt: startsAt, endsAt: endsAt, day: day }, select: { classroom: 1 } })
-            if (!OccupiedClassrooms) {
-                return res.status(400).send({
-                    message: "College Year does not exist"
-                })
-            } else {
-                const sessions = OccupiedClassrooms.map((element, index) => {
-                    return element.sessions
-                })
-                if (sessions.length === 0) {
-                    return res.status(200).send(classrooms.sort((a, b) => {
-                        if (a.classroomName.toLowerCase() > b.classroomName.toLowerCase()) return 1
-                        else return -1
-                    }))
-                } else {
-                    var finalArray = []
-                    for (let i = 0; i < sessions.length; i++) {
-                        var x1 = classrooms.filter((element) => element._id != sessions[i].classroom)
-                        finalArray = [...finalArray, x1]
-                    }
-                    const distinctClassrooms = finalArray.filter(function (obj, index, self) {
-                        return index === self.findIndex(function (o) {
-                            return JSON.stringify(o) === JSON.stringify(obj);
-                        });
-                    });
-                    return res.status(200).send(distinctClassrooms[0].sort((a, b) => {
-                        if (a.classroomName.toLowerCase() > b.classroomName.toLowerCase()) return 1
-                        else return -1
-                    }))
-                }
-            }
         }
-    } catch (e) {
+        var OccupiedClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match : { startsAt : startsAt , endsAt : endsAt , day : day, collegeYear : collegeYear}})
+        OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
+        if (OccupiedClassrooms.length > 1){
+            OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
+        }
+        else if (OccupiedClassrooms.length === 1) {
+            OccupiedClassrooms = [OccupiedClassrooms[0].classroom.toString()]
+        }
+        console.log(OccupiedClassrooms)
+        if (!OccupiedClassrooms.length) {
+            return res.status(200).json(classrooms)
+        } else {
+            return res.status(200).json(classrooms.filter((element) => OccupiedClassrooms.indexOf(element._id.toString()) === -1))
+        }
+    }catch(e){
         console.log(e)
         return res.status(500).send({
-            error: "Server Error"
+            error : "Server Error"
         })
     }
 }
+
+//available classrooms in the date given
+//need test
+// exports.findAvailableClassroms = async (req, res) => {
+//     try {
+//         const { startsAt, endsAt, day, collegeYear } = req.body
+//         console.log(req.body)
+//         if (!startsAt || !endsAt || !day || !collegeYear) {
+//             return res.status(400).send({
+//                 error: "BadRequest"
+//             })
+//         }
+//         //get all classrooms
+//         const classrooms = await ClassroomModel.find({})
+//         if (!classrooms) {
+//             return res.status(400).send({
+//                 message: "NoClassrooms",
+//                 found: false
+//             })
+//         } else {
+//             const classroomIds = []
+//             for (let i = 0; i < classrooms.length; i++) {
+//                 classroomIds[i] = classrooms[i]._id
+//             }
+//             var OccupiedClassrooms = await Template.find({ collegeYear: new Types.ObjectId(collegeYear) }, 'sessions').populate({ path: "sessions", match: { startsAt: startsAt, endsAt: endsAt, day: day } })
+//             console.log(OccupiedClassrooms)
+//             if (!OccupiedClassrooms) {
+//                 return res.status(400).send({
+//                     message: "College Year does not exist"
+//                 })
+//             } else {
+//                 const sessions = OccupiedClassrooms.map((element, index) => {
+//                     return element.sessions
+//                 })
+//                 if (sessions.length === 0) {
+//                     return res.status(200).send(classrooms.sort((a, b) => {
+//                         if (a.classroomName.toLowerCase() > b.classroomName.toLowerCase()) return 1
+//                         else return -1
+//                     }))
+//                 } else {
+//                     var finalArray = []
+//                     for (let i = 0; i < sessions.length; i++) {
+//                         var x1 = classrooms.filter((element) => element._id != sessions[i].classroom)
+//                         finalArray = [...finalArray, x1]
+//                     }
+//                     const distinctClassrooms = finalArray.filter(function (obj, index, self) {
+//                         return index === self.findIndex(function (o) {
+//                             return JSON.stringify(o) === JSON.stringify(obj);
+//                         });
+//                     });
+//                     return res.status(200).send(distinctClassrooms[0].sort((a, b) => {
+//                         if (a.classroomName.toLowerCase() > b.classroomName.toLowerCase()) return 1
+//                         else return -1
+//                     }))
+//                 }
+//             }
+//         }
+//     } catch (e) {
+//         console.log(e)
+//         return res.status(500).send({
+//             error: "Server Error"
+//         })
+//     }
+// }
