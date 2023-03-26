@@ -158,28 +158,34 @@ exports.findAvailableClassroms = async (req, res) => {
             }
             const OccupiedClassrooms = await Template.find({ collegeYear: new Types.ObjectId(collegeYear) }, 'sessions')
                 .populate({ path: "sessions", match: { startsAt: startsAt, endsAt: endsAt, day: day }, select: { classroom: 1 } })
-            if (!OccupiedClassrooms){
+            if (!OccupiedClassrooms) {
                 return res.status(400).send({
-                    message : "College Year does not exist"
+                    message: "College Year does not exist"
                 })
-            }else{
-                const sessions = OccupiedClassrooms.map( (element,index) => {
+            } else {
+                const sessions = OccupiedClassrooms.map((element, index) => {
                     return element.sessions
                 })
-                if (sessions.length === 0){
-                    return res.status(200).send(classrooms)
-                }else{
-                    var finalArray= []
-                    for ( let i = 0 ; i < sessions.length ; i++){
-                        var x1 = classrooms.filter( (element) => element._id != sessions[i].classroom)
-                        finalArray =  [...finalArray, x1]
+                if (sessions.length === 0) {
+                    return res.status(200).send(classrooms.sort((a, b) => {
+                        if (a.classroomName.toLowerCase() > b.classroomName.toLowerCase()) return 1
+                        else return -1
+                    }))
+                } else {
+                    var finalArray = []
+                    for (let i = 0; i < sessions.length; i++) {
+                        var x1 = classrooms.filter((element) => element._id != sessions[i].classroom)
+                        finalArray = [...finalArray, x1]
                     }
-                    const distinctClassrooms = finalArray.filter(function(obj, index, self) {
-                        return index === self.findIndex(function(o) {
-                          return JSON.stringify(o) === JSON.stringify(obj);
+                    const distinctClassrooms = finalArray.filter(function (obj, index, self) {
+                        return index === self.findIndex(function (o) {
+                            return JSON.stringify(o) === JSON.stringify(obj);
                         });
-                      });
-                    return res.status(200).send(distinctClassrooms)
+                    });
+                    return res.status(200).send(distinctClassrooms[0].sort((a, b) => {
+                        if (a.classroomName.toLowerCase() > b.classroomName.toLowerCase()) return 1
+                        else return -1
+                    }))
                 }
             }
         }
