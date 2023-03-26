@@ -63,7 +63,7 @@ exports.addSessionToTemplate = async (req, res) => {
         if (session) {
             const updatedPlanning = await Template.findByIdAndUpdate(idTemplate, { $push: { sessions: session._id } }, { new: true, runValidators: true })
                 .populate("collegeYear")
-                .populate("sessions")
+                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                 .populate("group")
             if (updatedPlanning) {
                 return res.status(200).send({
@@ -97,7 +97,7 @@ exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
     }
     try {
         const template = await Template.findOne({ group: group, collegeYear: collegeYear }).sort({ createdAt: -1 })
-            .populate({ path: "sessions", populate: [{ path: "teacher" }, { path: "subject" }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
             .populate("collegeYear")
             .populate({ path: "group", populate: { path: "section" } })
         if (template) {

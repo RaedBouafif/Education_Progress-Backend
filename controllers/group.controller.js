@@ -3,14 +3,16 @@ const StudentModel = require("../models/Users/student.model")
 const { Types } = require('mongoose')
 exports.create = async (req, res) => {
     try {
-        const group = await GroupModel.create({
+        var group = await GroupModel.create({
             groupName: req.body.groupName,
             section: req.body.section,
             collegeYear: req.body.collegeYear,
             students: req.body.students?.split(',') || null,
             note: req.body.note || null
         });
-        await group.save();
+        group = await group.save()
+        group = await GroupModel.populate(group, { path: "section" })
+        console.log(group)
         if (req.body.students) {
             req.body.students = req.body.students.split(',')
             req.body.students.forEach(async (element) => {
