@@ -139,7 +139,7 @@ exports.countDocsss = async (req, res) => {
 exports.findAvailableClassroms = async (req, res) => {
     try {
         const { startsAt, endsAt, day, collegeYear } = req.body
-        if (!startsAt || !endsAt || !day || !collegeYear) {
+        if (!startsAt || !endsAt || (!day && day != 0) || !collegeYear) {
             return res.status(400).send({
                 error: "BadRequest"
             })

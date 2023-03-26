@@ -88,6 +88,39 @@ exports.addSessionToTemplate = async (req, res) => {
         })
     }
 }
+
+exports.deleteSessionFromTemplate = async (req, res) => {
+    try {
+        const { sessionId, templateId } = req.params
+        var template = await Template.findById(templateId)
+        if (template) {
+            console.log(template?.sessions)
+            if (template?.sessions?.find((element) => element._id.toString() === sessionId)) {
+                template.sessions = template.sessions.filter((element) => element._id.toString() !== sessionId)
+                await template.save()
+                await Session.findByIdAndDelete(sessionId)
+                return res.status(200).json({ deleted: true })
+            }
+            else {
+                return res.status(404).json({
+                    error: "sessionNotFound"
+                })
+            }
+        }
+        else {
+            return res.status(404).json({
+                error: "templateNotFound"
+            })
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
 exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
     const { group, collegeYear } = req.query
     if (!group || !collegeYear) {
