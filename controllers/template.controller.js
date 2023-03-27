@@ -88,6 +88,87 @@ exports.addSessionToTemplate = async (req, res) => {
         })
     }
 }
+
+//update session
+exports.updateSessionFromTemplate = async(req,res) => {
+    try{
+        const { sessionId, templateId , teacher, subject, classroom, sessionType} = req.body
+        if (!sessionId || !templateId){
+            return res.status(400).send({
+                error :"BadRequest"
+            })
+        }
+        const session = await Session.findById(sessionId)
+        if (session){
+            if (session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType){
+                session.teacher = teacher
+                session.subject = subject 
+                session.classroom = classroom
+                session.sessionType = sessionType
+                await session.save()
+                const template = await Template.findById(templateId)
+                .populate("collegeYear")
+                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                .populate("group")
+                if (!template){
+                    return res.status(400).send({
+                        error : "TemplateError"
+                    })
+                }else{
+                    return res.status(200).send({
+                        template  
+                    })
+                }
+            }else{
+                return res.status(304).send({
+                    updated : false
+                })
+            }
+        }else{
+            return res.status(404).send({
+                message : "SessionNotFound"
+            })
+        }  
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error : "Server Error"
+        })
+    }
+}
+
+exports.deleteSessionFromTemplate = async (req, res) => {
+    try {
+        const { sessionId, templateId } = req.params
+        var template = await Template.findById(templateId)
+        if (template) {
+            console.log(template?.sessions)
+            if (template?.sessions?.find((element) => element._id.toString() === sessionId)) {
+                template.sessions = template.sessions.filter((element) => element._id.toString() !== sessionId)
+                await template.save()
+                await Session.findByIdAndDelete(sessionId)
+                return res.status(200).json({ deleted: true })
+            }
+            else {
+                return res.status(404).json({
+                    error: "sessionNotFound"
+                })
+            }
+        }
+        else {
+            return res.status(404).json({
+                error: "templateNotFound"
+            })
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
 exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
     const { group, collegeYear } = req.query
     if (!group || !collegeYear) {

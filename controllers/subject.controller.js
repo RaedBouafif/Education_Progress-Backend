@@ -317,7 +317,7 @@ exports.findAvailableTeachers = async (req, res) => {
     try {
         const subjectId = req.params.subjectId
         const { startsAt, endsAt, day, collegeYear } = req.body
-        if (!startsAt || !endsAt || !day || !collegeYear || !subjectId) {
+        if (!startsAt || !endsAt || (!day && day != 0) || !collegeYear || !subjectId) {
             return res.status(400).send({
                 error: "BadRequest"
             })
