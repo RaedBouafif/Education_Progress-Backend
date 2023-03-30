@@ -43,7 +43,7 @@ exports.create = async (req, res) => {
 
 exports.addSessionToTemplate = async (req, res) => {
     try {
-        const { teacher, classroom, subject, group, day, startsAt, endsAt, sessionType, idTemplate } = req.body
+        const { teacher, classroom, subject, group, day, startsAt, duration, sessionType, idTemplate } = req.body
         if (!teacher || !classroom || !subject || !group || !day || !startsAt || !endsAt || !sessionType || !idTemplate) {
             return res.status(400).send({
                 error: "BadRequest"
@@ -56,7 +56,7 @@ exports.addSessionToTemplate = async (req, res) => {
             group: group,
             day: day,
             startsAt: startsAt,
-            endsAt: endsAt,
+            endsAt: startsAt + duration,
             sessionType: sessionType,
         })
         await session.save()
@@ -102,7 +102,7 @@ exports.updateSessionFromTemplate = async(req,res) => {
         if (session){
             if (session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType){
                 session.teacher = teacher
-                session.subject = subject 
+                session.subject = subject
                 session.classroom = classroom
                 session.sessionType = sessionType
                 await session.save()
@@ -197,7 +197,7 @@ exports.getTemplatesByGroupAndCollegeYear = async (req, res) => {
 }
 
 exports.getTemplatesByGroup = async (req, res) => {
-    const { group, collegeYear } = req.query
+    const { group } = req.query
     if (!group || !collegeYear) {
         return res.status(400).send({
             error: "BadRequest"

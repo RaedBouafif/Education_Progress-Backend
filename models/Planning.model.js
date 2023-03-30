@@ -23,27 +23,27 @@ const Planning = Schema(
             ref: "Group",
             required: [true, "groupRequired"]
         },
-        semester: {
+        collegeYear: {
             type: Schema.Types.ObjectId,
-            ref: "Semester",
-            required: [true, "semesterRequired"]
+            ref: "CollegeYear",
+            required: [true, "collegeYearRequired"]
         },
         sessions: [{
             type: Schema.Types.ObjectId,
             ref: "Session",
         }],
         active: {
-            type: Boolean,
+            type: Boolean,  
             default: true
         }
     },
     {
-        timestamps: true
+        timestamps: true 
     }
 )
 
 
-Planning.index({ week: 1, group: 1, semester: 1 }, { unique: true })
+Planning.index({ week: 1, group: 1, collegeYear : 1 }, { unique: true })
 
 
 module.exports = model("Planning", Planning)

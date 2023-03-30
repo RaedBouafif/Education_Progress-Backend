@@ -91,6 +91,10 @@ const Session = Schema(
         delaid : {
             type: Boolean,
             default: false
+        },
+        duration : {
+            type : Number,
+            dafault : 1
         }
     },
     {

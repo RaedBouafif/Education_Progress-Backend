@@ -139,7 +139,7 @@ exports.countDocsss = async (req, res) => {
 
 exports.findAvailableClassroms = async (req,res) => {
     try{
-        const { startsAt, endsAt, day, collegeYear } = req.body
+        const { startsAt, duree, day, collegeYear } = req.body
         if (!startsAt || !endsAt || (!day && day != 0) || !collegeYear) {
             return res.status(400).send({
                 error : "BadRequest"
@@ -152,12 +152,42 @@ exports.findAvailableClassroms = async (req,res) => {
             })
         }
         var OccupiedClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match : { startsAt : startsAt , endsAt : endsAt , day : day, collegeYear : collegeYear}})
+        var OccupiedPredClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match: { startsAt : { $lt : startsAt }}, options : { sort : {startsAt : -1} }})   
+        var OccupiedNextClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match: { startsAt : { $gt : startsAt }}})   
+
         OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
+        // OccupiedPredClassrooms = OccupiedPredClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedPredClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
+        // OccupiedNextClassrooms = OccupiedNextClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedNextClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
+
         if (OccupiedClassrooms.length > 1){
             OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
         }
         else if (OccupiedClassrooms.length === 1) {
             OccupiedClassrooms = [OccupiedClassrooms[0].classroom.toString()]
+        }
+        //predClassrooms
+        // if (OccupiedPredClassrooms.length > 1){
+        //     OccupiedPredClassrooms = OccupiedPredClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
+        // }
+        // else if (OccupiedPredClassrooms.length === 1) {
+        //     OccupiedPredClassrooms = [OccupiedPredClassrooms[0].classroom.toString()]
+        // }
+        // //nextClassrooms
+        // if (OccupiedNextClassrooms.length > 1){
+        //     OccupiedNextClassrooms = OccupiedNextClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
+        // }
+        // else if (OccupiedNextClassrooms.length === 1) {
+        //     OccupiedNextClassrooms = [OccupiedNextClassrooms[0].classroom.toString()]
+        // }
+        for ( let i =0 ; i < OccupiedPredClassrooms ; i++){
+            if (OccupiedPredClassrooms[i].sessions[0].endsAt > startsAt){
+                classrooms.filter((element) => OccupiedPredClassrooms[i].sessions[0].classroom.indexOf(element._id.toString()) === -1)
+            }
+        }
+        for ( let j=0 ; j < OccupiedNextClassrooms ; j++){
+            if (OccupiedNextClassrooms[i].sessions[0].startsAt < startsAt){
+                classrooms.filter((element) => OccupiedNextClassrooms[i].sessions[0].classroom.indexOf(element._id.toString()) === -1)
+            }
         }
         console.log(OccupiedClassrooms)
         if (!OccupiedClassrooms.length) {
