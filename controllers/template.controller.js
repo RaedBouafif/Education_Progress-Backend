@@ -43,21 +43,22 @@ exports.create = async (req, res) => {
 
 exports.addSessionToTemplate = async (req, res) => {
     try {
-        const { teacher, classroom, subject, group, day, startsAt, duration, sessionType, idTemplate } = req.body
-        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !endsAt || !sessionType || !idTemplate) {
+        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate } = req.body
+        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !duree || !sessionType || !idTemplate) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
         const session = await Session.create({
             teacher: teacher,
-            classroom: classroom,
-            subject: subject,
-            group: group,
-            day: day,
-            startsAt: startsAt,
-            endsAt: startsAt + duration,
-            sessionType: sessionType,
+            classroom:classroom,
+            subject :subject,
+            group : group,
+            day : day,
+            startsAt : startsAt,
+            endsAt : startsAt + duree,
+            sessionType : sessionType,
+            idTemplate: idTemplate
         })
         await session.save()
         if (session) {

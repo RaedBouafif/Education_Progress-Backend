@@ -145,13 +145,13 @@ exports.findAvailableClassroms = async (req,res) => {
                 error : "BadRequest"
             })
         }
-        const classrooms = await ClassroomModel.find({})
+        var classrooms = await ClassroomModel.find({})
         if(!classrooms){
             return res.status(400).send({
                 error : "NoClassrooms"
             })
         }
-        var OccupiedClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match : { startsAt : startsAt , endsAt : Number(duree)+ Number(startsAt) , day : day, collegeYear : collegeYear}})
+        var OccupiedClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match : { startsAt : startsAt, day : day, collegeYear : collegeYear}})
         var OccupiedPredClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match: { startsAt : { $lt : startsAt }}, options : { sort : {startsAt : -1} }})   
         var OccupiedNextClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match: { startsAt : { $gt : startsAt }}})   
 
@@ -179,14 +179,15 @@ exports.findAvailableClassroms = async (req,res) => {
         // else if (OccupiedNextClassrooms.length === 1) {
         //     OccupiedNextClassrooms = [OccupiedNextClassrooms[0].classroom.toString()]
         // }
-        for ( let i =0 ; i < OccupiedPredClassrooms ; i++){
-            if (OccupiedPredClassrooms[i].sessions[0].endsAt > startsAt){
-                classrooms.filter((element) => OccupiedPredClassrooms[i].sessions[0].classroom.indexOf(element._id.toString()) === -1)
+        for(let i=0 ; i < OccupiedPredClassrooms.length ; i++){
+            if (Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)){
+                console.log(1)
+                classrooms = classrooms.filter((element) => OccupiedPredClassrooms[i]?.sessions[0]?.classroom != element._id.toString())
             }
         }
-        for ( let j=0 ; j < OccupiedNextClassrooms ; j++){
-            if (OccupiedNextClassrooms[i].sessions[0].startsAt < startsAt){
-                classrooms.filter((element) => OccupiedNextClassrooms[i].sessions[0].classroom.indexOf(element._id.toString()) === -1)
+        for( let j=0 ; j < OccupiedNextClassrooms.length ; j++){
+            if (Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)){
+                classrooms = classrooms.filter((element) => OccupiedNextClassrooms[j]?.sessions[0]?.classroom != element._id.toString())
             }
         }
         console.log(OccupiedClassrooms)
