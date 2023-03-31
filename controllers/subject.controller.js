@@ -331,7 +331,7 @@ exports.findAvailableTeachers = async (req, res) => {
         } else {
             teachersOfTheSubject = teachersOfTheSubject.teachers
             var OccupiedTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, endsAt: duree+startsAt, day: day } })
+                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, day: day } })
             var OccupiedPredTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
                 .populate({ path: "sessions", match: { startsAt : { $lt : startsAt }}, options : { sort : {startsAt : -1}}})
             var OccupiedNextTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
@@ -343,14 +343,14 @@ exports.findAvailableTeachers = async (req, res) => {
             else if (OccupiedTeachers.length === 1) {
                 OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]
             }
-            for ( let i =0 ; i < OccupiedPredTeachers ; i++){
-                if (OccupiedPredTeachers[i].sessions[0].endsAt > startsAt){
-                    teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i].sessions[0].teacher.indexOf(element._id.toString()) === -1)
+            for ( let i =0 ; i < OccupiedPredTeachers.length ; i++){
+                if (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)){
+                    teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher != element._id.toString())
                 }
             }
-            for ( let j=0 ; j < OccupiedNextTeachers ; j++){
-                if (OccupiedNextTeachers[i].sessions[0].startsAt < startsAt){
-                    teachersOfTheSubject.filter((element) => OccupiedNextTeachers[i].sessions[0].teacher.indexOf(element._id.toString()) === -1)
+            for ( let j=0 ; j < OccupiedNextTeachers.length ; j++){
+                if (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)){
+                    teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher != element._id.toString())
                 }
             }
             console.log(teachersOfTheSubject)

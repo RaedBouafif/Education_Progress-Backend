@@ -92,7 +92,7 @@ exports.addSessionToTemplate = async (req, res) => {
 //update session
 exports.updateSessionFromTemplate = async (req, res) => {
     try {
-        const { sessionId, templateId, teacher, subject, classroom, sessionType } = req.body
+        const { sessionId, templateId, teacher, subject, classroom, sessionType, duree, startsAt } = req.body
         if (!sessionId || !templateId) {
             return res.status(400).send({
                 error: "BadRequest"
@@ -100,11 +100,13 @@ exports.updateSessionFromTemplate = async (req, res) => {
         }
         const session = await Session.findById(sessionId)
         if (session) {
-            if (session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType) {
+            if (session.endsAt != Number(duree) + Number(startsAt) || session.startsAt != startsAt || session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType) {
                 session.teacher = teacher
                 session.subject = subject
                 session.classroom = classroom
                 session.sessionType = sessionType
+                session.startsAt = startsAt
+                session.endsAt = Number(duree) + Number(startsAt)
                 await session.save()
                 const template = await Template.findById(templateId)
                     .populate("collegeYear")
