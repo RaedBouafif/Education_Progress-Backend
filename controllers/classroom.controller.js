@@ -140,7 +140,7 @@ exports.countDocsss = async (req, res) => {
 exports.findAvailableClassroms = async (req,res) => {
     try{
         const { startsAt, duree, day, collegeYear } = req.body
-        if (!startsAt || !endsAt || (!day && day != 0) || !collegeYear) {
+        if (!startsAt || !duree || (!day && day != 0) || !collegeYear) {
             return res.status(400).send({
                 error : "BadRequest"
             })
@@ -151,7 +151,7 @@ exports.findAvailableClassroms = async (req,res) => {
                 error : "NoClassrooms"
             })
         }
-        var OccupiedClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match : { startsAt : startsAt , endsAt : endsAt , day : day, collegeYear : collegeYear}})
+        var OccupiedClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match : { startsAt : startsAt , endsAt : Number(duree)+ Number(startsAt) , day : day, collegeYear : collegeYear}})
         var OccupiedPredClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match: { startsAt : { $lt : startsAt }}, options : { sort : {startsAt : -1} }})   
         var OccupiedNextClassrooms = await Template.find({collegeYear : collegeYear}, 'sessions').populate({ path : 'sessions', match: { startsAt : { $gt : startsAt }}})   
 
