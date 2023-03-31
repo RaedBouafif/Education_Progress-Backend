@@ -43,8 +43,8 @@ exports.create = async (req, res) => {
 
 exports.addSessionToTemplate = async (req, res) => {
     try {
-        const { teacher, classroom, subject, group, day, startsAt, duration, sessionType, idTemplate } = req.body
-        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !endsAt || !sessionType || !idTemplate) {
+        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate } = req.body
+        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !duree || !sessionType || !idTemplate) {
             return res.status(400).send({
                 error: "BadRequest"
             })
@@ -56,7 +56,7 @@ exports.addSessionToTemplate = async (req, res) => {
             group: group,
             day: day,
             startsAt: startsAt,
-            endsAt: startsAt + duration,
+            endsAt: Number(startsAt) + Number(duree),
             sessionType: sessionType,
         })
         await session.save()
@@ -90,49 +90,49 @@ exports.addSessionToTemplate = async (req, res) => {
 }
 
 //update session
-exports.updateSessionFromTemplate = async(req,res) => {
-    try{
-        const { sessionId, templateId , teacher, subject, classroom, sessionType} = req.body
-        if (!sessionId || !templateId){
+exports.updateSessionFromTemplate = async (req, res) => {
+    try {
+        const { sessionId, templateId, teacher, subject, classroom, sessionType } = req.body
+        if (!sessionId || !templateId) {
             return res.status(400).send({
-                error :"BadRequest"
+                error: "BadRequest"
             })
         }
         const session = await Session.findById(sessionId)
-        if (session){
-            if (session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType){
+        if (session) {
+            if (session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType) {
                 session.teacher = teacher
                 session.subject = subject
                 session.classroom = classroom
                 session.sessionType = sessionType
                 await session.save()
                 const template = await Template.findById(templateId)
-                .populate("collegeYear")
-                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
-                .populate("group")
-                if (!template){
+                    .populate("collegeYear")
+                    .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                    .populate("group")
+                if (!template) {
                     return res.status(400).send({
-                        error : "TemplateError"
+                        error: "TemplateError"
                     })
-                }else{
+                } else {
                     return res.status(200).send({
-                        template  
+                        template
                     })
                 }
-            }else{
+            } else {
                 return res.status(304).send({
-                    updated : false
+                    updated: false
                 })
             }
-        }else{
+        } else {
             return res.status(404).send({
-                message : "SessionNotFound"
+                message: "SessionNotFound"
             })
-        }  
-    }catch(e){
+        }
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }

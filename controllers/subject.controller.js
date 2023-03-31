@@ -316,8 +316,8 @@ exports.changeSubjectState = (req, res) => {
 exports.findAvailableTeachers = async (req, res) => {
     try {
         const subjectId = req.params.subjectId
-        const { startsAt, endsAt, day, collegeYear } = req.body
-        if (!startsAt || !endsAt || (!day && day != 0) || !collegeYear || !subjectId) {
+        const { startsAt, duree, day, collegeYear } = req.body
+        if (!startsAt || !duree || (!day && day != 0) || !collegeYear || !subjectId) {
             return res.status(400).send({
                 error: "BadRequest"
             })
@@ -331,13 +331,27 @@ exports.findAvailableTeachers = async (req, res) => {
         } else {
             teachersOfTheSubject = teachersOfTheSubject.teachers
             var OccupiedTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, endsAt: endsAt, day: day } })
+                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, endsAt: duree+startsAt, day: day } })
+            var OccupiedPredTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
+                .populate({ path: "sessions", match: { startsAt : { $lt : startsAt }}, options : { sort : {startsAt : -1}}})
+            var OccupiedNextTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
+                .populate({ path : 'sessions', match: { startsAt : { $gt : startsAt }}})  
             OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
             if (OccupiedTeachers.length > 1) {
                 OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
             }
             else if (OccupiedTeachers.length === 1) {
                 OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]
+            }
+            for ( let i =0 ; i < OccupiedPredTeachers ; i++){
+                if (OccupiedPredTeachers[i].sessions[0].endsAt > startsAt){
+                    teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i].sessions[0].teacher.indexOf(element._id.toString()) === -1)
+                }
+            }
+            for ( let j=0 ; j < OccupiedNextTeachers ; j++){
+                if (OccupiedNextTeachers[i].sessions[0].startsAt < startsAt){
+                    teachersOfTheSubject.filter((element) => OccupiedNextTeachers[i].sessions[0].teacher.indexOf(element._id.toString()) === -1)
+                }
             }
             console.log(teachersOfTheSubject)
             console.log(OccupiedTeachers)
