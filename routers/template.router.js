@@ -4,7 +4,8 @@ const {
     getTemplatesByGroupAndCollegeYear,
     getTemplatesByGroup,
     deleteSessionFromTemplate,
-    updateSessionFromTemplate
+    updateSessionFromTemplate,
+    getAvailableGroups
 } = require('../controllers/template.controller')
 const Router = require('express').Router()
 
@@ -14,6 +15,7 @@ Router.route("/updateSession").post(updateSessionFromTemplate)
 Router.route("/deleteSession/:templateId/:sessionId").delete(deleteSessionFromTemplate)
 Router.route("/getAll").get(getTemplatesByGroupAndCollegeYear)
 Router.route("/getAllByGroup").post(getTemplatesByGroup)
+Router.route("/availableGroups/:collegeYear/:section/:day/:startsAt/:duration").get(getAvailableGroups)
 
 module.exports = Router
 

@@ -59,8 +59,8 @@ const Session = Schema(
                 studentName: {
                     type: String
                 },
-                description : {
-                    type : String
+                description: {
+                    type: String
                 },
                 justifiedReports: {
                     type: Boolean,
@@ -88,13 +88,13 @@ const Session = Schema(
             type: Boolean,
             default: false
         },
-        delaid : {
+        delaid: {
             type: Boolean,
             default: false
         },
-        duration : {
-            type : Number,
-            dafault : 1
+        duration: {
+            type: Number,
+            dafault: 1
         }
     },
     {
@@ -107,12 +107,6 @@ Session.statics.getDistinctLatestSessionTemplate = async function (group, catego
     return await this.aggregate([
         { $sort: { "createdAt": -1 } },
         { $match: { group: new Types.ObjectId(group), sessionCategorie: categorie } },
-        // to project the docs ( if i need all the data)
-        // {
-        //     $project: {
-        //         docs: 1
-        //     }
-        // }
         {
             $group: {
                 _id: { day: "$day", startsAt: "$startsAt" },
@@ -126,8 +120,6 @@ Session.statics.getDistinctLatestSessionTemplate = async function (group, catego
         }
     ])
 }
-
-Session.index({ classroom: 1, day: 1, startsAt: 1} , {unique : true})
 
 module.exports = model("Session", Session)
 
