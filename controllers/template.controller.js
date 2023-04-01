@@ -100,7 +100,7 @@ exports.updateSessionFromTemplate = async(req,res) => {
         const { sessionId, templateId , teacher, subject, classroom, sessionType, initialSubGroup} = req.body
         if (!sessionId || !templateId){
             return res.status(400).send({
-                error :"BadRequest"
+                error: "BadRequest"
             })
         }
         if (!initialSubGroup){
@@ -116,32 +116,32 @@ exports.updateSessionFromTemplate = async(req,res) => {
                 session.initialSubGroup = initialSubGroup
                 await session.save()
                 const template = await Template.findById(templateId)
-                .populate("collegeYear")
-                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
-                .populate("group")
-                if (!template){
+                    .populate("collegeYear")
+                    .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                    .populate("group")
+                if (!template) {
                     return res.status(400).send({
-                        error : "TemplateError"
+                        error: "TemplateError"
                     })
-                }else{
+                } else {
                     return res.status(200).send({
-                        template  
+                        template
                     })
                 }
-            }else{
+            } else {
                 return res.status(304).send({
-                    updated : false
+                    updated: false
                 })
             }
-        }else{
+        } else {
             return res.status(404).send({
-                message : "SessionNotFound"
+                message: "SessionNotFound"
             })
-        }  
-    }catch(e){
+        }
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
