@@ -43,8 +43,8 @@ exports.create = async (req, res) => {
 
 exports.addSessionToTemplate = async (req, res) => {
     try {
-        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate } = req.body
-        if (!teacher || !classroom || !subject || !group || !day || !startsAt || !duree || !sessionType || !idTemplate) {
+        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate, otherGroups } = req.body
+        if (!teacher || !classroom || !subject || !group || (!day && day != 0) || !startsAt || !duree || !sessionType || !idTemplate) {
             return res.status(400).send({
                 error: "BadRequest"
             })
@@ -60,6 +60,24 @@ exports.addSessionToTemplate = async (req, res) => {
             sessionType: sessionType,
         })
         await session.save()
+        if (otherGroups.length) {
+            for (const element of otherGroups) {
+                var otherSession = await Session.create({
+                    teacher: teacher,
+                    classroom: classroom,
+                    subject: subject,
+                    group: element,
+                    day: day,
+                    startsAt: startsAt,
+                    endsAt: Number(startsAt) + Number(duree),
+                    sessionType: sessionType,
+                })
+                await otherSession.save()
+                if (otherSession) {
+                    await Template.findOneAndUpdate({ group: element }, { $push: { sessions: otherSession._id } }, { new: true, runValidators: true })
+                }
+            }
+        }
         if (session) {
             const updatedPlanning = await Template.findByIdAndUpdate(idTemplate, { $push: { sessions: session._id } }, { new: true, runValidators: true })
                 .populate("collegeYear")
@@ -83,6 +101,7 @@ exports.addSessionToTemplate = async (req, res) => {
             })
         }
     } catch (e) {
+        console.log(e)
         return res.status(500).send({
             error: "Server Error"
         })
