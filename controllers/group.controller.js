@@ -1,5 +1,6 @@
 const GroupModel = require("../models/group.model");
 const StudentModel = require("../models/Users/student.model")
+const TemplateModel = require("../models/template.model")
 const { Types } = require('mongoose')
 exports.create = async (req, res) => {
     try {
@@ -12,14 +13,18 @@ exports.create = async (req, res) => {
         });
         group = await group.save()
         group = await GroupModel.populate(group, { path: "section" })
-        console.log(group)
+
+        const template = await TemplateModel.create({
+            group: group._id,
+            collegeYear: collegeYear,
+        })
+        await template.save()
         if (req.body.students) {
             req.body.students = req.body.students.split(',')
             req.body.students.forEach(async (element) => {
                 await StudentModel.findByIdAndUpdate(Types.ObjectId(element), { group: group._id }, { runValidators: true, new: true })
             })
         }
-        console.log(group)
         return res.status(201).json(group);
     } catch (e) {
         console.log(e);
