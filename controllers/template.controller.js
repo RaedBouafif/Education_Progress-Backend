@@ -271,7 +271,8 @@ exports.getListOfTeachers = async (req,res) =>{
                 error :"BadRequest"
             })
         }
-        var listOfTeachers = await Section.findById(Types.ObjectId(idSection), "subjects")
+        console.log(idSection)
+        var listOfTeachers = await Section.findById(idSection, "subjects")
         .populate(
         { 
             path : "subjects",
