@@ -297,3 +297,30 @@ exports.getListOfTeachers = async (req,res) =>{
         })
     }
 }
+
+
+exports.getAvailableGroups = async (req, res) => {
+    try {
+        var { section, startsAt, duration, collegeYear, day } = req.params
+        startsAt = startsAt ? Number(startsAt) : null
+        duration = duration ? Number(duration) : null
+        const endsAt = startsAt + duration
+        console.log(startsAt, " ", endsAt)
+        var groups = await GroupModel.find({ section, collegeYear })
+        var templates = await Template.find({ group: { $in: groups.map((element) => element._id) } }).populate("sessions")
+        templates = templates.filter((element) => element.sessions)
+        var sessions = []
+        templates.forEach((element) => {
+            sessions = [...sessions, ...element.sessions]
+        })
+        const unavaiblableGroups = sessions.filter((element) => (day == element.day) && ((Number(element.startsAt) >= startsAt && Number(element.startsAt) < endsAt) || (Number(element.endsAt) <= endsAt && Number(element.endsAt) > startsAt) || (Number(element.startsAt) <= startsAt && Number(element.endsAt) >= endsAt))).map((element) => element.group.toString())
+        groups = groups ? groups.filter((element) => unavaiblableGroups.indexOf(element._id.toString()) === -1) : []
+        console.log(unavaiblableGroups)
+        return res.status(200).json(groups)
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
