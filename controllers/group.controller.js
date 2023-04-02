@@ -16,7 +16,7 @@ exports.create = async (req, res) => {
 
         const template = await TemplateModel.create({
             group: group._id,
-            collegeYear: collegeYear,
+            collegeYear: req.body.collegeYear,
         })
         await template.save()
         if (req.body.students) {

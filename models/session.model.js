@@ -92,9 +92,14 @@ const Session = Schema(
             type: Boolean,
             default: false
         },
-        duration: {
-            type: Number,
-            dafault: 1
+        duration : {
+            type : Number,
+            dafault : 1
+        },
+        initialSubGroup : {
+            type : String,
+            required: [true, "sessionTypeRequired"],
+            enum : ['G1','G2','All']
         }
     },
     {
@@ -120,6 +125,8 @@ Session.statics.getDistinctLatestSessionTemplate = async function (group, catego
         }
     ])
 }
+
+// Session.index({ classroom: 1, day: 1, startsAt: 1} , {unique : true})
 
 module.exports = model("Session", Session)
 

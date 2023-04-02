@@ -1,12 +1,15 @@
 const Template = require("../models/template.model")
 const Session = require("../models/session.model")
-const section = require("../models/collegeYear.model")
+const Section = require("../models/section.model")
 const Semester = require("../models/semester.model")
 const CollegeYearModel = require("../models/collegeYear.model")
 const GroupModel = require("../models/group.model")
 const SessionModel = require("../models/session.model")
 const { Types } = require("mongoose")
 const PlanningModel = require("../models/Planning.model")
+const Teacher = require("../models/Users/teacher.model")
+const Subject = require("../models/subject.model")
+const { ListCollectionsCursor } = require("mongodb")
 
 
 exports.create = async (req, res) => {
@@ -43,7 +46,7 @@ exports.create = async (req, res) => {
 
 exports.addSessionToTemplate = async (req, res) => {
     try {
-        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate, otherGroups } = req.body
+        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate, initialSubGroup, otherGroups } = req.body
         if (!teacher || !classroom || !subject || !group || (!day && day != 0) || !startsAt || !duree || !sessionType || !idTemplate) {
             return res.status(400).send({
                 error: "BadRequest"
@@ -56,11 +59,13 @@ exports.addSessionToTemplate = async (req, res) => {
             group: group,
             day: day,
             startsAt: startsAt,
-            endsAt: Number(startsAt) + Number(duree),
+            endsAt: startsAt + duree,
             sessionType: sessionType,
+            idTemplate: idTemplate,
+            initialSubGroup: initialSubGroup || "All"
         })
         await session.save()
-        if (otherGroups.length) {
+        if (otherGroups?.length) {
             for (const element of otherGroups) {
                 var otherSession = await Session.create({
                     teacher: teacher,
@@ -71,6 +76,7 @@ exports.addSessionToTemplate = async (req, res) => {
                     startsAt: startsAt,
                     endsAt: Number(startsAt) + Number(duree),
                     sessionType: sessionType,
+                    initialSubGroup: initialSubGroup || "All"
                 })
                 await otherSession.save()
                 if (otherSession) {
@@ -111,21 +117,23 @@ exports.addSessionToTemplate = async (req, res) => {
 //update session
 exports.updateSessionFromTemplate = async (req, res) => {
     try {
-        const { sessionId, templateId, teacher, subject, classroom, sessionType, duree, startsAt } = req.body
+        const { sessionId, templateId, teacher, subject, classroom, sessionType, initialSubGroup } = req.body
         if (!sessionId || !templateId) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
+        if (!initialSubGroup) {
+            initialSubGroup = "All"
+        }
         const session = await Session.findById(sessionId)
         if (session) {
-            if (session.endsAt != Number(duree) + Number(startsAt) || session.startsAt != startsAt || session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType) {
+            if (session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup) {
                 session.teacher = teacher
                 session.subject = subject
                 session.classroom = classroom
                 session.sessionType = sessionType
-                session.startsAt = startsAt
-                session.endsAt = Number(duree) + Number(startsAt)
+                session.initialSubGroup = initialSubGroup
                 await session.save()
                 const template = await Template.findById(templateId)
                     .populate("collegeYear")
@@ -165,7 +173,7 @@ exports.deleteSessionFromTemplate = async (req, res) => {
         if (template) {
             console.log(template?.sessions)
             if (template?.sessions?.find((element) => element._id.toString() === sessionId)) {
-                template.sessions = template.sessions.filter((element) => element._id.toString() !== sessionId)
+                template.sessions = template.sessions.filter((element) => element.toString() !== sessionId)
                 await template.save()
                 await Session.findByIdAndDelete(sessionId)
                 return res.status(200).json({ deleted: true })
@@ -241,6 +249,72 @@ exports.getTemplatesByGroup = async (req, res) => {
     } catch (e) {
         return res.status(500).send({
             return: "Server Error"
+        })
+    }
+}
+
+
+//get teacher Template
+exports.getTeacherTemplate = async (req, res) => {
+    try {
+        const collegeYear = req.params.collegeYear
+        const idTeacher = req.params.idTeacher
+        if (!idTeacher || !collegeYear) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        const templates = await Template.find({ collegeYear: collegeYear }, "sessions").populate({ path: "sessions", match: { teacher: idTeacher } })
+        if (templates) {
+            teacherTemplate = templates?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? templates?.filter((element) => Array.isArray(element.sessions)) : []
+            teacherTemplate = teacherTemplate.filter(element => element.sessions.length != 0)
+            return res.status(200).send(teacherTemplate)
+        } else {
+            return res.status(404).send({
+                error: "TemplateNotFound"
+            })
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+//get list of Teachers par section
+exports.getListOfTeachers = async (req, res) => {
+    try {
+        const idSection = req.params.idSection
+        if (!idSection) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        console.log(idSection)
+        var listOfTeachers = await Section.findById(idSection, "subjects")
+            .populate(
+                {
+                    path: "subjects",
+                    select: { subjectName: 0, active: 0, active: 0, description: 0, image: 0 },
+                    populate: { path: "teachers", select: { password: 0, email: 0, tel: 0, gender: 0, maritalStatus: 0, subjects: 0, image: 0, adresse: 0, birth: 0 } }
+                })
+        if (listOfTeachers) {
+            listOfTeachers = listOfTeachers.subjects
+            const finalTeachers = listOfTeachers.flatMap((subject) => subject.teachers);
+            const uniqueTeachers = [...new Set(finalTeachers.map((teacher) => teacher._id))].map(
+                (_id) => finalTeachers.find((teacher) => teacher._id === _id)
+            );
+            return res.status(200).send(uniqueTeachers)
+        } else {
+            return res.status(404).send({
+                error: "SectionNotFound",
+            })
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
         })
     }
 }
