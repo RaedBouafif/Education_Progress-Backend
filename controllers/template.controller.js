@@ -268,7 +268,8 @@ exports.getTeacherTemplate = async (req, res) => {
         if (templates) {
             teacherTemplate = templates?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? templates?.filter((element) => Array.isArray(element.sessions)) : []
             teacherTemplate = teacherTemplate.filter(element => element.sessions.length != 0)
-            return res.status(200).send(teacherTemplate)
+            const sessions = templates.flatMap(teacherTemplate => teacherTemplate.sessions);
+            return res.status(200).send(sessions)
         } else {
             return res.status(404).send({
                 error: "TemplateNotFound"
