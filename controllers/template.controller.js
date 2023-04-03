@@ -117,7 +117,7 @@ exports.addSessionToTemplate = async (req, res) => {
 //update session
 exports.updateSessionFromTemplate = async (req, res) => {
     try {
-        const { sessionId, templateId, teacher, subject, classroom, sessionType, initialSubGroup } = req.body
+        const { sessionId, templateId, teacher, subject, classroom, startsAt, duree, sessionType, initialSubGroup, } = req.body
         if (!sessionId || !templateId) {
             return res.status(400).send({
                 error: "BadRequest"
@@ -128,12 +128,14 @@ exports.updateSessionFromTemplate = async (req, res) => {
         }
         const session = await Session.findById(sessionId)
         if (session) {
-            if (session.teacher != teacher || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup) {
+            if (session.teacher != teacher || startsAt != session.startsAt || session.endsAt != (Number(duree) + Number(startsAt)) || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup) {
                 session.teacher = teacher
                 session.subject = subject
                 session.classroom = classroom
                 session.sessionType = sessionType
                 session.initialSubGroup = initialSubGroup
+                session.startsAt = startsAt
+                session.endsAt = (Number(duree) + Number(startsAt))
                 await session.save()
                 const template = await Template.findById(templateId)
                     .populate("collegeYear")
@@ -264,7 +266,7 @@ exports.getTeacherTemplate = async (req, res) => {
                 error: "BadRequest"
             })
         }
-        const templates = await Template.find({ collegeYear: collegeYear }, "sessions").populate({ path: "sessions", match: { teacher: idTeacher } })
+        const templates = await Template.find({ collegeYear: collegeYear }, "sessions").populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "group", populate: { path: "section" } }, { path: "teacher", select: { password: 0 } }, { path: "classroom" }] })
         if (templates) {
             teacherTemplate = templates?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? templates?.filter((element) => Array.isArray(element.sessions)) : []
             teacherTemplate = teacherTemplate.filter(element => element.sessions.length != 0)
