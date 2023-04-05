@@ -46,7 +46,7 @@ exports.create = async (req, res) => {
 
 exports.addSessionToTemplate = async (req, res) => {
     try {
-        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate, initialSubGroup, otherGroups } = req.body
+        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, idTemplate, initialSubGroup, otherGroups, createdBy } = req.body
         if (!teacher || !classroom || !subject || !group || (!day && day != 0) || !startsAt || !duree || !sessionType || !idTemplate) {
             return res.status(400).send({
                 error: "BadRequest"
@@ -61,8 +61,8 @@ exports.addSessionToTemplate = async (req, res) => {
             startsAt: startsAt,
             endsAt: startsAt + duree,
             sessionType: sessionType,
-            idTemplate: idTemplate,
-            initialSubGroup: initialSubGroup || "All"
+            initialSubGroup: initialSubGroup || "All",
+            createdBy : createdBy || null
         })
         await session.save()
         if (otherGroups?.length) {

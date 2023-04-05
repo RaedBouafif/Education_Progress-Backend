@@ -1,33 +1,35 @@
 const {
     create,
-    getAll,
-    getById,
-    deleteById,
-    update,
-    createInitialTemplate,
-    createOneSession,
-    getTemplate,
-    getPlanning,
-    refreshPlanning
+    getPlanningByWeek,
+    getPlanningByNextWeek,
+    getPlanningByPredWeek,
+    getCurrentPlanning,
+    addSessionToPlanning,
+    updateSessionFromPlanning,
+    deleteSessionFromPlanning,
+    switchSessionsFromPlanning
 } = require("../controllers/planning.controller");
 
 const Router = require("express").Router();
 
 //---POST---//
 Router.route("/create").post(create);
-// Router.route("/createTemp").post(createInitialTemplate);
-// Router.route("/test").post(createOneSession);
+Router.route("/addSession").post(addSessionToPlanning)
+Router.route("/updateSession").post(updateSessionFromPlanning)
+Router.route("/switchSessions").post(switchSessionsFromPlanning)
+
 
 //---GET---//
-// Router.route("/getAll").get(getAll);
-// Router.route("/getById/:planningId").get(getById);
-// Router.route("/getTemplate/:groupId").get(getTemplate);
-// Router.route("/refreshPlanning/:week/:groupId/:semesterId").get(refreshPlanning)
-// Router.route("/getPlanning/:week/:groupId/:semesterId").get(getPlanning);
+Router.route("/getByWeek/:collegeYear/:group/:week").get(getPlanningByWeek)
+Router.route("/getNextWeek/:collegeYear/:group/:week").get(getPlanningByNextWeek)
+Router.route("/getPredWeek/:collegeYear/:group/:week").get(getPlanningByPredWeek)
+Router.route("/getCurrentWeek/:collegeYear/:group").get(getCurrentPlanning)
+
 
 //---DELETE---//*
 // Router.route("/deleteById/:planningId").delete(deleteById);
+Router.route("/deleteSession/:planningId/:sessionId").delete(deleteSessionFromPlanning)
 
 //---UPDATE---//
-// Router.route("/update/:planningId").put(update);
+
 module.exports = Router;
