@@ -253,7 +253,7 @@ exports.getCurrentPlanning = async (req,res) => {
     const group = req.params.group
     // need to send the date of today and return the week equals to our current day
     try{
-        if (group || !collegeYear){
+        if (!group || !collegeYear){
             return res.status(400).send({
                 error : "BadRequest"
             })
@@ -261,21 +261,18 @@ exports.getCurrentPlanning = async (req,res) => {
         const year = await CollegeYear.findById(collegeYear).populate({path : "semesters" , select : { dateBegin : 1, dateEnd : 1, name : 1}, options: { sort : { dateBegin : 1}}})
         if (year){
             var numberTotalOfWeeks = 0
-            var infos = null
+            var infos =  []
             for ( let i=0 ; i < year.semesters.length ; i++){
-                var currentSemester = year.semesters[i]
-                let currentDateEnd =  currentSemester.dateEnd.split('T')[0]
-                let currentDateBegin = currentSemester.dateBegin.split('T')[0]
+                let currentSemester = year.semesters[i]
+                console.log(currentSemester)
+                let currentDateEnd =  currentSemester.dateEnd
+                let currentDateBegin = currentSemester.dateBegin
                 let numberOfWeeks = Math.floor(Math.abs(currentDateEnd-currentDateBegin) / ( 1000 * 60 * 60 * 24 * 7))
-                if (i == 0 ){
-                    dateBeginSem1 = currentDateBegin
-                    dateEndSem1 = currentDateEnd
-                }
-                infos = infos.push({semester : currentSemester.name , numberOfWeeks : numberOfWeeks , dateBegin : currentDateBegin , dateEnd: currentDateEnd})
+                infos.push({semester : currentSemester.name , numberOfWeeks : numberOfWeeks , dateBegin : currentDateBegin , dateEnd: currentDateEnd})
                 numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks   
             }
              // this will always return week number 1 
-            const planning = Planning.findOne({ group : group , collegeYear: collegeYear , week : 1}).sort({createdAt : -1})
+            const planning = await Planning.findOne({ group : group , collegeYear: collegeYear , week : 1}).sort({createdAt : -1})
             .populate({ path : "group", populate : { path : "section"}})
             .populate("collegeYear")
             .populate({ path : "sessions" , populate : [{ path : "teacher" , select : { password : 0}}, { path: "subject" }, { path: "classroom" }]})
@@ -285,14 +282,13 @@ exports.getCurrentPlanning = async (req,res) => {
                 })
             }
             return res.status(200).send({
-                planning : planning,
+                planning,
                 initialSemester : year.semesters[0].name,
-                numberTotalOfWeeks : numberTotalOfWeeks,
+                numberTotalOfWeeks,
                 infos
-
             })
         }else {
-            return res.startus(404).send({
+            return res.status(404).send({
                 error : "College Year with id : " +collegeYear+ "NotFound"
             })
         }
