@@ -7,7 +7,8 @@ const {
     addSessionToPlanning,
     updateSessionFromPlanning,
     deleteSessionFromPlanning,
-    switchSessionsFromPlanning
+    switchSessionsFromPlanning,
+    test
 } = require("../controllers/planning.controller");
 
 const Router = require("express").Router();
@@ -17,6 +18,7 @@ Router.route("/create").post(create);
 Router.route("/addSession").post(addSessionToPlanning)
 Router.route("/updateSession").post(updateSessionFromPlanning)
 Router.route("/switchSessions").post(switchSessionsFromPlanning)
+Router.route("/test").post(test)
 
 
 //---GET---//
