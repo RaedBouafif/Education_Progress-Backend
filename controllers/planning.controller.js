@@ -6,102 +6,102 @@ const CollegeYear = require("../models/collegeYear.model")
 const Group = require("../models/group.model")
 const Template = require("../models/template.model")
 const Teacher = require("../models/Users/teacher.model")
+const Subject = require("../models/subject.model")
+const Classroom = require("../models/classroom.model")
 const { Types } = require("mongoose")
 
 
 // création de template
-exports.create = async (req,res) => {
-    try{
+exports.create = async (req, res) => {
+    try {
         const { group, collegeYear } = req.body
-        if (!group || !collegeYear ){
+        if (!group || !collegeYear) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const globalTemplate = await Template.findOne({group : group, collegeYear : collegeYear}).populate({ path : "sessions" })
-        if (globalTemplate){
-            const year = await CollegeYear.findById(collegeYear).populate({path : "semesters" , select : { dateBegin : 1, dateEnd : 1, name : 1}, options: { sort : { dateBegin : 1}}})
-            if (year){
+        const globalTemplate = await Template.findOne({ group: group, collegeYear: collegeYear }).populate({ path: "sessions" })
+        if (globalTemplate) {
+            const year = await CollegeYear.findById(collegeYear).populate({ path: "semesters", select: { dateBegin: 1, dateEnd: 1, name: 1 }, options: { sort: { dateBegin: 1 } } })
+            if (year) {
                 var numberTotalOfWeeks = 0
-                var infos = null
+                var infos = []
                 var returnedPlanning = null
-                for ( let i=0 ; i < year.semesters.length ; i++){
+                for (let i = 0; i < year.semesters.length; i++) {
                     var currentSemester = year.semesters[i]
-                    let currentDateEnd =  currentSemester.dateEnd.split('T')[0]
-                    let currentDateBegin = currentSemester.dateBegin.split('T')[0]
-                    let numberOfWeeks = Math.floor(Math.abs(currentDateEnd-currentDateBegin) / ( 1000 * 60 * 60 * 24 * 7))
-                    if (i == 0 ){
-                        dateBeginSem1 = currentDateBegin
-                        dateEndSem1 = currentDateEnd
-                    }
-                    infos = infos.push({semester : currentSemester.name , numberOfWeeks : numberOfWeeks , dateBegin : currentDateBegin , dateEnd: currentDateEnd})
-                    numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks   
+                    let currentDateEnd = currentSemester.dateEnd
+                    let currentDateBegin = currentSemester.dateBegin
+                    let numberOfWeeks = Math.floor(Math.abs(currentDateEnd - currentDateBegin) / (1000 * 60 * 60 * 24 * 7))
+                    infos.push({ semester: currentSemester.name, numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd })
+                    numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks
                 }
-                for( let j = 0 ; j < numberTotalOfWeeks ; j++){
+                for (let j = 0; j < numberTotalOfWeeks; j++) {
                     var newSessions = []
-                    for ( let x = 0 ; x < globalTemplate.sessions.length ; x++){
+                    for (let x = 0; x < globalTemplate.sessions.length; x++) {
                         let currentSession = globalTemplate.sessions[x]
                         var newSession = await Session.create({
-                            teacher : currentSession.teacher,
-                            classroom : currentSession.classroom,
-                            subject : currentSession.subject,
-                            group : currentSession.group,
-                            day : currentSession.day,
-                            startsAt : currentSession.startsAt,
-                            endsAt : currentSession.endsAt,
+                            teacher: currentSession.teacher,
+                            classroom: currentSession.classroom,
+                            subject: currentSession.subject,
+                            group: currentSession.group,
+                            day: currentSession.day,
+                            startsAt: currentSession.startsAt,
+                            endsAt: currentSession.endsAt,
                             startedAt: currentSession.startedAt,
                             endedAt: currentSession.endedAt,
-                            sessionType : currentSession.sessionType,
-                            active : currentSession.active,
-                            initialSubGroup : currentSession.initialSubGroup    
+                            sessionType: currentSession.sessionType,
+                            active: currentSession.active,
+                            initialSubGroup: currentSession.initialSubGroup
                         })
                         await newSession.save()
                         newSessions.push(newSession)
                     }
                     var planning = await Planning.create({
-                        week : j+1,
-                        group : group,
-                        collegeYear : collegeYear,
-                        sessions : newSessions,
-                        active : true
+                        week: j + 1,
+                        group: group,
+                        collegeYear: collegeYear,
+                        sessions: newSessions,
+                        active: true
                     })
 
-                    await planning.save()   
-                    if (planning.week == 1){
+                    await planning.save()
+                    if (planning.week == 1) {
                         returnedPlanning = await Planning.populate(planning, [
-                            { path : "group" , populate : {path : "section"}},
-                            { path : "collegeYear" },
-                            { path : "sessions" , populate : [
-                                {path : "teacher" , select : { password : 0}},
-                                {path : "subject" , select : { image : 0}},
-                                {path : "classroom"}
-                            ]}
+                            { path: "group", populate: { path: "section" } },
+                            { path: "collegeYear" },
+                            {
+                                path: "sessions", populate: [
+                                    { path: "teacher", select: { password: 0 } },
+                                    { path: "subject", select: { image: 0 } },
+                                    { path: "classroom" }
+                                ]
+                            }
                         ])
-                    }              
+                    }
                 }
-                if (returnedPlanning && infos){
+                if (returnedPlanning && infos.length) {
                     return res.status(200).send({
-                        planning : returnedPlanning,
-                        initialSemester : year.semesters[0].name,
-                        numberTotalOfWeeks : numberTotalOfWeeks,
+                        planning: returnedPlanning,
+                        initialSemester: year.semesters[0].name,
+                        numberTotalOfWeeks: numberTotalOfWeeks,
                         infos
                     })
-                }else{
+                } else {
                     return res.status(400).send({
-                        error : "Some Error occured"
+                        error: "Some Error occured"
                     })
                 }
-            }else{
+            } else {
                 return res.status(404).send({
-                    error : "CollegeYearNotFound" 
+                    error: "CollegeYearNotFound"
                 })
             }
-        }else{
+        } else {
             return res.status(404).send({
-                error : "TemplateNotFound"
+                error: "TemplateNotFound"
             })
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
         if (e.code === 11000) {
             return res.status(409).send({
@@ -109,7 +109,7 @@ exports.create = async (req,res) => {
             })
         }
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
@@ -161,157 +161,152 @@ exports.create = async (req,res) => {
 
 
 //get planning by week
-exports.getPlanningByWeek = async (req,res) => {
+exports.getPlanningByWeek = async (req, res) => {
     const collegeYear = req.params.collegeYear
     const group = req.params.group
     const week = req.params.week
-    try{
-        if (!week || !group || !collegeYear){
+    try {
+        if (!week || !group || !collegeYear) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const planning = Planning.findOne({ group : group , collegeYear: collegeYear , week : week}).sort({createdAt : -1})
-        .populate({ path : "group", populate : { path : "section"}})
-        .populate("collegeYear")
-        .populate({ path : "sessions" , populate : [{ path : "teacher" , select : { password : 0}}, { path: "subject" }, { path: "classroom" }]})
-        if (!planning){
+        const planning = Planning.findOne({ group: group, collegeYear: collegeYear, week: week }).sort({ createdAt: -1 })
+            .populate({ path: "group", populate: { path: "section" } })
+            .populate("collegeYear")
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+        if (!planning) {
             return res.status(404).send({
-                message : "PlannigNotFound"
+                message: "PlannigNotFound"
             })
         }
         return res.status(200).send(planning)
-    }catch(e) {
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
 
 //get planning by next week
-exports.getPlanningByNextWeek = async (req,res) => {
+exports.getPlanningByNextWeek = async (req, res) => {
     const collegeYear = req.params.collegeYear
     const group = req.params.group
     const week = req.params.week
-    try{
-        if (!week || !group || !collegeYear){
+    try {
+        if (!week || !group || !collegeYear) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const planning = Planning.findOne({ group : group , collegeYear: collegeYear , week : Number(week) + 1}).sort({createdAt : -1})
-        .populate({ path : "group", populate : { path : "section"}})
-        .populate("collegeYear")
-        .populate({ path : "sessions" , populate : [{ path : "teacher" , select : { password : 0}}, { path: "subject" }, { path: "classroom" }]})
-        if (!planning){
+        const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) + 1 }).sort({ createdAt: -1 })
+            .populate({ path: "group", populate: { path: "section" } })
+            .populate("collegeYear")
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+        if (!planning) {
             return res.status(404).send({
-                message : "PlannigNotFound"
+                message: "PlannigNotFound"
             })
         }
         return res.status(200).send(planning)
-    }catch(e) {
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
 
 //get Planning by pred week
-exports.getPlanningByPredWeek = async (req,res) => {
+exports.getPlanningByPredWeek = async (req, res) => {
     const collegeYear = req.params.collegeYear
     const group = req.params.group
     const week = req.params.week
-    try{
-        if (!week || !group || !collegeYear){
+    try {
+        if (!week || !group || !collegeYear) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const planning = Planning.findOne({ group : group , collegeYear: collegeYear , week : Number(week) - 1}).sort({createdAt : -1})
-        .populate({ path : "group", populate : { path : "section"}})
-        .populate("collegeYear")
-        .populate({ path : "sessions" , populate : [{ path : "teacher" , select : { password : 0}}, { path: "subject" }, { path: "classroom" }]})
-        if (!planning){
+        const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) - 1 }).sort({ createdAt: -1 })
+            .populate({ path: "group", populate: { path: "section" } })
+            .populate("collegeYear")
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+        if (!planning) {
             return res.status(404).send({
-                message : "PlannigNotFound"
+                message: "PlannigNotFound"
             })
         }
         return res.status(200).send(planning)
-    }catch(e) {
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
 
 //get current Planning this returns also the information of weeks
-exports.getCurrentPlanning = async (req,res) => {
+exports.getCurrentPlanning = async (req, res) => {
     const collegeYear = req.params.collegeYear
     const group = req.params.group
     // need to send the date of today and return the week equals to our current day
-    try{
-        if (group || !collegeYear){
+    try {
+        if (!group || !collegeYear) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const year = await CollegeYear.findById(collegeYear).populate({path : "semesters" , select : { dateBegin : 1, dateEnd : 1, name : 1}, options: { sort : { dateBegin : 1}}})
-        if (year){
+        const year = await CollegeYear.findById(collegeYear).populate({ path: "semesters", select: { dateBegin: 1, dateEnd: 1, name: 1 }, options: { sort: { dateBegin: 1 } } })
+        if (year) {
             var numberTotalOfWeeks = 0
-            var infos = null
-            for ( let i=0 ; i < year.semesters.length ; i++){
+            var infos = []
+            for (let i = 0; i < year.semesters.length; i++) {
                 var currentSemester = year.semesters[i]
-                let currentDateEnd =  currentSemester.dateEnd.split('T')[0]
-                let currentDateBegin = currentSemester.dateBegin.split('T')[0]
-                let numberOfWeeks = Math.floor(Math.abs(currentDateEnd-currentDateBegin) / ( 1000 * 60 * 60 * 24 * 7))
-                if (i == 0 ){
-                    dateBeginSem1 = currentDateBegin
-                    dateEndSem1 = currentDateEnd
-                }
-                infos = infos.push({semester : currentSemester.name , numberOfWeeks : numberOfWeeks , dateBegin : currentDateBegin , dateEnd: currentDateEnd})
-                numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks   
+                let currentDateEnd = currentSemester.dateEnd
+                let currentDateBegin = currentSemester.dateBegin
+                let numberOfWeeks = Math.floor(Math.abs(currentDateEnd - currentDateBegin) / (1000 * 60 * 60 * 24 * 7))
+                infos.push({ semester: currentSemester.name, numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd })
+                numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks
             }
-             // this will always return week number 1 
-            const planning = Planning.findOne({ group : group , collegeYear: collegeYear , week : 1}).sort({createdAt : -1})
-            .populate({ path : "group", populate : { path : "section"}})
-            .populate("collegeYear")
-            .populate({ path : "sessions" , populate : [{ path : "teacher" , select : { password : 0}}, { path: "subject" }, { path: "classroom" }]})
-            if (!planning){
-                return res.status(404).send({
-                    message : "PlannigNotFound"
+            // this will always return week number 1 
+            const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
+                .populate({ path: "group", populate: { path: "section" } })
+                .populate("collegeYear")
+                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+            if (!planning) {
+                return res.status(404).json({
+                    message: "PlannigNotFound"
                 })
             }
-            return res.status(200).send({
-                planning : planning,
-                initialSemester : year.semesters[0].name,
-                numberTotalOfWeeks : numberTotalOfWeeks,
+            return res.status(200).json({
+                planning,
+                initialSemester: year.semesters[0].name,
+                numberTotalOfWeeks: numberTotalOfWeeks,
                 infos
-
             })
-        }else {
-            return res.startus(404).send({
-                error : "College Year with id : " +collegeYear+ "NotFound"
+        } else {
+            return res.status(404).json({
+                error: "College Year with id : " + collegeYear + "NotFound"
             })
         }
-    }catch(e) {
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
 
 
 // add session to Planning
-exports.addSessionToPlanning = async (req,res) =>{
-    try{
+exports.addSessionToPlanning = async (req, res) => {
+    try {
         const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, WeeksDuration, initialSubGroup, otherGroups, idPlanning, createdBy, collegeYear } = req.body
-        if ( !teacher || !classroom || !subject || !group || (!day && day != 0) || !startsAt || !duree || !sessionType || !idPlanning){
+        if (!teacher || !classroom || !subject || !group || (!day && day != 0) || !startsAt || !duree || !sessionType || !idPlanning) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
         const session = await Session.create({
@@ -322,10 +317,10 @@ exports.addSessionToPlanning = async (req,res) =>{
             day: day,
             startsAt: startsAt,
             endsAt: startsAt + duree,
-            sessionType: sessionType, 
-            duration : WeeksDuration || 1,
+            sessionType: sessionType,
+            duration: WeeksDuration || 1,
             initialSubGroup: initialSubGroup || "All",
-            createdBy : createdBy || null
+            createdBy: createdBy || null
         })
         await session.save()
         if (otherGroups?.length) {
@@ -347,30 +342,30 @@ exports.addSessionToPlanning = async (req,res) =>{
                 }
             }
         }
-        if (session){
+        if (session) {
             const updatedPlanning = await Planning.findByIdAndUpdate(idPlanning, { $push: { sessions: session._id } }, { new: true, runValidators: true })
                 .populate("collegeYear")
                 .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                 .populate("group")
-            if (updatedPlanning){
-                if(WeeksDuration > 1 && collegeYear){
-                    for ( let i =0 ; i < WeeksDuration ; i++){
-                        const updatedPlanning1 = await Planning.findOneAndUpdate({collegeYear : collegeYear , group : group , week : updatedPlanning.week +i+1}, { $push : { sessions : session._id}}, { new : true, runValidators : true})
-                        if (!updatedPlanning1){
+            if (updatedPlanning) {
+                if (WeeksDuration > 1 && collegeYear) {
+                    for (let i = 0; i < WeeksDuration; i++) {
+                        const updatedPlanning1 = await Planning.findOneAndUpdate({ collegeYear: collegeYear, group: group, week: updatedPlanning.week + i + 1 }, { $push: { sessions: session._id } }, { new: true, runValidators: true })
+                        if (!updatedPlanning1) {
                             return res.status(400).send({
-                                error : "Error occured while updating the next plannings with adding this session"
+                                error: "Error occured while updating the next plannings with adding this session"
                             })
                         }
                     }
                 }
                 return res.status(200).send(updatedPlanning)
-            }else{
+            } else {
                 return res.status(404).send({
-                    error : "Planning with id : "+idPlanning+" Not Found"
+                    error: "Planning with id : " + idPlanning + " Not Found"
                 })
             }
         }
-    }catch(e) {
+    } catch (e) {
         console.log(e)
         // need to check the exceptions for example 
         return res.status(500).send({
@@ -393,7 +388,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
         }
         const session = await Session.findById(sessionId)
         if (session) {
-            if (session.teacher != teacher || startsAt != session.startsAt || session.endsAt != (Number(duree) + Number(startsAt)) || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup || WeeksDuration != session.duration ) {
+            if (session.teacher != teacher || startsAt != session.startsAt || session.endsAt != (Number(duree) + Number(startsAt)) || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup || WeeksDuration != session.duration) {
                 session.teacher = teacher
                 session.subject = subject
                 session.classroom = classroom
@@ -438,9 +433,9 @@ exports.updateSessionFromPlanning = async (req, res) => {
 exports.deleteSessionFromPlanning = async (req, res) => {
     try {
         const { sessionId, planningId } = req.params
-        if (!planning || !sessionId){
+        if (!planning || !sessionId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
         var planning = await Planning.findById(planningId)
@@ -472,37 +467,37 @@ exports.deleteSessionFromPlanning = async (req, res) => {
 }
 
 // switch session with another one 
-exports.switchSessionsFromPlanning = async (req,res) => {
-    try{
-        const { initialPlanning , intialSessionId , otherPlanning, otherSessionId } = req.body
-        if(!initialPlanning || !intialSessionId || !otherPlanning || !otherSessionId){
+exports.switchSessionsFromPlanning = async (req, res) => {
+    try {
+        const { initialPlanning, intialSessionId, otherPlanning, otherSessionId } = req.body
+        if (!initialPlanning || !intialSessionId || !otherPlanning || !otherSessionId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const newInitialPlanning = await Planning.findByIdAndUpdate(initialPlanning , { $pull : { sessions :  Types.ObjectId(intialSessionId) }, $push : { sessions : Types.ObjectId(otherSessionId) }} , {new : true})
+        const newInitialPlanning = await Planning.findByIdAndUpdate(initialPlanning, { $pull: { sessions: Types.ObjectId(intialSessionId) }, $push: { sessions: Types.ObjectId(otherSessionId) } }, { new: true })
             .populate("collegeYear")
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
             .populate("group")
-        if (newInitialPlanning){
-            const newOtherPlanning = await Planning.findByIdAndUpdate(otherPlanning, { $pull : { sessions : Types.ObjectId(otherSessionId) } , $push : { sessions : Types.ObjectId(intialSessionId)} }, { new : true})
-            if (!newOtherPlanning){
+        if (newInitialPlanning) {
+            const newOtherPlanning = await Planning.findByIdAndUpdate(otherPlanning, { $pull: { sessions: Types.ObjectId(otherSessionId) }, $push: { sessions: Types.ObjectId(intialSessionId) } }, { new: true })
+            if (!newOtherPlanning) {
                 return res.status(400).send({
-                    error : "Switching session error",
-                    message : "the other Planning with id : " +otherPlanning+ " Issue."
+                    error: "Switching session error",
+                    message: "the other Planning with id : " + otherPlanning + " Issue."
                 })
             }
             return res.status(200).send(newInitialPlanning)
-        }else{
+        } else {
             return res.status(400).send({
-                error : "Switching session error",
-                message : "initial Planning with id : " +initialPlanning+  " Issue."
+                error: "Switching session error",
+                message: "initial Planning with id : " + initialPlanning + " Issue."
             })
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
@@ -510,7 +505,7 @@ exports.switchSessionsFromPlanning = async (req,res) => {
 
 
 // exports.createInitialTemplate = async (req, res) => {
-//     //test if modified or not 
+//     //test if modified or not
 //     try {
 //         //Initialize my Template and create an Initial Planning
 //         //sessions group semester default week = 1
@@ -590,13 +585,13 @@ exports.switchSessionsFromPlanning = async (req,res) => {
 //     }
 // }
 
-// create sessions manual => (if : séance déja fait ) ncreati planning 
+// create sessions manual => (if : séance déja fait ) ncreati planning
 
 //------------------------------------------------------------Plannning--------------------------------------------------------------
 
 // Refresh planning
 // exports.refreshPlanning = async (req, res) => {
-//     //Valid for refreshing With creation of a new planning 
+//     //Valid for refreshing With creation of a new planning
 //     //Valid for refreshing With an existing planning  (Still working...)
 //     // fel front ki bech naffichi el sessions mte3i ba3d marefreshit el planning bech nparkouri ken nel9a session manula fel wa9t nafsou m3a session template ====> n'affichi el manual
 //     try {
@@ -828,7 +823,7 @@ exports.switchSessionsFromPlanning = async (req,res) => {
 //     try {
 //         const plannings = await Planning.find(req.body)
 //             .populate("semester")
-//         // .populate({ path: "group", populate: { path: "section" } }) comments cause we find by groupe 
+//         // .populate({ path: "group", populate: { path: "section" } }) comments cause we find by groupe
 //         return plannings.length
 //             ? res.status(200).json({ found: true, plannings })
 //             : res.status(204).json({ found: false })
