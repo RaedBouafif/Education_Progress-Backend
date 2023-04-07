@@ -10,14 +10,14 @@ const Planning = Schema(
             min: [0, "invalidWeek"] // max week needed 
             //autoincrement if group and year exist
         },
-        // dateBegin: {
-        //     type: Date,
-        //     required: [true, "dateBeginRequired"]
-        // },
-        // dateEnd: {
-        //     type: Date,
-        //     required: [true, "dateEndRequired"]
-        // },
+        dateBegin: {
+            type: Date,
+            required: [true, "dateBeginRequired"]
+        },
+        dateEnd: {
+            type: Date,
+            required: [true, "dateEndRequired"]
+        },
         group: {
             type: Schema.Types.ObjectId,
             ref: "Group",

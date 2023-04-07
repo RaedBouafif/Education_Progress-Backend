@@ -7,7 +7,8 @@ const {
     addSessionToPlanning,
     updateSessionFromPlanning,
     deleteSessionFromPlanning,
-    switchSessionsFromPlanning
+    switchSessionsFromPlanning,
+    test
 } = require("../controllers/planning.controller");
 
 const Router = require("express").Router();
