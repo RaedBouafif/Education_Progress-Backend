@@ -35,6 +35,7 @@ exports.create = async (req, res) => {
                     infos.push({ semester: currentSemester.name, numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd })
                     numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks
                 }
+                //this code will set our Dates depending on the smesters
                 var number_Semesters_Trimesters = infos.length
                 console.log(infos.length)
                 switch (number_Semesters_Trimesters) {
@@ -55,174 +56,246 @@ exports.create = async (req, res) => {
                     }
                     default : return res.status(400).send({ error : "Planning cannot be created"})
                 }
-                console.log(initialDatedebSem1)
-                console.log(initialDatedebSem2)
-                console.log(initialDatedebSem3)
-                for (let j = 0; j < numberTotalOfWeeks; j++) {
-                    var newSessions = []
-                    for (let x = 0; x < globalTemplate.sessions.length; x++) {
-                        let currentSession = globalTemplate.sessions[x]
-                        var newSession = await Session.create({
-                            teacher: currentSession.teacher,
-                            classroom: currentSession.classroom,
-                            subject: currentSession.subject,
-                            group: currentSession.group,
-                            day: currentSession.day,
-                            startsAt: currentSession.startsAt,
-                            endsAt: currentSession.endsAt,
-                            startedAt: currentSession.startedAt,
-                            endedAt: currentSession.endedAt,
-                            sessionType: currentSession.sessionType,
-                            active: currentSession.active,
-                            initialSubGroup: currentSession.initialSubGroup || "All"
+                //end of handling startingDates
+
+                //this code will checks if i have to update the planning from the next week of the current one
+                const currentDate = new Date()
+                const currentPlanning = await Planning.findOne({ group : group, collegeYear : collegeYear, dateBegin : { $lte : currentDate}, dateEnd : { $gte : currentDate }})
+                if (currentPlanning){
+                    // this code will update my planning starting from the current planning
+                    var initialWeekToUpdate = currentPlanning.week+1
+                    for ( initialWeekToUpdate ; initialWeekToUpdate <= numberTotalOfWeeks ; initialWeekToUpdate++ ){
+                        var newSessions = []
+                        for (let x = 0; x < globalTemplate.sessions.length; x++) {
+                            let currentSession = globalTemplate.sessions[x]
+                            var newSession = await Session.create({
+                                teacher: currentSession.teacher,
+                                classroom: currentSession.classroom,
+                                subject: currentSession.subject,
+                                group: currentSession.group,
+                                day: currentSession.day,
+                                startsAt: currentSession.startsAt,
+                                endsAt: currentSession.endsAt,
+                                startedAt: currentSession.startedAt,
+                                endedAt: currentSession.endedAt,
+                                sessionType: currentSession.sessionType,
+                                active: currentSession.active,
+                                initialSubGroup: currentSession.initialSubGroup || "All"
+                            })
+                            await newSession.save()
+                            newSessions.push(newSession)
+                        }
+                        const filter = {week : initialWeekToUpdate , group : group, collegeYear : collegeYear}
+                        var planning = await Planning.findOneAndUpdate(filter, {sessions : newSessions}, { new : true , runValidators : true} )
+                        console.log("planning updated")
+                    }
+                    if ( initialWeekToUpdate === currentPlanning.week+1 ){
+                        return res.status(204).send({
+                            message : "The Update on the Planning cannot be performed because we are allready in the last week of the year"
                         })
-                        await newSession.save()
-                        newSessions.push(newSession)
                     }
-                    switch (number_Semesters_Trimesters) {
-                        case 1 : {        
-                            const finalDate1 = new Date(initialDatedebSem1)
-                            finalDate1.setDate(finalDate1.getDate() + 6)       
-                            if ( j < infos[0].numberOfWeeks ){
-                                console.log("onlysem1")
-                                var planning = await Planning.create({
-                                    week: j + 1,
-                                    dateBegin : initialDatedebSem1,
-                                    dateEnd : finalDate1,
-                                    group: group,
-                                    collegeYear: collegeYear,
-                                    sessions: newSessions,
-                                    active: true
+                }else{
+                    const existingPlanning = await Planning.findOne({ group : group , collegeYear : collegeYear, week: 1})
+                    if (existingPlanning){
+                        // this code will update the existing planning from week number 1 because this planning is in the future or from past
+                        for ( let w = 1 ; w <= numberTotalOfWeeks ; w++){
+                            var newSessions = []
+                            for (let x = 0; x < globalTemplate.sessions.length; x++) {
+                                let currentSession = globalTemplate.sessions[x]
+                                var newSession = await Session.create({
+                                    teacher: currentSession.teacher,
+                                    classroom: currentSession.classroom,
+                                    subject: currentSession.subject,
+                                    group: currentSession.group,
+                                    day: currentSession.day,
+                                    startsAt: currentSession.startsAt,
+                                    endsAt: currentSession.endsAt,
+                                    startedAt: currentSession.startedAt,
+                                    endedAt: currentSession.endedAt,
+                                    sessionType: currentSession.sessionType,
+                                    active: currentSession.active,
+                                    initialSubGroup: currentSession.initialSubGroup || "All"
                                 })
-                                await planning.save()
-                                finalDate1.setDate(finalDate1.getDate() + 1)
-                                initialDatedebSem1 = finalDate1
+                                await newSession.save()
+                                newSessions.push(newSession)
                             }
-                            break
+                            const filter = {week : w , group : group, collegeYear : collegeYear}
+                            var planning = await Planning.findOneAndUpdate(filter, {sessions : newSessions}, { new : true , runValidators : true} )
+                            console.log("planning updated")
                         }
-                        case 2 : {
-                            if ( j < infos[0].numberOfWeeks ){
-                                console.log("sem1")
-                                const finalDate = new Date(initialDatedebSem1)
-                                finalDate.setDate(finalDate.getDate() + 6)
-                                var planning = await Planning.create({
-                                    week: j + 1,
-                                    dateBegin : initialDatedebSem1,
-                                    dateEnd : finalDate,
-                                    group: group,
-                                    collegeYear: collegeYear,
-                                    sessions: newSessions,
-                                    active: true
+                    }else{
+                        // this code will create a new planning because it does not exist
+                        console.log(initialDatedebSem1)
+                        console.log(initialDatedebSem2)
+                        console.log(initialDatedebSem3)
+                        for (let j = 0; j < numberTotalOfWeeks; j++) {
+                            var newSessions = []
+                            for (let x = 0; x < globalTemplate.sessions.length; x++) {
+                                let currentSession = globalTemplate.sessions[x]
+                                var newSession = await Session.create({
+                                    teacher: currentSession.teacher,
+                                    classroom: currentSession.classroom,
+                                    subject: currentSession.subject,
+                                    group: currentSession.group,
+                                    day: currentSession.day,
+                                    startsAt: currentSession.startsAt,
+                                    endsAt: currentSession.endsAt,
+                                    startedAt: currentSession.startedAt,
+                                    endedAt: currentSession.endedAt,
+                                    sessionType: currentSession.sessionType,
+                                    active: currentSession.active,
+                                    initialSubGroup: currentSession.initialSubGroup || "All"
                                 })
-                                await planning.save()
-                                finalDate.setDate(finalDate.getDate() + 1)
-                                initialDatedebSem1 = finalDate
-                            }else{
-                                console.log("sem2")
-                                const finalDate = new Date(initialDatedebSem2)
-                                finalDate.setDate(finalDate.getDate() + 6)
-                                var planning = await Planning.create({
-                                    week: j + 1,
-                                    dateBegin : initialDatedebSem2,
-                                    dateEnd : finalDate,
-                                    group: group,
-                                    collegeYear: collegeYear,
-                                    sessions: newSessions,
-                                    active: true
-                                })
-                                await planning.save()
-                                finalDate.setDate(finalDate.getDate() + 1)
-                                initialDatedebSem2 = finalDate
+                                await newSession.save()
+                                newSessions.push(newSession)
                             }
-                            break
+                            switch (number_Semesters_Trimesters) {
+                                case 1 : {        
+                                    const finalDate1 = new Date(initialDatedebSem1)
+                                    finalDate1.setDate(finalDate1.getDate() + 6)       
+                                    if ( j < infos[0].numberOfWeeks ){
+                                        console.log("onlysem1")
+                                        var planning = await Planning.create({
+                                            week: j + 1,
+                                            dateBegin : initialDatedebSem1,
+                                            dateEnd : finalDate1,
+                                            group: group,
+                                            collegeYear: collegeYear,
+                                            sessions: newSessions,
+                                            active: true
+                                        })
+                                        await planning.save()
+                                        finalDate1.setDate(finalDate1.getDate() + 1)
+                                        initialDatedebSem1 = finalDate1
+                                    }
+                                    break
+                                }
+                                case 2 : {
+                                    if ( j < infos[0].numberOfWeeks ){
+                                        console.log("sem1")
+                                        const finalDate = new Date(initialDatedebSem1)
+                                        finalDate.setDate(finalDate.getDate() + 6)
+                                        var planning = await Planning.create({
+                                            week: j + 1,
+                                            dateBegin : initialDatedebSem1,
+                                            dateEnd : finalDate,
+                                            group: group,
+                                            collegeYear: collegeYear,
+                                            sessions: newSessions,
+                                            active: true
+                                        })
+                                        await planning.save()
+                                        finalDate.setDate(finalDate.getDate() + 1)
+                                        initialDatedebSem1 = finalDate
+                                    }else{
+                                        console.log("sem2")
+                                        const finalDate = new Date(initialDatedebSem2)
+                                        finalDate.setDate(finalDate.getDate() + 6)
+                                        var planning = await Planning.create({
+                                            week: j + 1,
+                                            dateBegin : initialDatedebSem2,
+                                            dateEnd : finalDate,
+                                            group: group,
+                                            collegeYear: collegeYear,
+                                            sessions: newSessions,
+                                            active: true
+                                        })
+                                        await planning.save()
+                                        finalDate.setDate(finalDate.getDate() + 1)
+                                        initialDatedebSem2 = finalDate
+                                    }
+                                    break
+                                }
+                                case 3 : {
+                                    if ( j < infos[0].numberOfWeeks ){
+                                        console.log("sem3")
+                                        const finalDate = new Date(initialDatedebSem1)
+                                        finalDate.setDate(finalDate.getDate() + 6)
+                                        var planning = await Planning.create({
+                                            week: j + 1,
+                                            dateBegin : initialDatedebSem1,
+                                            dateEnd : finalDate,
+                                            group: group,
+                                            collegeYear: collegeYear,
+                                            sessions: newSessions,
+                                            active: true
+                                        })
+                                        await planning.save()
+                                        finalDate.setDate(finalDate.getDate() + 1)
+                                        initialDatedebSem1 = finalDate
+                                    }else if ( (j < infos[0].numberOfWeeks + infos[1].numberOfWeeks) && (j >= infos[0].numberOfWeeks) ){
+                                        console.log("sem3")
+                                        const finalDate = new Date(initialDatedebSem2)
+                                        finalDate.setDate(finalDate.getDate() + 6)
+                                        var planning = await Planning.create({
+                                            week: j + 1,
+                                            dateBegin : initialDatedebSem2,
+                                            dateEnd : finalDate,
+                                            group: group,
+                                            collegeYear: collegeYear,
+                                            sessions: newSessions,
+                                            active: true
+                                        })
+                                        await planning.save()
+                                        finalDate.setDate(finalDate.getDate() + 1)
+                                        initialDatedebSem2 = finalDate
+                                    }
+                                    else{
+                                        console.log("sem3")
+                                        const finalDate = new Date(initialDatedebSem3)
+                                        finalDate.setDate(finalDate.getDate() + 6)
+                                        var planning = await Planning.create({
+                                            week: j + 1,
+                                            dateBegin : initialDatedebSem3,
+                                            dateEnd : finalDate,
+                                            group: group,
+                                            collegeYear: collegeYear,
+                                            sessions: newSessions,
+                                            active: true
+                                        })
+                                        await planning.save()
+                                        finalDate.setDate(finalDate.getDate() + 1)
+                                        initialDatedebSem3 = finalDate
+                                    }
+                                    break
+                                }
+                                default : return res.status(400).send({ error : "error occured while creating the planning"})
+                            }
+                            // if (planning.week == 1) {
+                            //     returnedPlanning = await Planning.populate(planning, [
+                            //         { path: "group", populate: { path: "section" } },
+                            //         { path: "collegeYear" },
+                            //         {
+                            //             path: "sessions", populate: [
+                            //                 { path: "teacher", select: { password: 0 } },
+                            //                 { path: "subject", select: { image: 0 } },
+                            //                 { path: "classroom" }
+                            //             ]
+                            //         }
+                            //     ])
+                            // }
                         }
-                        case 3 : {
-                            if ( j < infos[0].numberOfWeeks ){
-                                console.log("sem3")
-                                const finalDate = new Date(initialDatedebSem1)
-                                finalDate.setDate(finalDate.getDate() + 6)
-                                var planning = await Planning.create({
-                                    week: j + 1,
-                                    dateBegin : initialDatedebSem1,
-                                    dateEnd : finalDate,
-                                    group: group,
-                                    collegeYear: collegeYear,
-                                    sessions: newSessions,
-                                    active: true
-                                })
-                                await planning.save()
-                                finalDate.setDate(finalDate.getDate() + 1)
-                                initialDatedebSem1 = finalDate
-                            }else if ( (j < infos[0].numberOfWeeks + infos[1].numberOfWeeks) && (j >= infos[0].numberOfWeeks) ){
-                                console.log("sem3")
-                                const finalDate = new Date(initialDatedebSem2)
-                                finalDate.setDate(finalDate.getDate() + 6)
-                                var planning = await Planning.create({
-                                    week: j + 1,
-                                    dateBegin : initialDatedebSem2,
-                                    dateEnd : finalDate,
-                                    group: group,
-                                    collegeYear: collegeYear,
-                                    sessions: newSessions,
-                                    active: true
-                                })
-                                await planning.save()
-                                finalDate.setDate(finalDate.getDate() + 1)
-                                initialDatedebSem2 = finalDate
-                            }
-                            else{
-                                console.log("sem3")
-                                const finalDate = new Date(initialDatedebSem3)
-                                finalDate.setDate(finalDate.getDate() + 6)
-                                var planning = await Planning.create({
-                                    week: j + 1,
-                                    dateBegin : initialDatedebSem3,
-                                    dateEnd : finalDate,
-                                    group: group,
-                                    collegeYear: collegeYear,
-                                    sessions: newSessions,
-                                    active: true
-                                })
-                                await planning.save()
-                                finalDate.setDate(finalDate.getDate() + 1)
-                                initialDatedebSem3 = finalDate
-                            }
-                            break
+                        if (returnedPlanning && infos.length) {
+                            return res.status(200).send({
+                                cteated : true
+                                // planning: returnedPlanning,
+                                // initialSemester: year.semesters[0].name,
+                                // numberTotalOfWeeks: numberTotalOfWeeks,
+                                // infos
+                            })
+                        } else {
+                            return res.status(400).send({
+                                error: "Some Error occured"
+                            })
                         }
-                        default : return res.status(400).send({ error : "error occured while creating the planning"})
-                    }
-                    if (planning.week == 1) {
-                        returnedPlanning = await Planning.populate(planning, [
-                            { path: "group", populate: { path: "section" } },
-                            { path: "collegeYear" },
-                            {
-                                path: "sessions", populate: [
-                                    { path: "teacher", select: { password: 0 } },
-                                    { path: "subject", select: { image: 0 } },
-                                    { path: "classroom" }
-                                ]
-                            }
-                        ])
                     }
                 }
-                if (returnedPlanning && infos.length) {
-                    return res.status(200).send({
-                        planning: returnedPlanning,
-                        initialSemester: year.semesters[0].name,
-                        numberTotalOfWeeks: numberTotalOfWeeks,
-                        infos
-                    })
-                } else {
-                    return res.status(400).send({
-                        error: "Some Error occured"
-                    })
-                }
-            } else {
+            }else {
                 return res.status(404).send({
                     error: "CollegeYearNotFound"
                 })
             }
-        } else {
+        }else {
             return res.status(404).send({
                 error: "TemplateNotFound"
             })
@@ -239,23 +312,6 @@ exports.create = async (req, res) => {
         })
     }
 }
-
-
-exports.test =  async (req,res) => {
-    try{
-        const { date } = req.body
-        const newDate = new Date(date)
-        newDate.setDate(newDate.getDate() + 7)
-        console.log(newDate)
-        return res.status(200).send(newDate)
-    }catch(e) {
-        console.log(e.message)
-        return res.status(500).send({
-            error : "Server error"
-        })
-    }
-}
-
 // exports.create = async (req,res) => {
 //     try{
 //         const { group, collegeYear, sessions } = req.body
@@ -413,22 +469,33 @@ exports.getCurrentPlanning = async (req, res) => {
                 numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks
             }
             // this will always return week number 1 
-            const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
+            const currentDate = new Date()
+            const currentPlanning = await Planning.findOne({ group : group, collegeYear : collegeYear, dateBegin : {$lte : currentDate}, dateEnd : {$gte : currentDate} })
+            if (!currentPlanning){
+                const initialPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                 .populate({ path: "group", populate: { path: "section" } })
                 .populate("collegeYear")
                 .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
-            if (!planning) {
-                return res.status(404).json({
-                    message: "PlannigNotFound"
+                if (!initialPlanning) {
+                    return res.status(404).json({
+                        message: "PlannigNotFound"
+                    })
+                }
+                return res.status(200).json({
+                    planning : initialPlanning,
+                    initialSemester: year.semesters[0].name,
+                    numberTotalOfWeeks: numberTotalOfWeeks,
+                    infos
                 })
+            }else{
+                return res.status(200).send({
+                    planning : currentPlanning,
+                    initialSemester : year.semesters[0].name,
+                    numberTotalOfWeeks : numberTotalOfWeeks,
+                    infos
+                })            
             }
-            return res.status(200).json({
-                planning,
-                initialSemester: year.semesters[0].name,
-                numberTotalOfWeeks: numberTotalOfWeeks,
-                infos
-            })
-        } else {
+        }else {
             return res.status(404).json({
                 error: "College Year with id : " + collegeYear + "NotFound"
             })

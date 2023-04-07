@@ -18,7 +18,6 @@ Router.route("/create").post(create);
 Router.route("/addSession").post(addSessionToPlanning)
 Router.route("/updateSession").post(updateSessionFromPlanning)
 Router.route("/switchSessions").post(switchSessionsFromPlanning)
-Router.route("/test").post(test)
 
 
 //---GET---//
