@@ -433,7 +433,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
 exports.deleteSessionFromPlanning = async (req, res) => {
     try {
         const { sessionId, planningId } = req.params
-        if (!planning || !sessionId) {
+        if (!planningId || !sessionId) {
             return res.status(400).send({
                 error: "BadRequest"
             })
@@ -455,7 +455,7 @@ exports.deleteSessionFromPlanning = async (req, res) => {
         }
         else {
             return res.status(404).json({
-                error: "templateNotFound"
+                error: "planningNotFound"
             })
         }
     } catch (e) {
