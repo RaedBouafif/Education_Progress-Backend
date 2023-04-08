@@ -100,6 +100,11 @@ const Session = Schema(
             type : String,
             required: [true, "sessionTypeRequired"],
             enum : ['G1','G2','All']
+        },
+        sessionCategorie : {
+            type : String,
+            required : [ true, "sessionCategorieRequired"],
+            enum : ['Template', 'Planning']
         }
     },
     {

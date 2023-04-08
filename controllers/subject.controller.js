@@ -331,11 +331,11 @@ exports.findAvailableTeachers = async (req, res) => {
         } else {
             teachersOfTheSubject = teachersOfTheSubject.teachers
             var OccupiedTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, day: day } })
+                .populate({ path: "sessions", match: { startsAt: startsAt, day: day } })
             var OccupiedPredTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
+                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
             var OccupiedNextTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt } } })
+                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day : day } })
             OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
             if (OccupiedTeachers.length > 1) {
                 OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
@@ -353,8 +353,6 @@ exports.findAvailableTeachers = async (req, res) => {
                     teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher != element._id.toString())
                 }
             }
-            console.log(teachersOfTheSubject)
-            console.log(OccupiedTeachers)
             if (!OccupiedTeachers.length) {
                 return res.status(200).json(teachersOfTheSubject)
             } else {

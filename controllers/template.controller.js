@@ -62,7 +62,8 @@ exports.addSessionToTemplate = async (req, res) => {
             endsAt: startsAt + duree,
             sessionType: sessionType,
             initialSubGroup: initialSubGroup || "All",
-            createdBy : createdBy || null
+            createdBy : createdBy || null,
+            sessionCategorie : "Template"
         })
         await session.save()
         if (otherGroups?.length) {
@@ -136,6 +137,7 @@ exports.updateSessionFromTemplate = async (req, res) => {
                 session.initialSubGroup = initialSubGroup
                 session.startsAt = startsAt
                 session.endsAt = (Number(duree) + Number(startsAt))
+                session.sessionCategorie = "Template"
                 await session.save()
                 const template = await Template.findById(templateId)
                     .populate("collegeYear")

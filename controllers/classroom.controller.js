@@ -152,8 +152,8 @@ exports.findAvailableClassroms = async (req, res) => {
             })
         }
         var OccupiedClassrooms = await Template.find({ collegeYear: collegeYear }, 'sessions').populate({ path: 'sessions', match: { startsAt: startsAt, day: day, collegeYear: collegeYear } })
-        var OccupiedPredClassrooms = await Template.find({ collegeYear: collegeYear }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
-        var OccupiedNextClassrooms = await Template.find({ collegeYear: collegeYear }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $gt: startsAt } } })
+        var OccupiedPredClassrooms = await Template.find({ collegeYear: collegeYear }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
+        var OccupiedNextClassrooms = await Template.find({ collegeYear: collegeYear }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day } })
 
         OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
         // OccupiedPredClassrooms = OccupiedPredClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedPredClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
