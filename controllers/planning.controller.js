@@ -619,6 +619,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
             initialSubGroup = "All"
         }
         const session = await Session.findById(sessionId)
+
         if (session) {
             if (session.teacher != teacher || startsAt != session.startsAt || session.endsAt != (Number(duree) + Number(startsAt)) || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup || WeeksDuration != session.duration) {
                 session.teacher = teacher
@@ -629,6 +630,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
                 session.startsAt = startsAt
                 session.endsAt = (Number(duree) + Number(startsAt))
                 session.duration = WeeksDuration
+                //change to manuael type
                 await session.save()
                 const planning = await Planning.findById(planningId)
                     .populate("collegeYear")
