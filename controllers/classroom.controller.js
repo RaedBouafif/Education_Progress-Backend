@@ -163,7 +163,8 @@ exports.findAvailableClassroms = async (req, res) => {
             OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
         }
         else if (OccupiedClassrooms.length === 1) {
-            OccupiedClassrooms = [OccupiedClassrooms[0].classroom.toString()]
+            // OccupiedClassrooms = [OccupiedClassrooms[0].classroom.toString()] can generate error because i have correct her in avai-classroom(planning)
+            OccupiedClassrooms = OccupiedClassrooms[0].sessions?.map((element) => element.classroom.toString()) || []
         }
         //predClassrooms
         // if (OccupiedPredClassrooms.length > 1){

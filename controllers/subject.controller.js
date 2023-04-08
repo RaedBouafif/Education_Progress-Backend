@@ -296,7 +296,7 @@ exports.changeSubjectState = (req, res) => {
 //         {
 
 //         }
-    
+
 //         ]
 //     },
 //     {
@@ -333,23 +333,23 @@ exports.findAvailableTeachers = async (req, res) => {
             var OccupiedTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
                 .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, day: day } })
             var OccupiedPredTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path: "sessions", match: { startsAt : { $lt : startsAt }}, options : { sort : {startsAt : -1}}})
+                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
             var OccupiedNextTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path : 'sessions', match: { startsAt : { $gt : startsAt }}})  
+                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt } } })
             OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
             if (OccupiedTeachers.length > 1) {
                 OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
             }
             else if (OccupiedTeachers.length === 1) {
-                OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]
+                OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
             }
-            for ( let i =0 ; i < OccupiedPredTeachers.length ; i++){
-                if (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)){
+            for (let i = 0; i < OccupiedPredTeachers.length; i++) {
+                if (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
                     teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher != element._id.toString())
                 }
             }
-            for ( let j=0 ; j < OccupiedNextTeachers.length ; j++){
-                if (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)){
+            for (let j = 0; j < OccupiedNextTeachers.length; j++) {
+                if (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) {
                     teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher != element._id.toString())
                 }
             }

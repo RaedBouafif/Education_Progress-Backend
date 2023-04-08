@@ -6,12 +6,12 @@ const CollegeYear = require("../models/collegeYear.model")
 const Group = require("../models/group.model")
 const Template = require("../models/template.model")
 const Teacher = require("../models/Users/teacher.model")
-const Subject = require("../models/subject.model")
+const { Subject } = require("../models/subject.model")
 const Classroom = require("../models/classroom.model")
 const { Types } = require("mongoose")
 
 
-// création de template
+// création de planning
 exports.create = async (req, res) => {
     try {
         const { group, collegeYear } = req.body
@@ -39,32 +39,32 @@ exports.create = async (req, res) => {
                 var number_Semesters_Trimesters = infos.length
                 console.log(infos.length)
                 switch (number_Semesters_Trimesters) {
-                    case 1 : {
+                    case 1: {
                         var initialDatedebSem1 = infos[0].dateBegin
                         break
                     }
-                    case 2 : {
+                    case 2: {
                         var initialDatedebSem1 = infos[0].dateBegin
                         var initialDatedebSem2 = infos[1].dateBegin
                         break
                     }
-                    case 3 : {
+                    case 3: {
                         var initialDatedebSem1 = infos[0].dateBegin
                         var initialDatedebSem2 = infos[1].dateBegin
                         var initialDatedebSem3 = infos[2].dateBegin
                         break
                     }
-                    default : return res.status(400).send({ error : "Planning cannot be created"})
+                    default: return res.status(400).send({ error: "Planning cannot be created" })
                 }
                 //end of handling startingDates
 
                 //this code will checks if i have to update the planning from the next week of the current one
                 const currentDate = new Date()
-                const currentPlanning = await Planning.findOne({ group : group, collegeYear : collegeYear, dateBegin : { $lte : currentDate}, dateEnd : { $gte : currentDate }})
-                if (currentPlanning){
+                const currentPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
+                if (currentPlanning) {
                     // this code will update my planning starting from the current planning
-                    var initialWeekToUpdate = currentPlanning.week+1
-                    for ( initialWeekToUpdate ; initialWeekToUpdate <= numberTotalOfWeeks ; initialWeekToUpdate++ ){
+                    var initialWeekToUpdate = currentPlanning.week + 1
+                    for (initialWeekToUpdate; initialWeekToUpdate <= numberTotalOfWeeks; initialWeekToUpdate++) {
                         var newSessions = []
                         for (let x = 0; x < globalTemplate.sessions.length; x++) {
                             let currentSession = globalTemplate.sessions[x]
@@ -85,20 +85,20 @@ exports.create = async (req, res) => {
                             await newSession.save()
                             newSessions.push(newSession)
                         }
-                        const filter = {week : initialWeekToUpdate , group : group, collegeYear : collegeYear}
-                        var planning = await Planning.findOneAndUpdate(filter, {sessions : newSessions}, { new : true , runValidators : true} )
+                        const filter = { week: initialWeekToUpdate, group: group, collegeYear: collegeYear }
+                        var planning = await Planning.findOneAndUpdate(filter, { sessions: newSessions }, { new: true, runValidators: true })
                         console.log("planning updated")
                     }
-                    if ( initialWeekToUpdate === currentPlanning.week+1 ){
+                    if (initialWeekToUpdate === currentPlanning.week + 1) {
                         return res.status(204).send({
-                            message : "The Update on the Planning cannot be performed because we are allready in the last week of the year"
+                            message: "The Update on the Planning cannot be performed because we are allready in the last week of the year"
                         })
                     }
-                }else{
-                    const existingPlanning = await Planning.findOne({ group : group , collegeYear : collegeYear, week: 1})
-                    if (existingPlanning){
+                } else {
+                    const existingPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 })
+                    if (existingPlanning) {
                         // this code will update the existing planning from week number 1 because this planning is in the future or from past
-                        for ( let w = 1 ; w <= numberTotalOfWeeks ; w++){
+                        for (let w = 1; w <= numberTotalOfWeeks; w++) {
                             var newSessions = []
                             for (let x = 0; x < globalTemplate.sessions.length; x++) {
                                 let currentSession = globalTemplate.sessions[x]
@@ -119,11 +119,11 @@ exports.create = async (req, res) => {
                                 await newSession.save()
                                 newSessions.push(newSession)
                             }
-                            const filter = {week : w , group : group, collegeYear : collegeYear}
-                            var planning = await Planning.findOneAndUpdate(filter, {sessions : newSessions}, { new : true , runValidators : true} )
+                            const filter = { week: w, group: group, collegeYear: collegeYear }
+                            var planning = await Planning.findOneAndUpdate(filter, { sessions: newSessions }, { new: true, runValidators: true })
                             console.log("planning updated")
                         }
-                    }else{
+                    } else {
                         // this code will create a new planning because it does not exist
                         console.log(initialDatedebSem1)
                         console.log(initialDatedebSem2)
@@ -150,15 +150,15 @@ exports.create = async (req, res) => {
                                 newSessions.push(newSession)
                             }
                             switch (number_Semesters_Trimesters) {
-                                case 1 : {        
+                                case 1: {
                                     const finalDate1 = new Date(initialDatedebSem1)
-                                    finalDate1.setDate(finalDate1.getDate() + 6)       
-                                    if ( j < infos[0].numberOfWeeks ){
+                                    finalDate1.setDate(finalDate1.getDate() + 6)
+                                    if (j < infos[0].numberOfWeeks) {
                                         console.log("onlysem1")
                                         var planning = await Planning.create({
                                             week: j + 1,
-                                            dateBegin : initialDatedebSem1,
-                                            dateEnd : finalDate1,
+                                            dateBegin: initialDatedebSem1,
+                                            dateEnd: finalDate1,
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
@@ -170,15 +170,15 @@ exports.create = async (req, res) => {
                                     }
                                     break
                                 }
-                                case 2 : {
-                                    if ( j < infos[0].numberOfWeeks ){
+                                case 2: {
+                                    if (j < infos[0].numberOfWeeks) {
                                         console.log("sem1")
                                         const finalDate = new Date(initialDatedebSem1)
                                         finalDate.setDate(finalDate.getDate() + 6)
                                         var planning = await Planning.create({
                                             week: j + 1,
-                                            dateBegin : initialDatedebSem1,
-                                            dateEnd : finalDate,
+                                            dateBegin: initialDatedebSem1,
+                                            dateEnd: finalDate,
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
@@ -187,14 +187,14 @@ exports.create = async (req, res) => {
                                         await planning.save()
                                         finalDate.setDate(finalDate.getDate() + 1)
                                         initialDatedebSem1 = finalDate
-                                    }else{
+                                    } else {
                                         console.log("sem2")
                                         const finalDate = new Date(initialDatedebSem2)
                                         finalDate.setDate(finalDate.getDate() + 6)
                                         var planning = await Planning.create({
                                             week: j + 1,
-                                            dateBegin : initialDatedebSem2,
-                                            dateEnd : finalDate,
+                                            dateBegin: initialDatedebSem2,
+                                            dateEnd: finalDate,
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
@@ -206,15 +206,15 @@ exports.create = async (req, res) => {
                                     }
                                     break
                                 }
-                                case 3 : {
-                                    if ( j < infos[0].numberOfWeeks ){
+                                case 3: {
+                                    if (j < infos[0].numberOfWeeks) {
                                         console.log("sem3")
                                         const finalDate = new Date(initialDatedebSem1)
                                         finalDate.setDate(finalDate.getDate() + 6)
                                         var planning = await Planning.create({
                                             week: j + 1,
-                                            dateBegin : initialDatedebSem1,
-                                            dateEnd : finalDate,
+                                            dateBegin: initialDatedebSem1,
+                                            dateEnd: finalDate,
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
@@ -223,14 +223,14 @@ exports.create = async (req, res) => {
                                         await planning.save()
                                         finalDate.setDate(finalDate.getDate() + 1)
                                         initialDatedebSem1 = finalDate
-                                    }else if ( (j < infos[0].numberOfWeeks + infos[1].numberOfWeeks) && (j >= infos[0].numberOfWeeks) ){
+                                    } else if ((j < infos[0].numberOfWeeks + infos[1].numberOfWeeks) && (j >= infos[0].numberOfWeeks)) {
                                         console.log("sem3")
                                         const finalDate = new Date(initialDatedebSem2)
                                         finalDate.setDate(finalDate.getDate() + 6)
                                         var planning = await Planning.create({
                                             week: j + 1,
-                                            dateBegin : initialDatedebSem2,
-                                            dateEnd : finalDate,
+                                            dateBegin: initialDatedebSem2,
+                                            dateEnd: finalDate,
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
@@ -240,14 +240,14 @@ exports.create = async (req, res) => {
                                         finalDate.setDate(finalDate.getDate() + 1)
                                         initialDatedebSem2 = finalDate
                                     }
-                                    else{
+                                    else {
                                         console.log("sem3")
                                         const finalDate = new Date(initialDatedebSem3)
                                         finalDate.setDate(finalDate.getDate() + 6)
                                         var planning = await Planning.create({
                                             week: j + 1,
-                                            dateBegin : initialDatedebSem3,
-                                            dateEnd : finalDate,
+                                            dateBegin: initialDatedebSem3,
+                                            dateEnd: finalDate,
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
@@ -259,7 +259,7 @@ exports.create = async (req, res) => {
                                     }
                                     break
                                 }
-                                default : return res.status(400).send({ error : "error occured while creating the planning"})
+                                default: return res.status(400).send({ error: "error occured while creating the planning" })
                             }
                             // if (planning.week == 1) {
                             //     returnedPlanning = await Planning.populate(planning, [
@@ -277,7 +277,7 @@ exports.create = async (req, res) => {
                         }
                         if (returnedPlanning && infos.length) {
                             return res.status(200).send({
-                                cteated : true
+                                cteated: true
                                 // planning: returnedPlanning,
                                 // initialSemester: year.semesters[0].name,
                                 // numberTotalOfWeeks: numberTotalOfWeeks,
@@ -290,17 +290,17 @@ exports.create = async (req, res) => {
                         }
                     }
                 }
-            }else {
+            } else {
                 return res.status(404).send({
                     error: "CollegeYearNotFound"
                 })
             }
-        }else {
+        } else {
             return res.status(404).send({
-                error: "TemplateNotFound"
+                error: "PlanningNotFound"
             })
         }
-    }catch (e) {
+    } catch (e) {
         console.log(e)
         if (e.code === 11000) {
             return res.status(409).send({
@@ -470,32 +470,32 @@ exports.getCurrentPlanning = async (req, res) => {
             }
             // this will always return week number 1 
             const currentDate = new Date()
-            const currentPlanning = await Planning.findOne({ group : group, collegeYear : collegeYear, dateBegin : {$lte : currentDate}, dateEnd : {$gte : currentDate} })
-            if (!currentPlanning){
+            const currentPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
+            if (!currentPlanning) {
                 const initialPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
-                .populate({ path: "group", populate: { path: "section" } })
-                .populate("collegeYear")
-                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                    .populate({ path: "group", populate: { path: "section" } })
+                    .populate("collegeYear")
+                    .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                 if (!initialPlanning) {
                     return res.status(404).json({
                         message: "PlannigNotFound"
                     })
                 }
                 return res.status(200).json({
-                    planning : initialPlanning,
+                    planning: initialPlanning,
                     initialSemester: year.semesters[0].name,
                     numberTotalOfWeeks: numberTotalOfWeeks,
                     infos
                 })
-            }else{
+            } else {
                 return res.status(200).send({
-                    planning : currentPlanning,
-                    initialSemester : year.semesters[0].name,
-                    numberTotalOfWeeks : numberTotalOfWeeks,
+                    planning: currentPlanning,
+                    initialSemester: year.semesters[0].name,
+                    numberTotalOfWeeks: numberTotalOfWeeks,
                     infos
-                })            
+                })
             }
-        }else {
+        } else {
             return res.status(404).json({
                 error: "College Year with id : " + collegeYear + "NotFound"
             })
@@ -511,6 +511,7 @@ exports.getCurrentPlanning = async (req, res) => {
 
 // add session to Planning
 exports.addSessionToPlanning = async (req, res) => {
+    console.log(req.body)
     try {
         const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, WeeksDuration, initialSubGroup, otherGroups, idPlanning, createdBy, collegeYear } = req.body
         if (!teacher || !classroom || !subject || !group || (!day && day != 0) || !startsAt || !duree || !sessionType || !idPlanning) {
@@ -518,20 +519,7 @@ exports.addSessionToPlanning = async (req, res) => {
                 error: "BadRequest"
             })
         }
-        const session = await Session.create({
-            teacher: teacher,
-            classroom: classroom,
-            subject: subject,
-            group: group,
-            day: day,
-            startsAt: startsAt,
-            endsAt: startsAt + duree,
-            sessionType: sessionType,
-            duration: WeeksDuration || 1,
-            initialSubGroup: initialSubGroup || "All",
-            createdBy: createdBy || null
-        })
-        await session.save()
+
         if (otherGroups?.length) {
             for (const element of otherGroups) {
                 var otherSession = await Session.create({
@@ -547,27 +535,62 @@ exports.addSessionToPlanning = async (req, res) => {
                 })
                 await otherSession.save()
                 if (otherSession) {
-                    await Template.findOneAndUpdate({ group: element }, { $push: { sessions: otherSession._id } }, { new: true, runValidators: true })
+                    await Planning.findOneAndUpdate({ group: element }, { $push: { sessions: otherSession._id } }, { new: true, runValidators: true })
                 }
             }
         }
+        var session = await Session.create({
+            teacher: teacher,
+            classroom: classroom,
+            subject: subject,
+            group: group,
+            day: day,
+            startsAt: startsAt,
+            endsAt: startsAt + duree,
+            sessionType: sessionType,
+            duration: WeeksDuration || 1,
+            initialSubGroup: initialSubGroup || "All",
+            createdBy: createdBy || null
+        })
+        await session.save()
         if (session) {
             const updatedPlanning = await Planning.findByIdAndUpdate(idPlanning, { $push: { sessions: session._id } }, { new: true, runValidators: true })
                 .populate("collegeYear")
                 .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                 .populate("group")
             if (updatedPlanning) {
+                var newPlannings = [updatedPlanning]
                 if (WeeksDuration > 1 && collegeYear) {
-                    for (let i = 0; i < WeeksDuration; i++) {
-                        const updatedPlanning1 = await Planning.findOneAndUpdate({ collegeYear: collegeYear, group: group, week: updatedPlanning.week + i + 1 }, { $push: { sessions: session._id } }, { new: true, runValidators: true })
+                    for (let i = 0; i < WeeksDuration - 1; i++) {
+                        var session2 = await Session.create({
+                            teacher: teacher,
+                            classroom: classroom,
+                            subject: subject,
+                            group: group,
+                            day: day,
+                            startsAt: startsAt,
+                            endsAt: startsAt + duree,
+                            sessionType: sessionType,
+                            duration: WeeksDuration || 1,
+                            initialSubGroup: initialSubGroup || "All",
+                            createdBy: createdBy || null
+                        })
+                        await session2.save()
+                        const updatedPlanning1 = await Planning.findOneAndUpdate({ collegeYear: collegeYear, group: group, week: updatedPlanning.week + i + 1 }, { $push: { sessions: session2._id } }, { new: true, runValidators: true })
+                            .populate("collegeYear")
+                            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                            .populate("group")
                         if (!updatedPlanning1) {
                             return res.status(400).send({
                                 error: "Error occured while updating the next plannings with adding this session"
                             })
                         }
+                        else {
+                            newPlannings.push(updatedPlanning1)
+                        }
                     }
                 }
-                return res.status(200).send(updatedPlanning)
+                return res.status(200).send(newPlannings)
             } else {
                 return res.status(404).send({
                     error: "Planning with id : " + idPlanning + " Not Found"
@@ -586,8 +609,8 @@ exports.addSessionToPlanning = async (req, res) => {
 //Update Session from Planning
 exports.updateSessionFromPlanning = async (req, res) => {
     try {
-        const { sessionId, templateId, teacher, subject, classroom, startsAt, duree, sessionType, initialSubGroup, WeeksDuration } = req.body
-        if (!sessionId || !templateId) {
+        const { sessionId, planningId, teacher, subject, classroom, startsAt, duree, sessionType, initialSubGroup, WeeksDuration } = req.body
+        if (!sessionId || !planningId) {
             return res.status(400).send({
                 error: "BadRequest"
             })
@@ -607,17 +630,17 @@ exports.updateSessionFromPlanning = async (req, res) => {
                 session.endsAt = (Number(duree) + Number(startsAt))
                 session.duration = WeeksDuration
                 await session.save()
-                const template = await Planning.findById(templateId)
+                const planning = await Planning.findById(planningId)
                     .populate("collegeYear")
                     .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                     .populate("group")
-                if (!template) {
+                if (!planning) {
                     return res.status(400).send({
-                        error: "TemplateError"
+                        error: "PlanningError"
                     })
                 } else {
                     return res.status(200).send({
-                        template
+                        planning
                     })
                 }
             } else {
@@ -711,6 +734,310 @@ exports.switchSessionsFromPlanning = async (req, res) => {
     }
 }
 
+// find availble teachers
+exports.findAvailableTeachers = async (req, res) => {
+    try {
+        const subjectId = req.params.subjectId
+        const { startsAt, duree, day, collegeYear, week } = req.body
+        if (!startsAt || !duree || (!day && day != 0) || !collegeYear || !subjectId || !week) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        var teachersOfTheSubject = await Subject.findById(subjectId, 'subjectName teachers').populate({ path: "teachers", select: { image: 0, note: 0, birth: 0, maritalStatus: 0, password: 0 } })
+        if (!teachersOfTheSubject) {
+            return res.status(204).send({
+                error: "EmptyDataBase",
+                message: "There is no Teachers in Data base"
+            })
+        } else {
+            teachersOfTheSubject = teachersOfTheSubject.teachers
+            var OccupiedTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
+                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, day: day } })
+            var OccupiedPredTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
+                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
+            var OccupiedNextTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
+                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt } } })
+            OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
+            if (OccupiedTeachers.length > 1) {
+                OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
+            }
+            else if (OccupiedTeachers.length === 1) {
+                OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
+            }
+            for (let i = 0; i < OccupiedPredTeachers.length; i++) {
+                if (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
+                    teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher != element._id.toString())
+                }
+            }
+            for (let j = 0; j < OccupiedNextTeachers.length; j++) {
+                if (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) {
+                    teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher != element._id.toString())
+                }
+            }
+            console.log(teachersOfTheSubject)
+            console.log(OccupiedTeachers)
+            if (!OccupiedTeachers.length) {
+                return res.status(200).json(teachersOfTheSubject)
+            } else {
+                return res.status(200).json(teachersOfTheSubject.filter((element) => OccupiedTeachers.indexOf(element._id.toString()) === -1))
+            }
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+
+//find available classrooms
+exports.findAvailableClassroms = async (req, res) => {
+    try {
+        console.log(req.body)
+        const { startsAt, duree, day, collegeYear, week } = req.body
+        if (!startsAt || !duree || (!day && day != 0) || !collegeYear || !week) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        var classrooms = await Classroom.find({})
+        if (!classrooms) {
+            return res.status(400).send({
+                error: "NoClassrooms"
+            })
+        }
+        var OccupiedClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: startsAt, day: day, collegeYear: collegeYear } })
+        var OccupiedPredClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
+        var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $gt: startsAt } } })
+        OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
+        if (OccupiedClassrooms.length > 1) {
+            OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
+        }
+        else if (OccupiedClassrooms.length === 1) {
+            // OccupiedClassrooms = [OccupiedClassrooms[0].classroom?.toString()]
+            OccupiedClassrooms = OccupiedClassrooms[0].sessions?.map((element) => element.classroom.toString()) || []
+            console.log(OccupiedClassrooms)
+        }
+        for (let i = 0; i < OccupiedPredClassrooms.length; i++) {
+            if (Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
+                console.log(1)
+                classrooms = classrooms.filter((element) => OccupiedPredClassrooms[i]?.sessions[0]?.classroom != element._id?.toString())
+            }
+        }
+        for (let j = 0; j < OccupiedNextClassrooms.length; j++) {
+            if (Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) {
+                classrooms = classrooms.filter((element) => OccupiedNextClassrooms[j]?.sessions[0]?.classroom != element._id?.toString())
+            }
+        }
+        if (!OccupiedClassrooms.length) {
+            return res.status(200).json(classrooms)
+        } else {
+            return res.status(200).json(classrooms.filter((element) => OccupiedClassrooms.indexOf(element._id.toString()) === -1))
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+
+//find available groups
+exports.getAvailableGroups = async (req, res) => {
+    try {
+        var { section, startsAt, duration, collegeYear, day, week } = req.params
+        startsAt = startsAt ? Number(startsAt) : null
+        duration = duration ? Number(duration) : null
+        const endsAt = startsAt + duration
+        console.log(startsAt, " ", endsAt)
+        var groups = await Group.find({ section, collegeYear })
+        var plannings = await Planning.find({ group: { $in: groups.map((element) => element._id) }, week: week }).populate("sessions")
+        plannings = plannings.filter((element) => element.sessions)
+        var sessions = []
+        plannings.forEach((element) => {
+            sessions = [...sessions, ...element.sessions]
+        })
+        const unavaiblableGroups = sessions.filter((element) => (day == element.day) && ((Number(element.startsAt) >= startsAt && Number(element.startsAt) < endsAt) || (Number(element.endsAt) <= endsAt && Number(element.endsAt) > startsAt) || (Number(element.startsAt) <= startsAt && Number(element.endsAt) >= endsAt))).map((element) => element.group.toString())
+        groups = groups ? groups.filter((element) => unavaiblableGroups.indexOf(element._id.toString()) === -1) : []
+        console.log(unavaiblableGroups)
+        return res.status(200).json(groups)
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+
+//function that checks if the classroom is available in the given week
+const checkClassroomAvailability = async (startsAt, duree, day, collegeYear, week, classroom) => {
+    try {
+        var OccupiedClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: startsAt, day: day, collegeYear: collegeYear } })
+        var OccupiedPredClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { day: day, startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
+        var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { day: day, startsAt: { $gt: startsAt } } })
+        OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
+        if (OccupiedClassrooms.length > 1) {
+            OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
+        }
+        else if (OccupiedClassrooms.length === 1) {
+            // OccupiedClassrooms = [OccupiedClassrooms[0].classroom.toString()]
+            OccupiedClassrooms = OccupiedClassrooms[0].sessions?.map((element) => element.classroom.toString()) || []
+        }
+        for (let i = 0; i < OccupiedPredClassrooms.length; i++) {
+            if ((Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredClassrooms[i]?.sessions[0]?.classroom == classroom)) {
+                return { classroom: classroom, available: false }
+            }
+        }
+        for (let j = 0; j < OccupiedNextClassrooms.length; j++) {
+            if ((Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextClassrooms[j]?.sessions[0]?.classroom == classroom)) {
+                return { classroom: classroom, available: false }
+            }
+        }
+        if (!OccupiedClassrooms.length) {
+            return { classroom: classroom, available: true }
+        } else if (OccupiedClassrooms.indexOf(classroom) === -1) {
+            return { classroom: classroom, available: true }
+        } else {
+            return { class: classroom, available: false }
+        }
+    } catch (e) {
+        console.log(e)
+    }
+}
+
+
+//function that checks if the teacher is available in the given week
+const checkTeacherAvailability = async (startsAt, duree, day, collegeYear, week, teacher) => {
+    try {
+        var OccupiedTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
+            .populate({ path: "sessions", match: { startsAt: startsAt, day: day } })
+        var OccupiedPredTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
+            .populate({ path: "sessions", match: { day: day, startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
+        var OccupiedNextTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
+            .populate({ path: 'sessions', match: { day: day, startsAt: { $gt: startsAt } } })
+        OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
+        if (OccupiedTeachers.length > 1) {
+            OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
+        }
+        else if (OccupiedTeachers.length === 1) {
+            OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]
+        }
+        for (let i = 0; i < OccupiedPredTeachers.length; i++) {
+            if ((Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredTeachers[i]?.sessions[0]?.teacher == teacher)) {
+                return { teacher: teacher, available: false }
+            }
+        }
+        for (let j = 0; j < OccupiedNextTeachers.length; j++) {
+            if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextTeachers[j]?.sessions[0]?.teacher == teacher)) {
+                return { teacher: teacher, available: false }
+            }
+        }
+        if (!OccupiedTeachers.length) {
+            return { teacher: teacher, available: true }
+        } else if (OccupiedTeachers.indexOf(teacher) === -1) {
+            return { teacher: teacher, available: true }
+        } else {
+            return { teacher: teacher, available: false }
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+
+}
+
+
+//function that checks if the group given is available in the given week
+const checkGroupAvailability = async (startsAt, duree, collegeYear, day, week, group) => {
+    try {
+        var planning = await Planning.findOne({ group: group, week: week, collegeYear: collegeYear }).populate({ path: "sessions", match: { day: day } })
+        if (planning) {
+            const session = planning.sessions.find((element) => element.startedAt == Number(startsAt))
+            if (session) {
+                return { group: group, available: false }
+            }
+            const predSession = planning.sessions.find((element) => element.endsAt > Number(startsAt))
+            if (predSession) {
+                return { group: group, available: false }
+            }
+            const nextSession = planning.sessions.find((element) => element.endsAt < Number(startsAt) + Number(duree))
+            if (nextSession) {
+                return { group: group, available: false }
+            }
+            return { group: group, available: true }
+        } else {
+            return { group: group, available: false }
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+
+
+
+//check availabity for the duration
+exports.checkSessionDurationAvailability = async (req, res) => {
+    console.log(req.body)
+    try {
+        const { groups, teacher, classroom, duration, week, collegeYear, group, startsAt, duree, day } = req.body
+        if (!teacher || !classroom || !duration) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        for (let i = 1; i <= Number(duration); i++) {
+            const planning = await Planning.findOne({ collegeYear: collegeYear, group: group, week: week + i })
+            if (planning) {
+                if (groups?.length) {
+                    for (let j = 0; j < groups.length; j++) {
+                        let groupAvailability = checkGroupAvailability(startsAt, duree, collegeYear, day, week + i, groups[j])
+                        if (!groupAvailability.available) {
+                            return res.status(204).send({
+                                message: " Le Groupe avec l'id ! " + groups[j] + " N'est pas disponible pour la semaine " + (week + i)
+                            })
+                        }
+                    }
+                }
+                let classroomAvailability = checkClassroomAvailability(startsAt, duree, day, collegeYear, week + i, classroom)
+                if (!classroomAvailability.available) {
+                    return res.status(204).send({
+                        available: false,
+                        message: " La Salle donnée n'est pas disponible dans la semaine " + (week + i)
+                    })
+                }
+                let teacherAvailability = checkTeacherAvailability(startsAt, duree, day, collegeYear, week + i, teacher)
+                if (!teacherAvailability.available) {
+                    return res.status(204).send({
+                        available: false,
+                        message: " Le Prof donnée n'est pas disponible dans la semaine " + (week + i)
+                    })
+                }
+            } else {
+                return res.status(400).send({
+                    error: "Le durée données dépasse l'année universitaire"
+                })
+            }
+        }
+        return res.status(200).send({
+            available: true
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
 
 
 // exports.createInitialTemplate = async (req, res) => {
