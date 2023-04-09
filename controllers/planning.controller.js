@@ -80,7 +80,8 @@ exports.create = async (req, res) => {
                                 endedAt: currentSession.endedAt,
                                 sessionType: currentSession.sessionType,
                                 active: currentSession.active,
-                                initialSubGroup: currentSession.initialSubGroup || "All"
+                                initialSubGroup: currentSession.initialSubGroup || "All",
+                                sessionCategorie: "Planning"
                             })
                             await newSession.save()
                             newSessions.push(newSession)
@@ -114,7 +115,8 @@ exports.create = async (req, res) => {
                                     endedAt: currentSession.endedAt,
                                     sessionType: currentSession.sessionType,
                                     active: currentSession.active,
-                                    initialSubGroup: currentSession.initialSubGroup || "All"
+                                    initialSubGroup: currentSession.initialSubGroup || "All",
+                                    sessionCategorie: "Planning"
                                 })
                                 await newSession.save()
                                 newSessions.push(newSession)
@@ -144,7 +146,8 @@ exports.create = async (req, res) => {
                                     endedAt: currentSession.endedAt,
                                     sessionType: currentSession.sessionType,
                                     active: currentSession.active,
-                                    initialSubGroup: currentSession.initialSubGroup || "All"
+                                    initialSubGroup: currentSession.initialSubGroup || "All",
+                                    sessionCategorie: "Planning"
                                 })
                                 await newSession.save()
                                 newSessions.push(newSession)
@@ -531,7 +534,8 @@ exports.addSessionToPlanning = async (req, res) => {
                     startsAt: startsAt,
                     endsAt: Number(startsAt) + Number(duree),
                     sessionType: sessionType,
-                    initialSubGroup: initialSubGroup || "All"
+                    initialSubGroup: initialSubGroup || "All",
+                    sessionCategorie: "Planning"
                 })
                 await otherSession.save()
                 if (otherSession) {
@@ -550,7 +554,8 @@ exports.addSessionToPlanning = async (req, res) => {
             sessionType: sessionType,
             duration: WeeksDuration || 1,
             initialSubGroup: initialSubGroup || "All",
-            createdBy: createdBy || null
+            createdBy: createdBy || null,
+            sessionCategorie: "Planning"
         })
         await session.save()
         if (session) {
@@ -573,7 +578,8 @@ exports.addSessionToPlanning = async (req, res) => {
                             sessionType: sessionType,
                             duration: WeeksDuration || 1,
                             initialSubGroup: initialSubGroup || "All",
-                            createdBy: createdBy || null
+                            createdBy: createdBy || null,
+                            sessionCategorie: "Planning"
                         })
                         await session2.save()
                         const updatedPlanning1 = await Planning.findOneAndUpdate({ collegeYear: collegeYear, group: group, week: updatedPlanning.week + i + 1 }, { $push: { sessions: session2._id } }, { new: true, runValidators: true })
@@ -607,10 +613,13 @@ exports.addSessionToPlanning = async (req, res) => {
 }
 
 //Update Session from Planning
+// group week duration => plannings 
 exports.updateSessionFromPlanning = async (req, res) => {
     try {
-        const { sessionId, planningId, teacher, subject, classroom, startsAt, duree, sessionType, initialSubGroup, WeeksDuration } = req.body
-        if (!sessionId || !planningId) {
+        console.log("-- update planning --")
+        console.log(req.body)
+        const { group, oldClassroom, oldStartsAt, oldDay, oldEndsAt, oldSubject, oldTeacher, week, collegeYear, teacher, subject, classroom, startsAt, endsAt, sessionType, initialSubGroup, WeeksDuration } = req.body
+        if (!group || !week) {
             return res.status(400).send({
                 error: "BadRequest"
             })
@@ -618,43 +627,49 @@ exports.updateSessionFromPlanning = async (req, res) => {
         if (!initialSubGroup) {
             initialSubGroup = "All"
         }
-        const session = await Session.findById(sessionId)
-
-        if (session) {
-            if (session.teacher != teacher || startsAt != session.startsAt || session.endsAt != (Number(duree) + Number(startsAt)) || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup || WeeksDuration != session.duration) {
-                session.teacher = teacher
-                session.subject = subject
-                session.classroom = classroom
-                session.sessionType = sessionType
-                session.initialSubGroup = initialSubGroup
-                session.startsAt = startsAt
-                session.endsAt = (Number(duree) + Number(startsAt))
-                session.duration = WeeksDuration
-                //change to manuael type
-                await session.save()
-                const planning = await Planning.findById(planningId)
-                    .populate("collegeYear")
-                    .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
-                    .populate("group")
-                if (!planning) {
-                    return res.status(400).send({
-                        error: "PlanningError"
-                    })
-                } else {
-                    return res.status(200).send({
-                        planning
-                    })
-                }
-            } else {
-                return res.status(304).send({
-                    updated: false
-                })
-            }
-        } else {
-            return res.status(404).send({
-                message: "SessionNotFound"
-            })
+        const plannings = await Planning.find({ group, collegeYear, week: { $gte: week, $lt: (Number(week) + Number(WeeksDuration)) } })
+            .populate({ path: "sessions", match: { day: oldDay, startsAt: oldStartsAt, endsAt: oldEndsAt, classroom: oldClassroom, subject: oldSubject, teacher: oldTeacher } })
+        console.log("length : " + plannings.length)
+        var sessions = []
+        for (var pl of plannings) {
+            sessions = [...sessions, ...pl?.sessions]
         }
+        console.log(sessions)
+        for (let session of sessions) {
+            session = await Session.findById(session._id)
+            if (session.teacher == teacher) {
+                session.subTeacher = null
+                if (startsAt != session.startsAt || session.endsAt != endsAt || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup) {
+                    session.subject = subject
+                    session.classroom = classroom
+                    session.sessionType = sessionType
+                    session.initialSubGroup = initialSubGroup
+                    session.startsAt = startsAt
+                    session.endsAt = endsAt
+                    session.sessionCategorie = "Planning"
+                }
+                await session.save()
+            }
+            else {
+                if (session.subTeacher != teacher || startsAt != session.startsAt || session.endsAt != endsAt || session.subject != subject || session.classroom != classroom || session.sessionType != sessionType || session.initialSubGroup != initialSubGroup) {
+                    session.subTeacher = teacher
+                    session.subject = subject
+                    session.classroom = classroom
+                    session.sessionType = sessionType
+                    session.initialSubGroup = initialSubGroup
+                    session.startsAt = startsAt
+                    session.endsAt = endsAt
+                    session.sessionCategorie = "Planning"
+                    await session.save()
+                }
+            }
+            console.log(session.subTeacher)
+        }
+        const newPlannings = await Planning.find({ group, week: { $gte: week, $lt: (Number(week) + Number(WeeksDuration)) } })
+            .populate("collegeYear")
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+            .populate("group")
+        return res.status(200).json(newPlannings)
     } catch (e) {
         console.log(e)
         return res.status(500).send({
@@ -755,11 +770,11 @@ exports.findAvailableTeachers = async (req, res) => {
         } else {
             teachersOfTheSubject = teachersOfTheSubject.teachers
             var OccupiedTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
-                .populate({ path: "sessions", match: { subject: subjectId, startsAt: startsAt, day: day } })
+                .populate({ path: "sessions", match: { startsAt: startsAt, day: day } })
             var OccupiedPredTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
-                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
+                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
             var OccupiedNextTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
-                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt } } })
+                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day } })
             OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
             if (OccupiedTeachers.length > 1) {
                 OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
@@ -767,19 +782,21 @@ exports.findAvailableTeachers = async (req, res) => {
             else if (OccupiedTeachers.length === 1) {
                 OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
             }
+            console.log(OccupiedPredTeachers.sessions)
+            console.log(OccupiedNextTeachers.sessions)
             for (let i = 0; i < OccupiedPredTeachers.length; i++) {
-                if (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
+                if ((Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt))) {
                     teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher != element._id.toString())
                 }
             }
             for (let j = 0; j < OccupiedNextTeachers.length; j++) {
-                if (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) {
+                if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree))) {
                     teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher != element._id.toString())
                 }
             }
             console.log(teachersOfTheSubject)
-            console.log(OccupiedTeachers)
             if (!OccupiedTeachers.length) {
+                console.log(2232)
                 return res.status(200).json(teachersOfTheSubject)
             } else {
                 return res.status(200).json(teachersOfTheSubject.filter((element) => OccupiedTeachers.indexOf(element._id.toString()) === -1))
@@ -811,8 +828,8 @@ exports.findAvailableClassroms = async (req, res) => {
             })
         }
         var OccupiedClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: startsAt, day: day, collegeYear: collegeYear } })
-        var OccupiedPredClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
-        var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $gt: startsAt } } })
+        var OccupiedPredClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
+        var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day } })
         OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
         if (OccupiedClassrooms.length > 1) {
             OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
@@ -850,7 +867,7 @@ exports.findAvailableClassroms = async (req, res) => {
 //find available groups
 exports.getAvailableGroups = async (req, res) => {
     try {
-        var { section, startsAt, duration, collegeYear, day, week } = req.params
+        var { section, startsAt, duration, collegeYear, day, week } = req.body
         startsAt = startsAt ? Number(startsAt) : null
         duration = duration ? Number(duration) : null
         const endsAt = startsAt + duration
@@ -863,6 +880,7 @@ exports.getAvailableGroups = async (req, res) => {
             sessions = [...sessions, ...element.sessions]
         })
         const unavaiblableGroups = sessions.filter((element) => (day == element.day) && ((Number(element.startsAt) >= startsAt && Number(element.startsAt) < endsAt) || (Number(element.endsAt) <= endsAt && Number(element.endsAt) > startsAt) || (Number(element.startsAt) <= startsAt && Number(element.endsAt) >= endsAt))).map((element) => element.group.toString())
+        groups = groups ? groups.filter((group) => plannings.some((planning) => planning.group.toString() === group._id.toString())) : []
         groups = groups ? groups.filter((element) => unavaiblableGroups.indexOf(element._id.toString()) === -1) : []
         console.log(unavaiblableGroups)
         return res.status(200).json(groups)
@@ -875,9 +893,23 @@ exports.getAvailableGroups = async (req, res) => {
 }
 
 
+
+
+
+
+
+
+
+
 //function that checks if the classroom is available in the given week
 const checkClassroomAvailability = async (startsAt, duree, day, collegeYear, week, classroom) => {
     try {
+        // console.log(startsAt)
+        // console.log(duree)
+        // console.log(day)
+        // console.log(collegeYear)
+        // console.log(week)
+        // console.log(classroom)
         var OccupiedClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: startsAt, day: day, collegeYear: collegeYear } })
         var OccupiedPredClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { day: day, startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
         var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { day: day, startsAt: { $gt: startsAt } } })
@@ -891,20 +923,22 @@ const checkClassroomAvailability = async (startsAt, duree, day, collegeYear, wee
         }
         for (let i = 0; i < OccupiedPredClassrooms.length; i++) {
             if ((Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredClassrooms[i]?.sessions[0]?.classroom == classroom)) {
-                return { classroom: classroom, available: false }
+                console.log(1)
+                return false
             }
         }
         for (let j = 0; j < OccupiedNextClassrooms.length; j++) {
             if ((Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextClassrooms[j]?.sessions[0]?.classroom == classroom)) {
-                return { classroom: classroom, available: false }
+                console.log(2)
+                return false
             }
         }
         if (!OccupiedClassrooms.length) {
-            return { classroom: classroom, available: true }
+            return true
         } else if (OccupiedClassrooms.indexOf(classroom) === -1) {
-            return { classroom: classroom, available: true }
+            return true
         } else {
-            return { class: classroom, available: false }
+            return false
         }
     } catch (e) {
         console.log(e)
@@ -926,56 +960,60 @@ const checkTeacherAvailability = async (startsAt, duree, day, collegeYear, week,
             OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
         }
         else if (OccupiedTeachers.length === 1) {
-            OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]
+            console.log(OccupiedTeachers)
+            OccupiedTeachers = OccupiedTeachers[0].sessions?.map((element) => element.teacher.toString()) || []
         }
         for (let i = 0; i < OccupiedPredTeachers.length; i++) {
             if ((Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredTeachers[i]?.sessions[0]?.teacher == teacher)) {
-                return { teacher: teacher, available: false }
+                return false
             }
         }
         for (let j = 0; j < OccupiedNextTeachers.length; j++) {
             if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextTeachers[j]?.sessions[0]?.teacher == teacher)) {
-                return { teacher: teacher, available: false }
+                return false
             }
         }
         if (!OccupiedTeachers.length) {
-            return { teacher: teacher, available: true }
+            return true
         } else if (OccupiedTeachers.indexOf(teacher) === -1) {
-            return { teacher: teacher, available: true }
+            return true
         } else {
-            return { teacher: teacher, available: false }
+            return false
         }
     } catch (e) {
         console.log(e)
-        return res.status(500).send({
-            error: "Server Error"
-        })
     }
-
 }
+
 
 
 //function that checks if the group given is available in the given week
 const checkGroupAvailability = async (startsAt, duree, collegeYear, day, week, group) => {
     try {
-        var planning = await Planning.findOne({ group: group, week: week, collegeYear: collegeYear }).populate({ path: "sessions", match: { day: day } })
+        const planning = await Planning.findOne({ group: group, week: week, collegeYear: collegeYear }).populate({ path: "sessions", match: { day: day } })
         if (planning) {
-            const session = planning.sessions.find((element) => element.startedAt == Number(startsAt))
+            const session = planning?.sessions.find((element) => element.startsAt == Number(startsAt))
             if (session) {
-                return { group: group, available: false }
+                return false
             }
-            const predSession = planning.sessions.find((element) => element.endsAt > Number(startsAt))
-            if (predSession) {
-                return { group: group, available: false }
+            const predSessions = planning?.sessions.filter((element) => element.startsAt < startsAt)
+            if (predSessions) {
+                const checkpredSession = predSessions.find((element) => element.endsAt > startsAt)
+                if (checkpredSession) {
+                    return false
+                }
             }
-            const nextSession = planning.sessions.find((element) => element.endsAt < Number(startsAt) + Number(duree))
-            if (nextSession) {
-                return { group: group, available: false }
+            const nextSessions = planning?.sessions.filter((element) => element.startsAt > startsAt)
+            if (nextSessions) {
+                const checknextSession = nextSessions.find((element) => element.endsAt < startsAt + duree)
+                if (checknextSession) {
+                    return false
+                }
             }
-            return { group: group, available: true }
         } else {
-            return { group: group, available: false }
+            return true
         }
+        return true
     } catch (e) {
         console.log(e)
         return res.status(500).send({
@@ -989,40 +1027,47 @@ const checkGroupAvailability = async (startsAt, duree, collegeYear, day, week, g
 
 //check availabity for the duration
 exports.checkSessionDurationAvailability = async (req, res) => {
-    console.log(req.body)
     try {
-        const { groups, teacher, classroom, duration, week, collegeYear, group, startsAt, duree, day } = req.body
+        var { groups, teacher, classroom, duration, week, collegeYear, group, startsAt, duree, day, sameTeacher, sameClassroom } = req.body
         if (!teacher || !classroom || !duration) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
-        for (let i = 1; i <= Number(duration); i++) {
+        sameTeacher = sameTeacher != undefined ? sameTeacher : false
+        sameClassroom = sameClassroom != undefined ? sameClassroom : false
+        for (var i = 1; i < Number(duration); i++) {
             const planning = await Planning.findOne({ collegeYear: collegeYear, group: group, week: week + i })
             if (planning) {
                 if (groups?.length) {
                     for (let j = 0; j < groups.length; j++) {
-                        let groupAvailability = checkGroupAvailability(startsAt, duree, collegeYear, day, week + i, groups[j])
-                        if (!groupAvailability.available) {
-                            return res.status(204).send({
-                                message: " Le Groupe avec l'id ! " + groups[j] + " N'est pas disponible pour la semaine " + (week + i)
+                        let groupAvailability = await checkGroupAvailability(startsAt, duree, collegeYear, day, week + i, groups[j])
+                        if (!groupAvailability) {
+                            return res.status(300).send({
+                                message: " Le Groupe avec l'id ! " + groups[j] + " n'est pas disponible pour la semaine " + (week + i)
                             })
                         }
                     }
                 }
-                let classroomAvailability = checkClassroomAvailability(startsAt, duree, day, collegeYear, week + i, classroom)
-                if (!classroomAvailability.available) {
-                    return res.status(204).send({
-                        available: false,
-                        message: " La Salle donnée n'est pas disponible dans la semaine " + (week + i)
-                    })
+                if (!sameClassroom) {
+                    console.log("not same class")
+                    let classroomAvailability = await checkClassroomAvailability(startsAt, duree, day, collegeYear, week + i, classroom)
+                    if (!classroomAvailability) {
+                        return res.status(300).send({
+                            available: false,
+                            message: " La Salle avec l'id :" + classroom + " n'est pas disponible dans la semaine " + (week + i)
+                        })
+                    }
                 }
-                let teacherAvailability = checkTeacherAvailability(startsAt, duree, day, collegeYear, week + i, teacher)
-                if (!teacherAvailability.available) {
-                    return res.status(204).send({
-                        available: false,
-                        message: " Le Prof donnée n'est pas disponible dans la semaine " + (week + i)
-                    })
+                if (!sameTeacher) {
+                    console.log("noy same teacher")
+                    let teacherAvailability = await checkTeacherAvailability(startsAt, duree, day, collegeYear, week + i, teacher)
+                    if (!teacherAvailability) {
+                        return res.status(300).send({
+                            available: false,
+                            message: " Le Prof avec l'id : " + teacher + " n'est pas disponible dans la semaine " + (week + i)
+                        })
+                    }
                 }
             } else {
                 return res.status(400).send({
@@ -1030,9 +1075,16 @@ exports.checkSessionDurationAvailability = async (req, res) => {
                 })
             }
         }
-        return res.status(200).send({
-            available: true
-        })
+        if (i > 1) {
+            return res.status(200).send({
+                available: true
+            })
+        }
+        else {
+            return res.status(500).send({
+                available: false
+            })
+        }
     } catch (e) {
         console.log(e)
         return res.status(500).send({

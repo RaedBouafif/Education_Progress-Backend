@@ -24,6 +24,7 @@ Router.route("/switchSessions").post(switchSessionsFromPlanning)
 Router.route("/checkDurationAvailability").post(checkSessionDurationAvailability)
 Router.route("/getAvailableClassrooms").post(findAvailableClassroms)
 Router.route("/getAvailableTeachers/:subjectId").post(findAvailableTeachers)
+Router.route("/availableGroups").post(getAvailableGroups)
 
 
 
@@ -32,7 +33,6 @@ Router.route("/getByWeek/:collegeYear/:group/:week").get(getPlanningByWeek)
 Router.route("/getNextWeek/:collegeYear/:group/:week").get(getPlanningByNextWeek)
 Router.route("/getPredWeek/:collegeYear/:group/:week").get(getPlanningByPredWeek)
 Router.route("/getCurrentWeek/:collegeYear/:group").get(getCurrentPlanning)
-Router.route("/availableGroups/:collegeYear/:section/:day/:startsAt/:duration/:week").get(getAvailableGroups)
 
 
 
