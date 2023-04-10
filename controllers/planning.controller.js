@@ -81,7 +81,7 @@ exports.create = async (req, res) => {
                                 sessionType: currentSession.sessionType,
                                 active: currentSession.active,
                                 initialSubGroup: currentSession.initialSubGroup || "All",
-                                sessionCategorie : "Planning"
+                                sessionCategorie : "Template"
                             })
                             await newSession.save()
                             newSessions.push(newSession)
@@ -116,7 +116,7 @@ exports.create = async (req, res) => {
                                     sessionType: currentSession.sessionType,
                                     active: currentSession.active,
                                     initialSubGroup: currentSession.initialSubGroup || "All",
-                                    sessionCategorie : "Planning"
+                                    sessionCategorie : "Template"
                                 })
                                 await newSession.save()
                                 newSessions.push(newSession)
@@ -147,7 +147,7 @@ exports.create = async (req, res) => {
                                     sessionType: currentSession.sessionType,
                                     active: currentSession.active,
                                     initialSubGroup: currentSession.initialSubGroup || "All",
-                                    sessionCategorie : "Planning"
+                                    sessionCategorie : "Template"
                                 })
                                 await newSession.save()
                                 newSessions.push(newSession)
