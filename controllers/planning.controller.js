@@ -375,7 +375,7 @@ exports.getPlanningByWeek = async (req, res) => {
         const planning = Planning.findOne({ group: group, collegeYear: collegeYear, week: week }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: { path: "section" } })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -395,16 +395,17 @@ exports.getPlanningByNextWeek = async (req, res) => {
     const collegeYear = req.params.collegeYear
     const group = req.params.group
     const week = req.params.week
+    const nbrNextWeek = req.query.nbrNextWeek ? Number(req.query.nbrNextWeek) : 1
     try {
         if (!week || !group || !collegeYear) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
-        const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) + 1 }).sort({ createdAt: -1 })
+        const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) + nbrNextWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: { path: "section" } })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -424,16 +425,17 @@ exports.getPlanningByPredWeek = async (req, res) => {
     const collegeYear = req.params.collegeYear
     const group = req.params.group
     const week = req.params.week
+    const nbrPredWeek = req.query.nbrPredWeek ? Number(req.query.nbrPredWeek) : 1
     try {
         if (!week || !group || !collegeYear) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
-        const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) - 1 }).sort({ createdAt: -1 })
+        const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) - nbrPredWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: { path: "section" } })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -478,7 +480,7 @@ exports.getCurrentPlanning = async (req, res) => {
                 const initialPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                     .populate({ path: "group", populate: { path: "section" } })
                     .populate("collegeYear")
-                    .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                    .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                 if (!initialPlanning) {
                     return res.status(404).json({
                         message: "PlannigNotFound"
@@ -561,7 +563,7 @@ exports.addSessionToPlanning = async (req, res) => {
         if (session) {
             const updatedPlanning = await Planning.findByIdAndUpdate(idPlanning, { $push: { sessions: session._id } }, { new: true, runValidators: true })
                 .populate("collegeYear")
-                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                 .populate("group")
             if (updatedPlanning) {
                 var newPlannings = [updatedPlanning]
@@ -584,7 +586,7 @@ exports.addSessionToPlanning = async (req, res) => {
                         await session2.save()
                         const updatedPlanning1 = await Planning.findOneAndUpdate({ collegeYear: collegeYear, group: group, week: updatedPlanning.week + i + 1 }, { $push: { sessions: session2._id } }, { new: true, runValidators: true })
                             .populate("collegeYear")
-                            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+                            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
                             .populate("group")
                         if (!updatedPlanning1) {
                             return res.status(400).send({
@@ -667,7 +669,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
         }
         const newPlannings = await Planning.find({ group, week: { $gte: week, $lt: (Number(week) + Number(WeeksDuration)) } })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
             .populate("group")
         return res.status(200).json(newPlannings)
     } catch (e) {
@@ -726,7 +728,7 @@ exports.switchSessionsFromPlanning = async (req, res) => {
         }
         const newInitialPlanning = await Planning.findByIdAndUpdate(initialPlanning, { $pull: { sessions: Types.ObjectId(intialSessionId) }, $push: { sessions: Types.ObjectId(otherSessionId) } }, { new: true })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
             .populate("group")
         if (newInitialPlanning) {
             const newOtherPlanning = await Planning.findByIdAndUpdate(otherPlanning, { $pull: { sessions: Types.ObjectId(otherSessionId) }, $push: { sessions: Types.ObjectId(intialSessionId) } }, { new: true })
