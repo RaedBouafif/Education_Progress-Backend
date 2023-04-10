@@ -1096,6 +1096,22 @@ exports.checkSessionDurationAvailability = async (req, res) => {
 }
 
 
+
+exports.toggleCancelSession = async (req, res) => {
+    try {
+        const { sessionId, status } = req.params
+        const updateSession = await Session.findOneAndUpdate(sessionId, { canceled: status }, { runValidators: true, new: true })
+        if (updateSession) return res.status(200).json({ updated: true })
+        return res.status(404).json({ error: "sessionNotFound" })
+
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
 // exports.createInitialTemplate = async (req, res) => {
 //     //test if modified or not
 //     try {
