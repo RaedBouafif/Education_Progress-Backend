@@ -7,7 +7,11 @@ const Session = Schema(
             ref: "Teacher",
             required: [true, "teacherRequired"]
         },
-        classroom: {
+        subTeacher: {
+            type: Schema.Types.ObjectId,
+            ref: "Teacher",
+        }
+        , classroom: {
             type: Schema.Types.ObjectId,
             ref: "Classroom",
             required: [true, "classroomRequired"]
@@ -92,19 +96,19 @@ const Session = Schema(
             type: Boolean,
             default: false
         },
-        duration : {
-            type : Number,
-            dafault : 1
+        duration: {
+            type: Number,
+            dafault: 1
         },
-        initialSubGroup : {
-            type : String,
+        initialSubGroup: {
+            type: String,
             required: [true, "sessionTypeRequired"],
-            enum : ['G1','G2','All']
+            enum: ['G1', 'G2', 'All']
         },
-        sessionCategorie : {
-            type : String,
-            required : [ true, "sessionCategorieRequired"],
-            enum : ['Template', 'Planning']
+        sessionCategorie: {
+            type: String,
+            required: [true, "sessionCategorieRequired"],
+            enum: ['Template', 'Planning']
         }
     },
     {

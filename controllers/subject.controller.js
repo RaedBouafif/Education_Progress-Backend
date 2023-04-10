@@ -335,13 +335,13 @@ exports.findAvailableTeachers = async (req, res) => {
             var OccupiedPredTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
                 .populate({ path: "sessions", match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
             var OccupiedNextTeachers = await Template.find({ collegeYear: collegeYear }, 'sessions')
-                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day : day } })
+                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day } })
             OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
             if (OccupiedTeachers.length > 1) {
                 OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
             }
             else if (OccupiedTeachers.length === 1) {
-                OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
+                OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]
             }
             for (let i = 0; i < OccupiedPredTeachers.length; i++) {
                 if (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
