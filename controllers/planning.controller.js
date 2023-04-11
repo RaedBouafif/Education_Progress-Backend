@@ -476,6 +476,9 @@ exports.getCurrentPlanning = async (req, res) => {
             // this will always return week number 1 
             const currentDate = new Date()
             const currentPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
+                .populate({ path: "group", populate: { path: "section" } })
+                .populate("collegeYear")
+                .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
             if (!currentPlanning) {
                 const initialPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                     .populate({ path: "group", populate: { path: "section" } })
@@ -774,34 +777,49 @@ exports.findAvailableTeachers = async (req, res) => {
             var OccupiedTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
                 .populate({ path: "sessions", match: { startsAt: startsAt, day: day } })
             var OccupiedPredTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
-                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
+                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt },  day: day }, options: { sort: { startsAt: -1 } } })
             var OccupiedNextTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
-                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day } })
+                .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day }, options: { sort: { startsAt: 1 } } })
             OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
-            if (OccupiedTeachers.length > 1) {
-                OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
-            }
-            else if (OccupiedTeachers.length === 1) {
-                OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
-            }
-            console.log(OccupiedPredTeachers.sessions)
-            console.log(OccupiedNextTeachers.sessions)
             for (let i = 0; i < OccupiedPredTeachers.length; i++) {
-                if ((Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt))) {
-                    teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher != element._id.toString())
+                if ( OccupiedPredTeachers[i].sessions?.length ){
+                    if ((Number(OccupiedPredTeachers[i].sessions[0]?.endsAt) > Number(startsAt))) {
+                        teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher.toString() != element._id.toString())
+                    }
                 }
             }
             for (let j = 0; j < OccupiedNextTeachers.length; j++) {
-                if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree))) {
-                    teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher != element._id.toString())
+                if ( OccupiedNextTeachers[j].sessions?.length ){
+                    if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree))) {
+                        console.log("edszdqs")
+                        teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher.toString() != element._id.toString())
+                    }
                 }
+                // console.log(OccupiedNextTeachers[j]?.sessions[0]?.startsAt)
+                // console.log(Number(startsAt) + Number(duree))
+               
             }
-            console.log(teachersOfTheSubject)
-            if (!OccupiedTeachers.length) {
-                console.log(2232)
+            var newOccupiedTeachers = []
+            if (OccupiedTeachers.length > 1) {
+                let curr =0
+                for ( let i=0 ; i < OccupiedTeachers.length ; i++){
+                    if ( OccupiedTeachers[i].sessions?.length ){
+                        newOccupiedTeachers[curr] = OccupiedTeachers[i].sessions[0].teacher.toString()
+                        curr = curr+1
+                    }
+                }
+                // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
+            }
+            else if (OccupiedTeachers.length === 1) {
+                newOccupiedTeachers = OccupiedTeachers[0].sessions?.map((element) => element.teacher.toString()) || []
+                //OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
+            }
+            // console.log(teachersOfTheSubject)
+            if (!newOccupiedTeachers.length) {
                 return res.status(200).json(teachersOfTheSubject)
             } else {
-                return res.status(200).json(teachersOfTheSubject.filter((element) => OccupiedTeachers.indexOf(element._id.toString()) === -1))
+                console.log(2232)
+                return res.status(200).json(teachersOfTheSubject.filter((element) => newOccupiedTeachers.indexOf(element._id.toString()) === -1))
             }
         }
     } catch (e) {
@@ -833,29 +851,42 @@ exports.findAvailableClassroms = async (req, res) => {
         var OccupiedPredClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
         var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day } })
         OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
-        if (OccupiedClassrooms.length > 1) {
-            OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
-        }
-        else if (OccupiedClassrooms.length === 1) {
-            // OccupiedClassrooms = [OccupiedClassrooms[0].classroom?.toString()]
-            OccupiedClassrooms = OccupiedClassrooms[0].sessions?.map((element) => element.classroom.toString()) || []
-            console.log(OccupiedClassrooms)
-        }
         for (let i = 0; i < OccupiedPredClassrooms.length; i++) {
-            if (Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
-                console.log(1)
-                classrooms = classrooms.filter((element) => OccupiedPredClassrooms[i]?.sessions[0]?.classroom != element._id?.toString())
+            if ( OccupiedPredClassrooms[i].sessions?.length ){
+                if (Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
+                    console.log(1)
+                    classrooms = classrooms.filter((element) => OccupiedPredClassrooms[i]?.sessions[0]?.classroom != element._id?.toString())
+                }
             }
         }
         for (let j = 0; j < OccupiedNextClassrooms.length; j++) {
-            if (Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) {
-                classrooms = classrooms.filter((element) => OccupiedNextClassrooms[j]?.sessions[0]?.classroom != element._id?.toString())
+            if( OccupiedNextClassrooms[j].sessions?.length ){
+                if (Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) {
+                    classrooms = classrooms.filter((element) => OccupiedNextClassrooms[j]?.sessions[0]?.classroom != element._id?.toString())
+                }
             }
         }
-        if (!OccupiedClassrooms.length) {
+        var newOccupiedClassrooms = []
+        if (OccupiedClassrooms.length > 1) {
+            console.log("hedghioi")
+            let x =0
+            for ( let i=0 ; i < OccupiedClassrooms.length ; i++){
+                if ( OccupiedClassrooms[i].sessions?.length ){
+                    newOccupiedClassrooms[x] = OccupiedClassrooms[i].sessions[0].teacher.toString()
+                    console.log(newOccupiedClassrooms)
+                    x = x+1
+                }
+            }
+            // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
+        }
+        else if (OccupiedClassrooms.length === 1) {
+            newOccupiedClassrooms = OccupiedClassrooms[0].sessions?.map((element) => element.teacher.toString()) || []
+            //OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
+        }
+        if (!newOccupiedClassrooms.length) {
             return res.status(200).json(classrooms)
         } else {
-            return res.status(200).json(classrooms.filter((element) => OccupiedClassrooms.indexOf(element._id.toString()) === -1))
+            return res.status(200).json(classrooms.filter((element) => newOccupiedClassrooms.indexOf(element._id.toString()) === -1))
         }
     } catch (e) {
         console.log(e)
@@ -916,28 +947,42 @@ const checkClassroomAvailability = async (startsAt, duree, day, collegeYear, wee
         var OccupiedPredClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { day: day, startsAt: { $lt: startsAt } }, options: { sort: { startsAt: -1 } } })
         var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { day: day, startsAt: { $gt: startsAt } } })
         OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
-        if (OccupiedClassrooms.length > 1) {
-            OccupiedClassrooms = OccupiedClassrooms.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.classroom?.toString()) || []
-        }
-        else if (OccupiedClassrooms.length === 1) {
-            // OccupiedClassrooms = [OccupiedClassrooms[0].classroom.toString()]
-            OccupiedClassrooms = OccupiedClassrooms[0].sessions?.map((element) => element.classroom.toString()) || []
-        }
         for (let i = 0; i < OccupiedPredClassrooms.length; i++) {
-            if ((Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredClassrooms[i]?.sessions[0]?.classroom == classroom)) {
-                console.log(1)
-                return false
+            if ( OccupiedPredClassrooms[i].sessions?.length ){
+                if ((Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredClassrooms[i]?.sessions[0]?.classroom == classroom)) {
+                    console.log(1)
+                    return false
+                }
             }
         }
         for (let j = 0; j < OccupiedNextClassrooms.length; j++) {
-            if ((Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextClassrooms[j]?.sessions[0]?.classroom == classroom)) {
-                console.log(2)
-                return false
+            if ( OccupiedNextClassrooms[j].sessions?.length ){
+                if ((Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextClassrooms[j]?.sessions[0]?.classroom == classroom)) {
+                    console.log(2)
+                    return false
+                }
             }
         }
-        if (!OccupiedClassrooms.length) {
+        var newOccupiedClassrooms = []
+        if (OccupiedClassrooms.length > 1) {
+            console.log("hedghioi")
+            let x =0
+            for ( let i=0 ; i < OccupiedClassrooms.length ; i++){
+                if ( OccupiedClassrooms[i].sessions?.length ){
+                    newOccupiedClassrooms[x] = OccupiedClassrooms[i].sessions[0].teacher.toString()
+                    console.log(newOccupiedClassrooms)
+                    x = x+1
+                }
+            }
+            // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
+        }
+        else if (OccupiedClassrooms.length === 1) {
+            newOccupiedClassrooms = OccupiedClassrooms[0].sessions?.map((element) => element.teacher.toString()) || []
+            //OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
+        }
+        if (!newOccupiedClassrooms.length) {
             return true
-        } else if (OccupiedClassrooms.indexOf(classroom) === -1) {
+        } else if (newOccupiedClassrooms.indexOf(classroom) === -1) {
             return true
         } else {
             return false
@@ -958,26 +1003,40 @@ const checkTeacherAvailability = async (startsAt, duree, day, collegeYear, week,
         var OccupiedNextTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
             .populate({ path: 'sessions', match: { day: day, startsAt: { $gt: startsAt } } })
         OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
-        if (OccupiedTeachers.length > 1) {
-            OccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
-        }
-        else if (OccupiedTeachers.length === 1) {
-            console.log(OccupiedTeachers)
-            OccupiedTeachers = OccupiedTeachers[0].sessions?.map((element) => element.teacher.toString()) || []
-        }
         for (let i = 0; i < OccupiedPredTeachers.length; i++) {
-            if ((Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredTeachers[i]?.sessions[0]?.teacher == teacher)) {
-                return false
+            if ( OccupiedPredTeachers[i].sessions?.length){
+                if ((OccupiedPredTeachers[i].sessions.length) && (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredTeachers[i]?.sessions[0]?.teacher == teacher)) {
+                    return false
+                }
             }
         }
         for (let j = 0; j < OccupiedNextTeachers.length; j++) {
-            if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextTeachers[j]?.sessions[0]?.teacher == teacher)) {
-                return false
+            if ( OccupiedNextTeachers[j].sessions?.length){
+                if ( (OccupiedNextTeachers[j].sessions.length) && (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextTeachers[j]?.sessions[0]?.teacher == teacher)) {
+                    return false
+                }
             }
         }
-        if (!OccupiedTeachers.length) {
+        var newOccupiedTeachers = []
+        if (OccupiedTeachers.length > 1) {
+            console.log("hedghioi")
+            let x =0
+            for ( let i=0 ; i < OccupiedTeachers.length ; i++){
+                if ( OccupiedTeachers[i].sessions?.length ){
+                    newOccupiedTeachers[x] = OccupiedTeachers[i].sessions[0].teacher.toString()
+                    console.log(newOccupiedTeachers)
+                    x = x+1
+                }
+            }
+            // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
+        }
+        else if (OccupiedTeachers.length === 1) {
+            newOccupiedTeachers = OccupiedTeachers[0].sessions?.map((element) => element.teacher.toString()) || []
+            //OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
+        }
+        if (!newOccupiedTeachers.length) {
             return true
-        } else if (OccupiedTeachers.indexOf(teacher) === -1) {
+        } else if (newOccupiedTeachers.indexOf(teacher) === -1) {
             return true
         } else {
             return false

@@ -109,7 +109,7 @@ const Session = Schema(
             type: String,
             required: [true, "sessionCategorieRequired"],
             enum: ['Template', 'Planning']
-        }
+        },
     },
     {
         timestamps: true,
