@@ -110,6 +110,14 @@ const Session = Schema(
             required: [true, "sessionCategorieRequired"],
             enum: ['Template', 'Planning']
         },
+        catchedBy: {
+            type: Schema.Types.ObjectId,
+            ref: "Session",
+        },
+        catched: {
+            type: Schema.Types.ObjectId,
+            ref: "Session",
+        }
     },
     {
         timestamps: true,

@@ -81,7 +81,7 @@ exports.create = async (req, res) => {
                                 sessionType: currentSession.sessionType,
                                 active: currentSession.active,
                                 initialSubGroup: currentSession.initialSubGroup || "All",
-                                sessionCategorie : "Template"
+                                sessionCategorie: "Template"
                             })
                             await newSession.save()
                             newSessions.push(newSession)
@@ -116,7 +116,7 @@ exports.create = async (req, res) => {
                                     sessionType: currentSession.sessionType,
                                     active: currentSession.active,
                                     initialSubGroup: currentSession.initialSubGroup || "All",
-                                    sessionCategorie : "Template"
+                                    sessionCategorie: "Template"
                                 })
                                 await newSession.save()
                                 newSessions.push(newSession)
@@ -147,7 +147,7 @@ exports.create = async (req, res) => {
                                     sessionType: currentSession.sessionType,
                                     active: currentSession.active,
                                     initialSubGroup: currentSession.initialSubGroup || "All",
-                                    sessionCategorie : "Template"
+                                    sessionCategorie: "Template"
                                 })
                                 await newSession.save()
                                 newSessions.push(newSession)
@@ -521,7 +521,7 @@ exports.getCurrentPlanning = async (req, res) => {
 exports.addSessionToPlanning = async (req, res) => {
     console.log(req.body)
     try {
-        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, WeeksDuration, initialSubGroup, otherGroups, idPlanning, createdBy, collegeYear } = req.body
+        const { teacher, classroom, subject, group, day, startsAt, duree, sessionType, WeeksDuration, initialSubGroup, otherGroups, idPlanning, createdBy, collegeYear, catched } = req.body
         if (!teacher || !classroom || !subject || !group || (!day && day != 0) || !startsAt || !duree || !sessionType || !idPlanning) {
             return res.status(400).send({
                 error: "BadRequest"
@@ -560,10 +560,14 @@ exports.addSessionToPlanning = async (req, res) => {
             duration: WeeksDuration || 1,
             initialSubGroup: initialSubGroup || "All",
             createdBy: createdBy || null,
-            sessionCategorie: "Planning"
+            sessionCategorie: "Planning",
+            catched
         })
         await session.save()
         if (session) {
+            if (catched) {
+                await Session.findByIdAndUpdate(catched, { catchedBy: session._id }, { runValidators: true, new: true })
+            }
             const updatedPlanning = await Planning.findByIdAndUpdate(idPlanning, { $push: { sessions: session._id } }, { new: true, runValidators: true })
                 .populate("collegeYear")
                 .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 } }, { path: "subTeacher", select: { password: 0 } }, { path: "subject" }, { path: "classroom" }] })
@@ -777,19 +781,19 @@ exports.findAvailableTeachers = async (req, res) => {
             var OccupiedTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
                 .populate({ path: "sessions", match: { startsAt: startsAt, day: day } })
             var OccupiedPredTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
-                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt },  day: day }, options: { sort: { startsAt: -1 } } })
+                .populate({ path: "sessions", match: { startsAt: { $lt: startsAt }, day: day }, options: { sort: { startsAt: -1 } } })
             var OccupiedNextTeachers = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions')
                 .populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day }, options: { sort: { startsAt: 1 } } })
             OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
             for (let i = 0; i < OccupiedPredTeachers.length; i++) {
-                if ( OccupiedPredTeachers[i].sessions?.length ){
+                if (OccupiedPredTeachers[i].sessions?.length) {
                     if ((Number(OccupiedPredTeachers[i].sessions[0]?.endsAt) > Number(startsAt))) {
                         teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher.toString() != element._id.toString())
                     }
                 }
             }
             for (let j = 0; j < OccupiedNextTeachers.length; j++) {
-                if ( OccupiedNextTeachers[j].sessions?.length ){
+                if (OccupiedNextTeachers[j].sessions?.length) {
                     if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree))) {
                         console.log("edszdqs")
                         teachersOfTheSubject = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher.toString() != element._id.toString())
@@ -797,15 +801,15 @@ exports.findAvailableTeachers = async (req, res) => {
                 }
                 // console.log(OccupiedNextTeachers[j]?.sessions[0]?.startsAt)
                 // console.log(Number(startsAt) + Number(duree))
-               
+
             }
             var newOccupiedTeachers = []
             if (OccupiedTeachers.length > 1) {
-                let curr =0
-                for ( let i=0 ; i < OccupiedTeachers.length ; i++){
-                    if ( OccupiedTeachers[i].sessions?.length ){
+                let curr = 0
+                for (let i = 0; i < OccupiedTeachers.length; i++) {
+                    if (OccupiedTeachers[i].sessions?.length) {
                         newOccupiedTeachers[curr] = OccupiedTeachers[i].sessions[0].teacher.toString()
-                        curr = curr+1
+                        curr = curr + 1
                     }
                 }
                 // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
@@ -852,7 +856,7 @@ exports.findAvailableClassroms = async (req, res) => {
         var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { startsAt: { $gt: startsAt }, day: day } })
         OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
         for (let i = 0; i < OccupiedPredClassrooms.length; i++) {
-            if ( OccupiedPredClassrooms[i].sessions?.length ){
+            if (OccupiedPredClassrooms[i].sessions?.length) {
                 if (Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) {
                     console.log(1)
                     classrooms = classrooms.filter((element) => OccupiedPredClassrooms[i]?.sessions[0]?.classroom != element._id?.toString())
@@ -860,7 +864,7 @@ exports.findAvailableClassroms = async (req, res) => {
             }
         }
         for (let j = 0; j < OccupiedNextClassrooms.length; j++) {
-            if( OccupiedNextClassrooms[j].sessions?.length ){
+            if (OccupiedNextClassrooms[j].sessions?.length) {
                 if (Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) {
                     classrooms = classrooms.filter((element) => OccupiedNextClassrooms[j]?.sessions[0]?.classroom != element._id?.toString())
                 }
@@ -869,12 +873,12 @@ exports.findAvailableClassroms = async (req, res) => {
         var newOccupiedClassrooms = []
         if (OccupiedClassrooms.length > 1) {
             console.log("hedghioi")
-            let x =0
-            for ( let i=0 ; i < OccupiedClassrooms.length ; i++){
-                if ( OccupiedClassrooms[i].sessions?.length ){
+            let x = 0
+            for (let i = 0; i < OccupiedClassrooms.length; i++) {
+                if (OccupiedClassrooms[i].sessions?.length) {
                     newOccupiedClassrooms[x] = OccupiedClassrooms[i].sessions[0].teacher.toString()
                     console.log(newOccupiedClassrooms)
-                    x = x+1
+                    x = x + 1
                 }
             }
             // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
@@ -948,7 +952,7 @@ const checkClassroomAvailability = async (startsAt, duree, day, collegeYear, wee
         var OccupiedNextClassrooms = await Planning.find({ collegeYear: collegeYear, week: week }, 'sessions').populate({ path: 'sessions', match: { day: day, startsAt: { $gt: startsAt } } })
         OccupiedClassrooms = OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedClassrooms?.filter((element) => Array.isArray(element.sessions)) : []
         for (let i = 0; i < OccupiedPredClassrooms.length; i++) {
-            if ( OccupiedPredClassrooms[i].sessions?.length ){
+            if (OccupiedPredClassrooms[i].sessions?.length) {
                 if ((Number(OccupiedPredClassrooms[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredClassrooms[i]?.sessions[0]?.classroom == classroom)) {
                     console.log(1)
                     return false
@@ -956,7 +960,7 @@ const checkClassroomAvailability = async (startsAt, duree, day, collegeYear, wee
             }
         }
         for (let j = 0; j < OccupiedNextClassrooms.length; j++) {
-            if ( OccupiedNextClassrooms[j].sessions?.length ){
+            if (OccupiedNextClassrooms[j].sessions?.length) {
                 if ((Number(OccupiedNextClassrooms[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextClassrooms[j]?.sessions[0]?.classroom == classroom)) {
                     console.log(2)
                     return false
@@ -966,12 +970,12 @@ const checkClassroomAvailability = async (startsAt, duree, day, collegeYear, wee
         var newOccupiedClassrooms = []
         if (OccupiedClassrooms.length > 1) {
             console.log("hedghioi")
-            let x =0
-            for ( let i=0 ; i < OccupiedClassrooms.length ; i++){
-                if ( OccupiedClassrooms[i].sessions?.length ){
+            let x = 0
+            for (let i = 0; i < OccupiedClassrooms.length; i++) {
+                if (OccupiedClassrooms[i].sessions?.length) {
                     newOccupiedClassrooms[x] = OccupiedClassrooms[i].sessions[0].teacher.toString()
                     console.log(newOccupiedClassrooms)
-                    x = x+1
+                    x = x + 1
                 }
             }
             // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
@@ -1004,15 +1008,15 @@ const checkTeacherAvailability = async (startsAt, duree, day, collegeYear, week,
             .populate({ path: 'sessions', match: { day: day, startsAt: { $gt: startsAt } } })
         OccupiedTeachers = OccupiedTeachers?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? OccupiedTeachers?.filter((element) => Array.isArray(element.sessions)) : []
         for (let i = 0; i < OccupiedPredTeachers.length; i++) {
-            if ( OccupiedPredTeachers[i].sessions?.length){
+            if (OccupiedPredTeachers[i].sessions?.length) {
                 if ((OccupiedPredTeachers[i].sessions.length) && (Number(OccupiedPredTeachers[i]?.sessions[0]?.endsAt) > Number(startsAt)) && (OccupiedPredTeachers[i]?.sessions[0]?.teacher == teacher)) {
                     return false
                 }
             }
         }
         for (let j = 0; j < OccupiedNextTeachers.length; j++) {
-            if ( OccupiedNextTeachers[j].sessions?.length){
-                if ( (OccupiedNextTeachers[j].sessions.length) && (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextTeachers[j]?.sessions[0]?.teacher == teacher)) {
+            if (OccupiedNextTeachers[j].sessions?.length) {
+                if ((OccupiedNextTeachers[j].sessions.length) && (Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree)) && (OccupiedNextTeachers[j]?.sessions[0]?.teacher == teacher)) {
                     return false
                 }
             }
@@ -1020,12 +1024,12 @@ const checkTeacherAvailability = async (startsAt, duree, day, collegeYear, week,
         var newOccupiedTeachers = []
         if (OccupiedTeachers.length > 1) {
             console.log("hedghioi")
-            let x =0
-            for ( let i=0 ; i < OccupiedTeachers.length ; i++){
-                if ( OccupiedTeachers[i].sessions?.length ){
+            let x = 0
+            for (let i = 0; i < OccupiedTeachers.length; i++) {
+                if (OccupiedTeachers[i].sessions?.length) {
                     newOccupiedTeachers[x] = OccupiedTeachers[i].sessions[0].teacher.toString()
                     console.log(newOccupiedTeachers)
-                    x = x+1
+                    x = x + 1
                 }
             }
             // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
