@@ -1,6 +1,7 @@
 const CollegeYear = require("../models/collegeYear.model")
 const Semester = require("../models/semester.model")
-
+const moment = require("moment-timezone")
+const { DateTime } = require('luxon')
 // create a new collegeYear
 exports.createCollegeYear = async (req, res) => {
     try {
@@ -13,6 +14,7 @@ exports.createCollegeYear = async (req, res) => {
         await collegeYear.save()
         return res.status(201).json(collegeYear)
     } catch (e) {
+        console.log(e.message)
         return res.status(500).send({
             error: e.message,
             message: "Server ERROR!"
@@ -26,11 +28,15 @@ exports.createCollegeYearWithSemesters = async (req, res) => {
         const { semester1, semester2, year} = req.body
         if (!semester1 || !semester2 || !year) {
             return res.status(400).send({
-                error: "BadRequest"
+                error: "BadRequest" 
             })
         }
-        const sem1 = await Semester.create(semester1)
-        const sem2 = await Semester.create(semester2)
+        const dateBegin1 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
+        const finishDate1 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
+        const dateBegin2 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
+        const finishDate2 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
+        const sem1 = await Semester.create({...semester1, dateBegin : dateBegin1, dateEnd : finishDate1})
+        const sem2 = await Semester.create({...semester2, dateBegin : dateBegin2, dateEnd : finishDate2})
         await sem1.save()
         await sem2.save()
         if ( sem1 && sem2 ){
@@ -59,6 +65,7 @@ exports.createCollegeYearWithSemesters = async (req, res) => {
             })
         }
     } catch (e) {
+        console.log(e.message)
         if ( e.code === 11000) {
             return res.status(409).send({
               error : "BadRequest"
@@ -81,17 +88,14 @@ exports.createCollegeYearWithSemesters = async (req, res) => {
 // GET All college years 
 exports.findAllCollegeYears = (req, res) => {
     try {
-        CollegeYear.find({}).then(collegeYears => {
+        CollegeYear.find({}).populate({ path :"semesters",  options: { sort: { dateBegin: 1 } } }).then(collegeYears => {
             if (!collegeYears) {
                 return res.status(204).send({
                     message: "There is no College years in the database!!",
                     found: false
                 })
             }
-            return res.status(200).send({
-                collegeYears,
-                found: true
-            })
+            return res.status(200).send(collegeYears)
         }).catch(err => {
             return res.status(400).send({
                 error: err.message,
@@ -99,6 +103,7 @@ exports.findAllCollegeYears = (req, res) => {
             })
         })
     } catch (e) {
+        console.log(e.message)
         return res.status(500).send(({
             error: e.message,
             message: "Server ERROR!"
@@ -107,87 +112,107 @@ exports.findAllCollegeYears = (req, res) => {
 }
 
 // GET All college years 
-exports.findOneCollegeYear = (req, res) => {
-    try {
-        if (!req.params.yearId){
-            return res.status(400).send({
-                error : "BadRequest"
-            })
-        }
-        CollegeYear.findById(req.params.yearId).populate("semesters").then(collegeYear => {
-            if (!collegeYear) {
-                return res.status(404).send({
-                    message: "College year not found!!",
-                    found: false
-                })
-            }
-            return res.status(200).send({
-                collegeYear,
-                found: true
-            })
-        }).catch(err => {
-            return res.status(400).send({
-                error: err.message,
-                message: "Some Error occured while getting all the College years"
-            })
-        })
-    } catch (e) {
-        return res.status(500).send(({
-            error: e.message,
-            message: "Server ERROR!"
-        }))
-    }
-}
+// exports.findOneCollegeYear = (req, res) => {
+//     try {
+//         if (!req.params.yearId){
+//             return res.status(400).send({
+//                 error : "BadRequest"
+//             })
+//         }
+//         CollegeYear.findById(req.params.yearId).populate({ path :"semesters",  options: { sort: { dateBegin: 1 } } }).then(collegeYear => {
+//             if (!collegeYear) {
+//                 return res.status(404).send({
+//                     message: "College year not found!!",
+//                     found: false
+//                 })
+//             }
+//             return res.status(200).send({
+//                 collegeYear,
+//                 found: true
+//             })
+//         }).catch(err => {
+//             return res.status(400).send({
+//                 error: err.message,
+//                 message: "Some Error occured while getting all the College years"
+//             })
+//         })
+//     } catch (e) {
+//         return res.status(500).send(({
+//             error: e.message,
+//             message: "Server ERROR!"
+//         }))
+//     }
+// }
 
 
 //update college year 
-exports.updateCollegeYear =  (req,res) => {
+exports.updateCollegeYear = async (req,res) => {
     try{
-        if (!req.body.year){
+        const { semesters, year } = req.body
+        if (!year){
             return res.status(400).send({
                 error : "BadRequest"
             })
         }
-        console.log(req.body)
-        CollegeYear.findOne({ year: req.body.year })
-        .populate('semesters')
-        .then(  collegeYear => {
-            // Modify the post documents associated with the user
-            if (collegeYear){
-                console.log(collegeYear)
-                collegeYear.semesters.forEach((semester, index) => {
-                    semester.dateBegin = req.body.semesters[index].dateBegin;
-                    semester.dateEnd = req.body.semesters[index].dateEnd;
-                    semester.coefficient = req.body.semesters[index].coefficient;
-                    semester.save();
-                });
-                // Save the updated user document
-                collegeYear.note = req.body.note
-                collegeYear.save().then( data => {
-                    if (data){
-                        return res.status(200).send({
-                            data,
-                            updated : true
-                        })
-                    }
-                }).catch(err => {
-                    console.log(err.message)
-                    return res.status(400).send({
-                        error : "some error occured while updating"
-                    })
-                })
-            }else {
-                return res.status(404).send({
-                    error : "College year is not found"
-                })
+        const collegeYear = await CollegeYear.findOne({ year: req.body.year }).populate({ path :"semesters",  options: { sort: { dateBegin: 1 } } })
+            .populate('semesters')
+        if (collegeYear){
+            for( let semester of collegeYear.semesters){
+                const foundSemester = semesters.find((element) => element._id == semester._id.toString()) 
+                if (foundSemester){
+                    console.log(foundSemester)
+                    const dateBegin = DateTime.fromISO(foundSemester.dateBegin, { zone : 'utc'})
+                    var sameDate = dateBegin.toISO({ includeOffset : false})
+                    const dateEnd = DateTime.fromISO(foundSemester.dateEnd, { zone : 'utc'})
+                    var sameDate2 = dateEnd.toISO({ includeOffset : false})
+                    // const dateBegin = moment.tz(new Date(foundSemester.dateBegin), 'Europe/Paris').toDate()
+                    // const dateEnd = moment.tz(new Date(foundSemester.dateEnd), 'Europe/Paris').toDate()
+                    sameDate = new Date(sameDate)
+                    console.log(new Date(sameDate.setDate( sameDate.getDate() + 1)))
+                    await Semester.findByIdAndUpdate(semester._id, { dateBegin : sameDate, dateEnd : sameDate2, coefficient : foundSemester.coefficient } )
+                }
             }
-        }).catch( err => {
-            console.log(err)
-            return res.status(400).send({
-                error : "Some error occured while updating"
+            await collegeYear.save()
+            return res.status(200).send(collegeYear)
+        }else {
+            return res.status(404).send({
+                error : "College year is not found"
             })
-        })
+        }
+        // .then(  collegeYear => {
+        //     // Modify the post documents associated with the user
+        //     if (collegeYear){
+        //         console.log(collegeYear)
+        //         collegeYear.semesters.forEach((semester, index) => {
+        //             semester.dateBegin = req.body.semesters[index].dateBegin;
+        //             semester.dateEnd = req.body.semesters[index].dateEnd;
+        //             semester.coefficient = req.body.semesters[index].coefficient;
+        //             semester.save();
+        //         });
+        //         // Save the updated user document
+        //         collegeYear.note = req.body.note
+        //         collegeYear.save().then( data => {
+        //             if (data){
+        //                 return res.status(200).send({
+        //                     data,
+        //                     updated : true
+        //                 })
+        //             }
+        //         }).catch(err => {
+        //             console.log(err.message)
+        //             return res.status(400).send({
+        //                 error : "some error occured while updating"
+        //             })
+        //         })
+
+        // }).catch( err => {
+        //     console.log(err)
+        //     return res.status(400).send({
+        //         error : "Some error occured while updating"
+        //     })
+        // })
     }catch(e) {
+        console.log(e.message)
         return res.status(500).send({
             error :"Server Error!"
         })
