@@ -29,6 +29,26 @@ exports.startingSession = async (req,res) =>{
     } 
 } 
 
+// startedSession
+exports.endingSession = async (req,res) =>{
+    try{
+        //StartedAt is a number , if it should be a date .....
+        const { sessionId, endedAt } = req.params.sessionId
+        if (!sessionId ){
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        const sessionStarted = await Session.findByIdAndUpdate(sessionId, { endedAt : endedAt}, { new : true, runValidators : true})
+        return res.status(200).send(sessionStarted)
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error : "Server Error"
+        })
+    } 
+} 
+
 // get all sessionDetails
 exports.getSessionDetails = async (req,res) => {
     const { sessionId, groupId } = req.params.sessionId
@@ -61,6 +81,8 @@ exports.getSessionDetails = async (req,res) => {
         })
     }
 }
+
+
 
 //
 

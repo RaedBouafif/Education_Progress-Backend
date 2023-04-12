@@ -14,12 +14,25 @@ const StudentPresence = Schema(
             ref: "Session",
             required: [true, "sessionRequired"]
         },
+        group : {
+            type : Schema.Types.ObjectId,
+            ref : "Group",
+            required: [true, "groupRequired"]
+        },
         dateEntry: {
             type: Date,
         },
         dateLeave: {
             type: Date,
         },
+        extra : {
+            type: Boolean
+        },
+        collegeYear : {
+            type : Schema.Types.ObjectId,
+            ref: "CollegeYear",
+            required : [true, "collegeYearRequired"]
+        }
         //createdDate to know in which week this session
     },
     {

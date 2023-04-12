@@ -18,6 +18,16 @@ const StudentAbsence = Schema(
         justified: { // justified by admin
             type: Boolean,
             default: false
+        },
+        group : {
+            type : Schema.Types.ObjectId,
+            ref : "Group",
+            required: [true, "groupRequired"]
+        },
+        collegeYear : {
+            type : Schema.Types.ObjectId,
+            ref: "CollegeYear",
+            required : [true, "collegeYearRequired"]
         }
     },
     {
