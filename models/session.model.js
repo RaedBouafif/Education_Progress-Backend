@@ -41,10 +41,10 @@ const Session = Schema(
             required: [true, "endsAtRequired"]
         },
         startedAt: {
-            type: Date
+            type: Number
         },
         endedAt: {
-            type: Date
+            type: Number
         },
         rates: [
             {
