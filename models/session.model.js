@@ -58,20 +58,6 @@ const Session = Schema(
                 }
             }
         ],
-        reports: [
-            {
-                studentName: {
-                    type: String
-                },
-                description: {
-                    type: String
-                },
-                justifiedReports: {
-                    type: Boolean,
-                    default: false
-                }
-            }
-        ],
         sessionType: {
             type: String,
             required: [true, "sessionTypeRequired"],

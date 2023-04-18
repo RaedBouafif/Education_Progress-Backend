@@ -1,6 +1,7 @@
 const { createSession, findSessions, findSessionById, createManualSession, createTemplateSession,
-    startingSession,
-    getSessionDetails
+    settingStartedDate,
+    getSessionDetails,
+    settingEndedDate
 
 } = require('../controllers/session.controller')
 const Router = require('express').Router()
@@ -11,6 +12,7 @@ const Router = require('express').Router()
 //get
 // Router.route("/getSessions").get(findSessions)
 // Router.route("/getById/:sessionId").get(findSessionById)
-Router.route("/startingSession/:sessionId/:startedAt").get(startingSession)
+Router.route("/startingSession/:sessionId/:startedAt").get(settingStartedDate)
+Router.route("/endingSesiion/:sessionId/:endedAt").get(settingEndedDate)
 Router.route("/getSessionDetails").get(getSessionDetails)
 module.exports = Router

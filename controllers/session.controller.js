@@ -10,7 +10,7 @@ const Planning = require('../models/Planning.model')
 
 
 // startedSession
-exports.startingSession = async (req,res) =>{
+exports.settingStartedDate = async (req,res) =>{
     try{
         //StartedAt is a number , if it should be a date .....
         const { sessionId, startedAt } = req.params.sessionId
@@ -30,7 +30,7 @@ exports.startingSession = async (req,res) =>{
 } 
 
 // startedSession
-exports.endingSession = async (req,res) =>{
+exports.settingEndedDate = async (req,res) =>{
     try{
         //StartedAt is a number , if it should be a date .....
         const { sessionId, endedAt } = req.params.sessionId

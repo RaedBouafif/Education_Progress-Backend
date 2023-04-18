@@ -32,6 +32,9 @@ const StudentPresence = Schema(
             type : Schema.Types.ObjectId,
             ref: "CollegeYear",
             required : [true, "collegeYearRequired"]
+        },
+        active : {
+            type : Boolean
         }
         //createdDate to know in which week this session
     },
@@ -45,5 +48,5 @@ StudentPresence.virtual('createdAtDate').get(function () {
     return this.createdAt.toISOString().substr(0, 10)
 })
 
-StudentPresence.index({ student: 1, session: 1, createdAtDate: 1 }, { unique: true })
+StudentPresence.index({ student: 1, session: 1}, { unique: true })
 module.exports = model("StudentPresence", StudentPresence)

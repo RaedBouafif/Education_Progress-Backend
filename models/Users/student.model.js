@@ -55,7 +55,7 @@ const Student = mongoose.Schema(
         },
         note: {
             type: String
-        }
+        },
     },
     {
         timestamps: true

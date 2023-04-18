@@ -14,6 +14,10 @@ exports.saveStudentPresence = async (req,res) => {
                 error : "BadRequest"
             })
         }
+        const activatedPresence = await StudentPresence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : true}, { new : true})
+        if (activatedPresence){
+            return res.status(200).send(activatedPresence)
+        }
         const presence = await StudentPresence.create({
             student : studentId,
             group: groupId,
@@ -21,9 +25,11 @@ exports.saveStudentPresence = async (req,res) => {
             dateEntry: new Date(dateEntry) || null,
             dateLeave: new Date(dateLeave) || null,
             extra : extra || false,
-            collegeYear : collegeYear
+            collegeYear : collegeYear,
+            active : true
         })
         await presence.save()
+        await StudentPresence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : false}, { new : true})
         return res.status(200).send(presence)
     }catch(e) {
         console.log(e)
@@ -42,14 +48,20 @@ exports.saveStudentAbsence = async (req,res) => {
                 error : "BadRequest"
             })
         }
+        const activatedAbsence = await StudentAbsence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : true}, { new : true})
+        if (activatedAbsence){
+            return res.status(200).send(activatedAbsence)
+        }
         const absence = await StudentAbsence.create({
             student : studentId,
             group: groupId,
             session: sessionId,
             justified : justified || false,
-            collegeYear: collegeYear
+            collegeYear: collegeYear,
+            active: true
         })
         await absence.save()
+        await StudentPresence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : false}, { new : true})
         return res.status(200).send(absence)
     }catch(e) {
         console.log(e)
@@ -98,7 +110,7 @@ exports.justifyAbsence = async (req,res) => {
                 error : "BadRequest"
             })
         }
-        const justifiedAbsence = await StudentAbsence.findOneAndUpdate({ sessionId : sessionId, student : studentId, group : gorupId}, { justified : true}, {new: true, runValidators : true})
+        const justifiedAbsence = await StudentAbsence.findByIdAndUpdate(absenceId, { justified : true}, {new: true, runValidators : true})
         if(!justifiedAbsence){
             return res.status(404).send({
                 error : "AbsenceNotFound"
@@ -112,6 +124,44 @@ exports.justifyAbsence = async (req,res) => {
         })
     }
 }
+
+
+
+
+//find all students absence and presnece par session
+exports.getStudentsAbsenceAndPresence = async(req,res) => {
+    try{
+        const sessionId = req.params.sessionId
+        if (!sessionId){
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        const studentsAbsence = await StudentAbsence.find({session : sessionId, active : true})
+        const studentsPresence = await StudentPresence.find({ session : sessionId, active : true})
+        if (!studentsAbsence){
+            return res.status(204).send({
+                absence : true
+            })
+        }
+        if (!studentsPresence){
+            return res.status(204).send({
+                presence : true
+            })
+        }
+        return res.status(200).send({
+            studentsAbsence,
+            studentsPresence
+        })
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error : "Server Error"
+        })
+    }
+}
+
+
 
 
 
