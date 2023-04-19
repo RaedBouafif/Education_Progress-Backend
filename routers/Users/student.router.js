@@ -13,9 +13,9 @@ const {
     countDocsss
 } = require("../../controllers/Users/student.controller");
 const {
-    getStudentAbsence,
-    getStudentPresence,
-    justifyStudentAbsence,
+    saveStudentAbsence,
+    getStudentPresencesByYear,
+    justifyAbsence,
     saveStudentPresence,
 } = require("../../controllers/studentPresence.controller");
 const upload = require('../../middlewares/upload')
@@ -42,10 +42,10 @@ Router.route("/delete/:studentId").delete(deleteStudent);
 
 //////presence
 
-Router.route("/savePresence").post(saveStudentPresence);
-Router.route("/getAbsence").get(getStudentAbsence);
-Router.route("/getPresence").get(getStudentPresence);
-Router.route("/justifyAbsence/:absenceId").get(justifyStudentAbsence);
+Router.route("/saveStudentPresence").post(saveStudentPresence);
+Router.route("/saveStudentAbsence").post(saveStudentAbsence);
+Router.route("/getStudentPresencesByYear/:studentId/:collegeYear").get(getStudentPresencesByYear);
+Router.route("/justifyAbsence/:absenceId").get(justifyAbsence);
 Router.route("/count").get(countDocsss)
 
 module.exports = Router;

@@ -169,6 +169,8 @@ exports.deleteById = async (req, res) => {
 }
 
 
+
+// need to handle this from back
 exports.addStudent = async (req, res) => {
     try {
         const { studentId, groupId } = req.params
@@ -180,8 +182,8 @@ exports.addStudent = async (req, res) => {
         if (!student) return res.status(404).json({
             error: "studentNotFound"
         })
-        if (group.students?.find((element) => element == studentId)) return res.status(409).json({ error: "studentConflict" })
-        group.students.push(studentId)
+        if (group.students?.find((element) => element.toString() == studentId)) return res.status(409).json({ error: "studentConflict" })
+        group.students?.push(new Types.ObjectId(studentId))
         await group.save()
         return res.status(201).json({
             success: true

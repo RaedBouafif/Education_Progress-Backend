@@ -77,7 +77,9 @@ exports.addSessionToTemplate = async (req, res) => {
                     startsAt: startsAt,
                     endsAt: Number(startsAt) + Number(duree),
                     sessionType: sessionType,
-                    initialSubGroup: initialSubGroup || "All"
+                    initialSubGroup: initialSubGroup || "All",
+                    createdBy : createdBy || null,
+                    sessionCategorie : "Template"
                 })
                 await otherSession.save()
                 if (otherSession) {

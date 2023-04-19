@@ -41,10 +41,10 @@ const Session = Schema(
             required: [true, "endsAtRequired"]
         },
         startedAt: {
-            type: Date
+            type: Number
         },
         endedAt: {
-            type: Date
+            type: Number
         },
         rates: [
             {
@@ -55,20 +55,6 @@ const Session = Schema(
                     type: Number,
                     min: [0, "InvalidRate"],
                     max: [5, "InvalidRate"]
-                }
-            }
-        ],
-        reports: [
-            {
-                studentName: {
-                    type: String
-                },
-                description: {
-                    type: String
-                },
-                justifiedReports: {
-                    type: Boolean,
-                    default: false
                 }
             }
         ],

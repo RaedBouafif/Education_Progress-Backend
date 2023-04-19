@@ -18,6 +18,19 @@ const StudentAbsence = Schema(
         justified: { // justified by admin
             type: Boolean,
             default: false
+        },
+        group : {
+            type : Schema.Types.ObjectId,
+            ref : "Group",
+            required: [true, "groupRequired"]
+        },
+        collegeYear : {
+            type : Schema.Types.ObjectId,
+            ref: "CollegeYear",
+            required : [true, "collegeYearRequired"]
+        },
+        active : {
+            type : Boolean
         }
     },
     {
@@ -27,9 +40,9 @@ const StudentAbsence = Schema(
 
 //must add index with only date(using createdAt) student and session
 //+error handling for unique
-StudentAbsence.virtual('createdAtDate').get(function () {
-    return this.createdAt.toISOString().substr(0, 10)
-})
+// StudentAbsence.virtual('createdAtDate').get(function () {
+//     return this.createdAt.toISOString().substr(0, 10)
+// })
 
-StudentAbsence.index({ student: 1, session: 1, createdAtDate: 1 }, { unique: true })
+StudentAbsence.index({ student: 1, session: 1 }, { unique: true })
 module.exports = model("StudentAbsence", StudentAbsence)
