@@ -47,7 +47,11 @@ const Reports = Schema({
             type: String
         }
     }
-})
+},
+    {
+        timestamps: true
+    }
+)
 
 module.exports = model("Reports", Reports)
 

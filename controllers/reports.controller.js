@@ -80,6 +80,28 @@ exports.reportStudentFromSession = async (req, res) => {
 }
 
 
+exports.getSessionReports = async (req, res) => {
+    try {
+        const { sessionId } = req.params
+        const reports = await Reports.find({ session: sessionId }).sort({ createdAt: 1 })
+            .populate({ path: "students", select: { password: 0 } })
+            .populate({ path: "groups", populate: { path: "section" } })
+        if (reports?.length) {
+            return res.status(200).json(reports)
+        } else {
+            return res.status(204).json({
+                found: false
+            })
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+
 // "student default reported" report teachcer from session
 // need to add mailer
 exports.reportTeacherFromSession = async (req, res) => {
