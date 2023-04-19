@@ -1,145 +1,144 @@
 const { compareSync } = require("bcryptjs")
 const SessionLogs = require("../models/sessionLogs.model")
 
-exports.createLog =async (req , res)=>{
+exports.createLog = async (req, res) => {
     try {
         //session , startedAt , endedAt , canceled , reports! : [{studentId:,studentName:}]
         const log = await SessionLogs.create(req.body)
         await log.save()
         return res.status(201).json({
-            log , 
-            created : true
+            log,
+            created: true
         })
-    }catch(e){
+    } catch (e) {
         console.log(e)
-        if(e.code === 11000){
+        if (e.code === 11000) {
             return res.status(409).json({
-                error : "conflict"
+                error: "conflict"
             })
         }
-        else if(e.errors?.session?.properties?.message === "SessionRequired")
-        {
+        else if (e.errors?.session?.properties?.message === "SessionRequired") {
             return res.status(400).json({
-                error : "SessionRequired"
+                error: "SessionRequired"
             })
         }
         return res.status(500).json({
-            error : "serverSideError"
+            error: "serverSideError"
         })
     }
 }
 
 
 //find All sessions by (CollegeYear or semester)
-exports.getSessionsLogsBy = async (req,res) => {
+exports.getSessionsLogsBy = async (req, res) => {
     try {
-        const sessionsLogs = await SessionLogs.find({...req.body , startedAt : { $gte : new Date(req.body.dateBegin) , $lte : new Date(req.body.dateEnd) } })
-        return sessionsLogs 
+        const sessionsLogs = await SessionLogs.find({ ...req.body, startedAt: { $gte: new Date(req.body.dateBegin), $lte: new Date(req.body.dateEnd) } })
+        return sessionsLogs
             ? res.status(200).send({
-                found : true,
+                found: true,
                 sessionsLogs
             })
             : res.status(400).send({
-                found : false,
-                message : "There is no Session passed between " +req.body.dateBegin+ " And " +req.body.dateEnd
+                found: false,
+                message: "There is no Session passed between " + req.body.dateBegin + " And " + req.body.dateEnd
             })
-    }catch(e) {
+    } catch (e) {
         return res.status(500).json({
-            error : e.message,
-            error : "Server ERROR!"
+            error: e.message,
+            error: "Server ERROR!"
         })
     }
 }
 
 //justify report
-exports.justifyReport = async(req,res) => {
+exports.justifyReport = async (req, res) => {
     // data passed from params : { logId , studentId}
-    try{
-        const {logId , studentId} = req.params
+    try {
+        const { logId, studentId } = req.params
         const justifiedReport = await SessionLogs.findOneAndUpdate(
-        { 
-            _id : logId , 'reports.studentId' : studentId
-        },
-        { 
-            $set : {'reports.$.justifiedReports' : true }
-        },
-        { new : true , runValidators : true}
+            {
+                _id: logId, 'reports.studentId': studentId
+            },
+            {
+                $set: { 'reports.$.justifiedReports': true }
+            },
+            { new: true, runValidators: true }
         )
-        return justifiedReport 
+        return justifiedReport
             ? res.status(200).send({
-                justified : true,
+                justified: true,
                 justifiedReport
-              })
+            })
             :
             res.status(404).send({
                 justified: false,
-                message : "Session Log with Id : " +logId+ " Not Found OR Student with Id : " +studentId+ " Is not Reported"
+                message: "Session Log with Id : " + logId + " Not Found OR Student with Id : " + studentId + " Is not Reported"
             })
-    }catch(e) {
+    } catch (e) {
         console.log(e)
-        if(e.code === 11000){
+        if (e.code === 11000) {
             return res.status(409).json({
-                error : "conflict"
+                error: "conflict"
             })
         }
         return res.status(500).json({
-            error : e.message,
-            error : "Server ERROR!"
+            error: e.message,
+            error: "Server ERROR!"
         })
     }
 }
 
 
 //find All sessionsLogs
-exports.getAllLogs = async (req,res) => {
+exports.getAllLogs = async (req, res) => {
     try {
         const sessionsLogs = await SessionLogs.findAll({})
-        return sessionsLogs 
+        return sessionsLogs
             ? res.status(200).send({
-                found : true,
+                found: true,
                 sessionsLogs
             })
             : res.status(204).send({
-                found : false,
-                message : "DataBase is Empty from Logs"
+                found: false,
+                message: "DataBase is Empty from Logs"
             })
-    }catch(e) {
+    } catch (e) {
         return res.status(500).json({
-            error : e.message,
-            error : "Server ERROR!"
+            error: e.message,
+            error: "Server ERROR!"
         })
     }
-} 
+}
 
-exports.addRate = async (req , res)=>{//after session 
+exports.addRate = async (req, res) => {//after session 
     try {
-        const {logId , studentId} = req.params
+        const { logId, studentId } = req.params
         //req.body containe rate data directly
         const log = await SessionLogs.findById(logId)
-        if(log){
-            var rates  = []
-            if(!log.rates.find((element)=>element.studentId.toString() === studentId )){
+        if (log) {
+            var rates = []
+            if (!log.rates.find((element) => element.studentId.toString() === studentId)) {
                 log.rates.push(req.body)
                 rates = await log.save()
             }
             return res.status(200).json({
-                    found: true,
-                    rates
+                found: true,
+                rates
             })
-        }else {
+        } else {
             return res.status(404).json({
                 found: false
             })
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
-         if(e.code === 11000){
+        if (e.code === 11000) {
             return res.status(409).json({
-                error : "conflict"
+                error: "conflict"
             })
         }
         return res.status(500).json({
-            error :"serverSideError"
+            error: "serverSideError"
         })
     }
 }

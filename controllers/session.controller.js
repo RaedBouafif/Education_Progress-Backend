@@ -9,8 +9,8 @@ const Planning = require('../models/Planning.model')
 // Create a new Template Session
 exports.createTemplateSession = async (req, res) => {
     try {
-        const session = await Session.create({...req.body, sessionCategorie : "template"})
-        session.save().then( data => { 
+        const session = await Session.create({ ...req.body, sessionCategorie: "template" })
+        session.save().then(data => {
             return res.status(201).send({
                 data,
                 created: true
@@ -323,3 +323,16 @@ exports.findSessionById = (req, res) => {
 
 
 
+exports.startManually = async (req, res) => {
+    try {
+        const { startsAt, endsAt, sessionId } = req.params
+        const session = await Session.findByIdAndUpdate(sessionId, { startedAt: Number(startsAt), endedAt: Number(endsAt) })
+        if (session) return res.status(200).json({ found: true })
+        else return res.status(404).json({ found: false })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "serverSideError"
+        })
+    }
+} 
