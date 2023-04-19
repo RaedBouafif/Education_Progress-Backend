@@ -7,7 +7,7 @@ const {
 } = require("../controllers/reports.controller")
 const Router = require('express').Router()
 
-Router.route("/reportStudent").post(reportStudentFromSession)
+Router.route("/reportStudents").post(reportStudentFromSession)
 Router.route("/reportTeacher").post(reportTeacherFromSession)
 Router.route("/reportGroups").post(reportGroupsFromSession)
 Router.route("/reprotSections").post(reportSectionsFromSession)

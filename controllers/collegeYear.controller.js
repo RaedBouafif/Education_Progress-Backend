@@ -31,29 +31,20 @@ exports.createCollegeYearWithSemesters = async (req, res) => {
                 error: "BadRequest"
             })
         }
-<<<<<<< HEAD
-        const dateBegin1 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
-        const finishDate1 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
-        const dateBegin2 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
-        const finishDate2 = moment((new Date(semester1.dateBegin)).tz('Europe/Paris').format('YYYY-MM-DD HH:mm:ss'))
-        const sem1 = await Semester.create({ ...semester1, dateBegin: dateBegin1, dateEnd: finishDate1 })
-        const sem2 = await Semester.create({ ...semester2, dateBegin: dateBegin2, dateEnd: finishDate2 })
-=======
-        const dateBegin1 = DateTime.fromISO(semester1.dateBegin, { zone : 'utc'})
-        var begin1 = dateBegin.toISO({ includeOffset : false})
-        const finishDate1 = DateTime.fromISO(semester1.dateEnd, { zone : 'utc'})
-        var finish1 = dateEnd.toISO({ includeOffset : false})
-        const dateBegin2 = DateTime.fromISO(semester2.dateBegin, { zone : 'utc'})
-        var begin2 = dateBegin.toISO({ includeOffset : false})
-        const finishDate2 = DateTime.fromISO(semester2.dateEnd, { zone : 'utc'})
-        var finish2 = dateEnd.toISO({ includeOffset : false})
+        const dateBegin1 = DateTime.fromISO(semester1.dateBegin, { zone: 'utc' })
+        var begin1 = dateBegin.toISO({ includeOffset: false })
+        const finishDate1 = DateTime.fromISO(semester1.dateEnd, { zone: 'utc' })
+        var finish1 = dateEnd.toISO({ includeOffset: false })
+        const dateBegin2 = DateTime.fromISO(semester2.dateBegin, { zone: 'utc' })
+        var begin2 = dateBegin.toISO({ includeOffset: false })
+        const finishDate2 = DateTime.fromISO(semester2.dateEnd, { zone: 'utc' })
+        var finish2 = dateEnd.toISO({ includeOffset: false })
         begin1 = new Date(begin1)
         finish1 = new Date(finish1)
         begin2 = new Date(begin2)
         finish2 = new Date(finish2)
-        const sem1 = await Semester.create({...semester1, dateBegin : begin1, dateEnd : finish1})
-        const sem2 = await Semester.create({...semester2, dateBegin : begin2, dateEnd : finish2})
->>>>>>> 00cb80307678923c338251d1808c4c56d68b70a8
+        const sem1 = await Semester.create({ ...semester1, dateBegin: begin1, dateEnd: finish1 })
+        const sem2 = await Semester.create({ ...semester2, dateBegin: begin2, dateEnd: finish2 })
         await sem1.save()
         await sem2.save()
         if (sem1 && sem2) {
@@ -112,11 +103,7 @@ exports.findAllCollegeYears = (req, res) => {
                     found: false
                 })
             }
-<<<<<<< HEAD
-            return res.status(200).send({ collegeYears })
-=======
-            return res.status(200).send({collegeYears, found: true})
->>>>>>> 00cb80307678923c338251d1808c4c56d68b70a8
+            return res.status(200).send({ collegeYears, found: true })
         }).catch(err => {
             return res.status(400).send({
                 error: err.message,
@@ -189,14 +176,9 @@ exports.updateCollegeYear = async (req, res) => {
                     // const dateBegin = moment.tz(new Date(foundSemester.dateBegin), 'Europe/Paris').toDate()
                     // const dateEnd = moment.tz(new Date(foundSemester.dateEnd), 'Europe/Paris').toDate()
                     sameDate = new Date(sameDate)
-<<<<<<< HEAD
+                    sameDate2 = new Date(sameDate2)
                     console.log(new Date(sameDate.setDate(sameDate.getDate() + 1)))
                     await Semester.findByIdAndUpdate(semester._id, { dateBegin: sameDate, dateEnd: sameDate2, coefficient: foundSemester.coefficient })
-=======
-                    sameDate2 = new Date(sameDate2)
-                    console.log(new Date(sameDate.setDate( sameDate.getDate() + 1)))
-                    await Semester.findByIdAndUpdate(semester._id, { dateBegin : sameDate, dateEnd : sameDate2, coefficient : foundSemester.coefficient } )
->>>>>>> 00cb80307678923c338251d1808c4c56d68b70a8
                 }
             }
             await collegeYear.save()

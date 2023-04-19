@@ -1,44 +1,47 @@
-const { model , Schema, Types } = require("mongoose")
+const { model, Schema, Types } = require("mongoose")
 
 const Reports = Schema({
-    student : {
-        type : Schema.Types.ObjectId,
-        ref : "Student"
-    },
-    session : {
-        type : Schema.Types.ObjectId,
-        ref : 'Session'
-    },
-    content : {
-        type : String
-    },
-    type : {
-        type : String
-    },
-    teacher : {
-        type : Schema.Types.ObjectId,
-        ref : "Teacher",
-    },
-    groups : [{
-        type : Schema.Types.ObjectId,
-        ref : "Group"
+    students: [{
+        type: Schema.Types.ObjectId,
+        ref: "Student"
     }],
-    sections : [{ 
-        type : Schema.Types.ObjectId,
-        ref : "Section"
+    session: {
+        type: Schema.Types.ObjectId,
+        ref: 'Session'
+    },
+    content: {
+        type: String
+    },
+    object: {
+        type: String
+    },
+    type: {
+        type: String
+    },
+    teacher: {
+        type: Schema.Types.ObjectId,
+        ref: "Teacher",
+    },
+    groups: [{
+        type: Schema.Types.ObjectId,
+        ref: "Group"
     }],
-    justified : {
+    sections: [{
+        type: Schema.Types.ObjectId,
+        ref: "Section"
+    }],
+    justified: {
         type: Boolean
     },
-    sender : {
-        type : Object,
-        id : String,
-        senderType : {
-            type : String,
+    sender: {
+        type: Object,
+        id: String,
+        senderType: {
+            type: String,
             enum: ['teacher', 'student', 'admin'],
         },
-        senderFirstName : {
-            type : String
+        senderFirstName: {
+            type: String
         },
         senderLastName: {
             type: String
