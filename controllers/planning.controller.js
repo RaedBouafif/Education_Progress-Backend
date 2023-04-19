@@ -703,8 +703,9 @@ exports.deleteSessionFromPlanning = async (req, res) => {
                 planning.sessions = planning.sessions.filter((element) => element.toString() !== sessionId)
                 await planning.save()
                 const deletedSession = await Session.findByIdAndDelete(sessionId)
+                console.log(deletedSession)
                 if (deletedSession?.catched) {
-                    await Session.findByIdAndUpdate(deletedSession._id, { catchedBy: null })
+                    await Session.findByIdAndUpdate(deletedSession.catched, { catchedBy: null })
                 }
                 return res.status(200).json({ deleted: true })
             }
