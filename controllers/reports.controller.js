@@ -35,7 +35,7 @@ exports.reportStudentFromSession = async (req, res) => {
                 await nodeMailer(student.parent.email)
                 //ending the mail send process
             }
-            report = Reports.create({
+            report = await Reports.create({
                 object,
                 session: sessionId || null,
                 students: studentIds?.map((element) => new Types.ObjectId(element)),
@@ -43,6 +43,10 @@ exports.reportStudentFromSession = async (req, res) => {
                 content: content,
                 sender: { id: senderId, senderType: senderType || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
             })
+            report = await Reports.populate(report, [
+                { path: "students", select: { password: 0 } },
+                { path: "groups", populate: { path: "section" } }
+            ])
         }
         else {
             for (let studentId of allTheStudents) {
@@ -55,7 +59,7 @@ exports.reportStudentFromSession = async (req, res) => {
                 await nodeMailer(student.parent.email)
                 //ending the mail send process
             }
-            report = Reports.create({
+            report = await Reports.create({
                 object,
                 session: sessionId || null,
                 groups: [new Types.ObjectId(groupId)],
@@ -63,6 +67,10 @@ exports.reportStudentFromSession = async (req, res) => {
                 content: content,
                 sender: { id: senderId, senderType: senderType || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
             })
+            report = await Reports.populate(report, [
+                { path: "students", select: { password: 0 } },
+                { path: "groups", populate: { path: "section" } }
+            ])
         }
         if (!report) {
             return res.status(400).send({
@@ -70,6 +78,70 @@ exports.reportStudentFromSession = async (req, res) => {
             })
         }
         //sending the mail
+        console.log(report)
+        return res.status(200).send(report)
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+
+
+exports.reportActors = async (req, res) => {
+    try {
+        const { reportedIds, object, type, content, senderId, senderType, senderFirstName, senderLastName } = req.body
+        if (!reportedIds || !content || !senderId || !object) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        var reported = {}
+        reported["teacher"] = reportedIds.filter((element) => element.actor === "Teacher")
+        reported["parent"] = reportedIds.filter((element) => element.actor === "Parent")
+        reported["student"] = reportedIds.filter((element) => element.actor === "Student")
+        //sending the mail phase
+        var report
+        for (let student of reported["student"]) {
+            const parent = await Parent.findById(new Types.ObjectId(student.parent))
+            if (!parent) {
+                console.log("parent not found")
+            }
+            await nodeMailer(parent.email)
+            //ending the mail send process
+        }
+        for (let teacher of reported["teacher"]) {
+            const reportedTeacher = await Teacher.findById(new Types.ObjectId(teacher._id))
+            if (!reportedTeacher) {
+                console.log("teacher not found")
+            }
+            await nodeMailer(reportedTeacher.email)
+            //ending the mail send process
+        }
+        report = await Reports.create({
+            object,
+            students: reported["student"] ? reported["student"]?.map((element) => new Types.ObjectId(element._id)) : null,
+            teachers: reported["teacher"] ? reported["teacher"]?.map((element) => new Types.ObjectId(element._id)) : null,
+            parents: reported["parent"] ? reported["parent"]?.map((element) => new Types.ObjectId(element._id)) : null,
+            type: type || null,
+            content: content,
+            sender: { id: senderId, senderType: senderType || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
+        })
+        report = await Reports.populate(report, [
+            { path: "students", select: { password: 0 } },
+            { path: "groups", populate: { path: "section" } },
+            { path: "teachers", select: { password: 0 } },
+            { path: "parents", select: { password: 0 } },
+        ])
+        if (!report) {
+            return res.status(400).send({
+                error: "Some error occured while saving the report"
+            })
+        }
+        //sending the mail
+        console.log(report)
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)
@@ -83,7 +155,7 @@ exports.reportStudentFromSession = async (req, res) => {
 exports.getSessionReports = async (req, res) => {
     try {
         const { sessionId } = req.params
-        const reports = await Reports.find({ session: sessionId }).sort({ createdAt: 1 })
+        const reports = await Reports.find({ session: sessionId }).sort({ createdAt: -1 })
             .populate({ path: "students", select: { password: 0 } })
             .populate({ path: "groups", populate: { path: "section" } })
         if (reports?.length) {

@@ -8,6 +8,7 @@ const {
     addSubject,
     removeSubject,
     deleteTeacher,
+    findTeacherByName,
     countDocsss
 } = require("../../controllers/Users/teacher.controller");
 
@@ -19,6 +20,7 @@ Router.route("/update/:teacherId").put(updateTeacher);
 //---get requests---
 Router.route("/getById/:teacherId").get(getTeacherById);
 Router.route("/getAll").get(getAllTeachers);
+Router.route("/getTeachersByName/:word").get(findTeacherByName)
 Router.route("/addSubject/:teacherId/:subjectId").get(addSubject);
 Router.route("/count").get(countDocsss)
 //---delete requests---//

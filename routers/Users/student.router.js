@@ -10,7 +10,8 @@ const {
     graduationStudent,
     permutationStudent,
     findAllStudentsWithFilter,
-    countDocsss
+    countDocsss,
+    findStudentsWithName
 } = require("../../controllers/Users/student.controller");
 const {
     saveStudentAbsence,
@@ -31,6 +32,7 @@ Router.route("/getAllWithParent").get(findAllStudentsWithParent);
 Router.route("/graduated/:studentId/:groupId").get(graduationStudent);
 Router.route("/permutation/:studentId/:groupId").get(permutationStudent);
 Router.route("/getAllToassign").get(findAllStudentsWithFilter)
+Router.route("/getStudentByName/:word").get(findStudentsWithName)
 //post
 //upload.single('image'), 
 Router.route("/create").post(createStudent);

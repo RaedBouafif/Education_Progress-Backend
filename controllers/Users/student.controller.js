@@ -119,6 +119,32 @@ exports.findAllStudents = async (req, res) => {
     }
 };
 
+
+exports.findStudentsWithName = async (req, res) => {
+    try {
+        const { word } = req.params
+        const regex = new RegExp(word, "i");
+        const students = await Student.find({
+            $expr: {
+                $regexMatch: {
+                    input: { $concat: ["$firstName", " ", "$lastName"] },
+                    regex: regex,
+                },
+            }
+        }, { password: 0 }).sort({ createdAt: -1 }).populate({ path: "group", populate: { path: "section" } })
+        if (students.length) {
+            return res.status(200).json(students)
+        }
+        else {
+            return res.status(204).json([])
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
 //Retrieve all students with their parents data
 exports.findAllStudentsWithParent = (req, res) => {
     try {
@@ -448,15 +474,15 @@ exports.graduationStudent = async (req, res) => {
 //Retrieve all students with filter
 exports.findAllStudentsWithFilter = async (req, res) => {
     try {
-        const { firstName , tel } = req.query
+        const { firstName, tel } = req.query
         var filter = {}
         if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
-        if (tel) filter["tel"] = { $regex : tel , $options : 'i' }
+        if (tel) filter["tel"] = { $regex: tel, $options: 'i' }
         // if (absence) filter["absence"] = absence
         Student.find(filter, { password: 0 }).sort({ createdAt: -1 })
             .then((students) => {
                 if (!students) {
-                    return res.status(204).send({   
+                    return res.status(204).send({
                         message: "There is no students in the database!",
                         found: false,
                     });
@@ -481,12 +507,12 @@ exports.findAllStudentsWithFilter = async (req, res) => {
 };
 
 exports.countDocsss = async (req, res) => {
-    try{
+    try {
         const countStudents = await Student.countDocuments()
-        return res.status(200).send({number : countStudents || 0})
-    }catch(e) {
+        return res.status(200).send({ number: countStudents || 0 })
+    } catch (e) {
         return res.status(500).send({
-            error : "Server Error!"
+            error: "Server Error!"
         })
     }
 }

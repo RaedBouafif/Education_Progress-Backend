@@ -18,10 +18,14 @@ const Reports = Schema({
     type: {
         type: String
     },
-    teacher: {
+    teachers: [{
         type: Schema.Types.ObjectId,
         ref: "Teacher",
-    },
+    }],
+    parents: [{
+        type: Schema.Types.ObjectId,
+        ref: "Parent",
+    }],
     groups: [{
         type: Schema.Types.ObjectId,
         ref: "Group"

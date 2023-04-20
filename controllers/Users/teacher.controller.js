@@ -83,7 +83,29 @@ exports.create = async (req, res) => {
         }
     }
 };
-
+exports.findTeacherByName = async (req, res) => {
+    try {
+        const { word } = req.params
+        const regex = new RegExp(word, "i");
+        const teachers = await TeacherModel.find({
+            $expr: {
+                $regexMatch: {
+                    input: { $concat: ["$firstName", " ", "$lastName"] },
+                    regex: regex,
+                },
+            }
+        }, { password: 0 }).sort({ createdAt: -1 })
+        if (teachers.length) {
+            return res.status(200).json(teachers)
+        }
+        else {
+            return res.status(204).json([])
+        }
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({ error: "serverSideError" });
+    }
+}
 exports.getTeacherById = async (req, res) => {
     //WithSubjects
     try {
