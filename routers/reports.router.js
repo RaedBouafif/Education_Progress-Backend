@@ -5,7 +5,8 @@ const {
     reportSectionsFromSession,
     getSessionReports,
     reportActors,
-    sendMail
+    sendMail,
+    getAllReports
 } = require("../controllers/reports.controller")
 const Router = require('express').Router()
 
@@ -15,6 +16,7 @@ Router.route("/reportGroups").post(reportGroupsFromSession)
 Router.route("/reportSections").post(reportSectionsFromSession)
 Router.route("/reportActors").post(reportActors)
 Router.route("/getReports/:sessionId").get(getSessionReports)
+Router.route("/getAll").get(getAllReports)
 Router.route("/sendMail").get(sendMail)
 
 

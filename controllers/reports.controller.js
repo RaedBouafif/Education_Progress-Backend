@@ -172,6 +172,28 @@ exports.getSessionReports = async (req, res) => {
         })
     }
 }
+exports.getAllReports = async (req, res) => {
+    try {
+        var reports = await Reports.find().sort({ createdAt: -1 })
+        reports = await Reports.populate(reports, [
+            { path: "students", select: { password: 0 } },
+            { path: "groups", populate: { path: "section" } },
+            { path: "teachers", select: { password: 0 } },
+            { path: "parents", select: { password: 0 } },
+        ])
+        if (reports.length) {
+            return res.status(200).json(reports)
+        }
+        else {
+            return res.status(204).json([])
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
 
 
 // "student default reported" report teachcer from session
