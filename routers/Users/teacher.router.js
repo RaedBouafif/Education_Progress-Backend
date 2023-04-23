@@ -8,7 +8,8 @@ const {
     addSubject,
     removeSubject,
     deleteTeacher,
-    countDocsss
+    countDocsss,
+    getListOfTeachers
 } = require("../../controllers/Users/teacher.controller");
 
 //---posts requests---
@@ -21,6 +22,7 @@ Router.route("/getById/:teacherId").get(getTeacherById);
 Router.route("/getAll").get(getAllTeachers);
 Router.route("/addSubject/:teacherId/:subjectId").get(addSubject);
 Router.route("/count").get(countDocsss)
+Router.route("/getListOfTeachers").get(getListOfTeachers)
 //---delete requests---//
 Router.route("/delete/:teacherId").delete(deleteTeacher)
 Router.route("/removeSubject/:teacherId/:subjectId").delete(removeSubject)

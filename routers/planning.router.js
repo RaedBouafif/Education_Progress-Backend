@@ -13,7 +13,10 @@ const {
     findAvailableClassroms,
     findAvailableTeachers,
     toggleCancelSession,
-    getTeacherPlanning
+    getTeacherPlanning,
+    getCurrentTeacherPlanning,
+    getNextTeacherPlanning,
+    getPredTeacherPlanning
 } = require("../controllers/planning.controller");
 
 const Router = require("express").Router();
@@ -37,6 +40,11 @@ Router.route("/getPredWeek/:collegeYear/:group/:week").get(getPlanningByPredWeek
 Router.route("/getCurrentWeek/:collegeYear/:group").get(getCurrentPlanning)
 Router.route("/toggleCancelSession/:sessionId/:status").get(toggleCancelSession)
 Router.route("/getTeacherPlanning/:collegeYear/:week/:idTeacher").get(getTeacherPlanning)
+//teacher Template
+Router.route("/getTeacherCurrentWeek/:collegeYear/:idTeacher").get(getCurrentTeacherPlanning)
+Router.route("/getTeacherPredWeek/:collegeYear/:week/:idTeacher").get(getPredTeacherPlanning)
+Router.route("/getNextTeacherWeek/:collegeYear/:week/:idTeacher").get(getNextTeacherPlanning)
+
 
 
 

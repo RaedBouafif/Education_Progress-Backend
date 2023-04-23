@@ -224,6 +224,7 @@ exports.findOneStudent = (req, res) => {
                 });
             });
     } catch (e) {
+        console.log(e.message)
         res.status(500).send({
             error: e.message,
             message: "Server error!",

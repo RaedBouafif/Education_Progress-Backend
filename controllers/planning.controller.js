@@ -1207,6 +1207,176 @@ exports.getTeacherPlanning = async (req, res) => {
     }
 }
 
+
+//---------------teacher planning part---------------------------------------------//
+//get current teacher planning
+exports.getCurrentTeacherPlanning = async(req,res) => {
+    try{
+        const collegeYear = req.params.collegeYear
+        const idTeacher = req.params.idTeacher
+        if (!collegeYear || !idTeacher){
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        const year = await CollegeYear.findById(collegeYear).populate({ path: "semesters", select: { dateBegin: 1, dateEnd: 1, name: 1 }, options: { sort: { dateBegin: 1 } } })
+        console.log("hello")
+        if (year) {
+            const templates = await Template.find({collegeYear : new Types.ObjectId(collegeYear)}, "sessions").populate({ path: "sessions", match: {teacher: idTeacher}, select: { password: 0, image : 0}, options: { sort: { dateBegin: 1 } } })
+            if (templates){
+                const teacherSessions = await templates?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? templates?.filter((element) => Array.isArray(element.sessions)) : []
+                var checkTeacherHavePlanning = false
+                for ( let i =0 ; i< teacherSessions.length; i++){
+                    if(teacherSessions[i].sessions.length > 0){
+                        checkTeacherHavePlanning = true
+                    }
+                }
+                if(checkTeacherHavePlanning){
+                    var numberTotalOfWeeks = 0
+                        var infos = []
+                        for (let i = 0; i < year.semesters.length; i++) {
+                            var currentSemester = year.semesters[i]
+                            let currentDateEnd = currentSemester.dateEnd
+                            let currentDateBegin = currentSemester.dateBegin
+                            let numberOfWeeks = Math.floor(Math.abs(currentDateEnd - currentDateBegin) / (1000 * 60 * 60 * 24 * 7))
+                            infos.push({ semester: currentSemester.name, numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd })
+                            numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks
+                        }
+                        // this will always return week number 1 
+                        const currentDate = new Date()
+                        const currentPlannings = await Planning.find({collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
+                            .populate({ path: "group",populate: [{ path: "section" }, { path : "students", select : {password: 0} }]})
+                            .populate("collegeYear")
+                            .populate({ path: "sessions",match: {teacher :idTeacher}, populate: [{ path: "teacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} },{ path : "group", populate : [{ path : "students", select : { password : 0}}, { path : "section"}]}, { path: "subTeacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path: "subject" }, { path: "classroom" }] })
+                        if (!currentPlannings) {
+                            const initialPlannings = await Planning.find({collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
+                                .populate({ path: "group" , populate: [{ path: "section" }, { path : "students", select : {password: 0} }]})
+                                .populate("collegeYear")
+                                .populate({ path: "sessions", match: {teacher :idTeacher}, populate: [{ path: "teacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path : "group", populate : [{ path : "students", select : { password : 0}}, { path : "section"}]}, { path: "subTeacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path: "subject" }, { path: "classroom" }] })
+                            if (!initialPlannings) {
+                                return res.status(404).json({
+                                    message: "PlannigNotFound"
+                                })
+                            }
+                            var finalInitialPlanning = currentPlannings[0]
+                            teacherPlannings = currentPlannings?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? currentPlannings?.filter((element) => Array.isArray(element.sessions)) : []
+                            teacherPlannings = teacherPlannings.filter(element => element.sessions.length != 0)
+                            const sessions = currentPlannings.flatMap(teacherPlannings => teacherPlannings.sessions);
+                            finalInitialPlanning.sessions = sessions
+                            return res.status(200).json({
+                                planning: finalInitialPlanning,
+                                initialSemester: year.semesters[0].name,
+                                numberTotalOfWeeks: numberTotalOfWeeks,
+                                infos
+                            })
+                        } else {
+                            var finalCurrentPlanning = currentPlannings[0]
+                            teacherPlannings = currentPlannings?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? currentPlannings?.filter((element) => Array.isArray(element.sessions)) : []
+                            teacherPlannings = teacherPlannings.filter(element => element.sessions.length != 0)
+                            const sessions = currentPlannings.flatMap(teacherPlannings => teacherPlannings.sessions);
+                            finalCurrentPlanning.sessions = sessions
+                            return res.status(200).send({
+                                planning: finalCurrentPlanning,
+                                initialSemester: year.semesters[0].name,
+                                numberTotalOfWeeks: numberTotalOfWeeks,
+                                infos
+                            })
+                        }
+                }else{
+                    return res.status(204).send({
+                        message: "Teacher with id " +idTeacher+ " does not have any planning"
+                    })
+                }
+            }
+        } else {
+            return res.status(404).json({
+                error: "College Year with id : " + collegeYear + "NotFound"
+            })
+        }
+    }catch(e){
+        console.log(e.message)
+        return res.status(500).send({
+            error : "Server Error"
+        })
+    }
+}
+
+//get teacher planning by next week
+exports.getNextTeacherPlanning = async (req, res) => {
+    const collegeYear = req.params.collegeYear
+    const week = req.params.week
+    const nbrNextWeek = req.query.nbrNextWeek ? Number(req.query.nbrNextWeek) : 1
+    const idTeacher = req.params.idTeacher
+    console.log("collegeYear  "+collegeYear)
+    console.log("week  "+week)
+    console.log(" idTeacher "+idTeacher)
+    console.log("nbrNextWeek " +  nbrNextWeek)
+
+    try {
+        if (!week || !collegeYear) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        var planning = await Planning.find({ collegeYear: collegeYear, week: Number(week) + nbrNextWeek }).sort({ createdAt: -1 })
+            .populate({ path: "group", populate: [{ path: "section" }, { path : "students", select : {password: 0} }] })
+            .populate("collegeYear")
+            .populate({ path: "sessions", match: { teacher: idTeacher},  populate: [{ path: "teacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path : "group", populate : [[{ path : "students", select : { password : 0}}, { path : "section"}], { path : "section"}]}, { path: "subTeacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path: "subject" }, { path: "classroom" }] })
+        if (!planning) {
+            return res.status(404).send({
+                message: "PlannigNotFound"
+            })
+        }
+        var finalPlanning = planning[0]
+        teacherPlannings = planning?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? planning?.filter((element) => Array.isArray(element.sessions)) : []
+        teacherPlannings = teacherPlannings.filter(element => element.sessions.length != 0)
+        const sessions = planning.flatMap(teacherPlannings => teacherPlannings.sessions);
+        finalPlanning.sessions = sessions
+        return res.status(200).send(finalPlanning)
+    }catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+//get teacher planning by pred week 
+exports.getPredTeacherPlanning = async(req, res) => {
+    const collegeYear = req.params.collegeYear
+    const week = req.params.week
+    const nbrPredWeek = req.query.nbrNextWeek ? Number(req.query.nbrNextWeek) : 1
+    const idTeacher = req.params.idTeacher
+    try {
+        if (!week || !collegeYear) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        const planning = await Planning.find({ collegeYear: collegeYear, week: Number(week) - nbrPredWeek }).sort({ createdAt: -1 })
+            .populate({ path: "group",populate: [{ path: "section" }, { path : "students", select : {password: 0} }] })
+            .populate("collegeYear")
+            .populate({ path: "sessions", select : {teacher : idTeacher}, populate: [{ path: "teacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path : "group", populate : [{ path : "students", select : { password : 0}}, { path : "section"}]}, { path: "subTeacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path: "subject" }, { path: "classroom" }] })
+        if (!planning) {
+            return res.status(404).send({
+                message: "PlannigNotFound"
+            })
+        }
+        var finalPlanning = planning[0]
+        teacherPlannings = planning?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? planning?.filter((element) => Array.isArray(element.sessions)) : []
+        teacherPlannings = teacherPlannings.filter(element => element.sessions.length != 0)
+        const sessions = planning.flatMap(teacherPlannings => teacherPlannings.sessions);
+        finalPlanning.sessions = sessions
+        return res.status(200).send(finalPlanning)
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+
+}
+
 // exports.createInitialTemplate = async (req, res) => {
 //     //test if modified or not
 //     try {

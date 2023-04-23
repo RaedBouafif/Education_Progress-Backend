@@ -122,6 +122,22 @@ exports.getAllTeachers = async (req, res) => {
     }
 };
 
+//get list of all teachers
+exports.getListOfTeachers = async (req, res) => {
+    try {
+        var teachers = await TeacherModel.find({}, { password: 0 }).sort({ createdAt: -1 }).populate(
+            "subjects"
+        )
+        return teachers?.length
+            ? res.status(200).json({ teachers, found: true, })
+            : res.status(204).json({ found: false });
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({ error: "serverSideError" });
+    }
+};
+
+
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;

@@ -4,32 +4,38 @@ const StudentPresence = require("../models/studentPresence.model")
 const  Group = require("../models/group.model")
 const Session = require("../models/session.model")
 const StudentAbsence = require("../models/studentAbsence.model")
+const { Types } =require("mongoose")
 
 //studentPresence
 exports.saveStudentPresence = async (req,res) => {
     try{
-        const { studentId, sessionId, groupId, dateEntry, dateLeave, collegeYear } = req.body
-        if (!studentId || !sessionId || !groupId || !collegeYear){
+        const { studentId, sessionId, groupId, dateEntry, dateLeave, collegeYear, extra } = req.body
+        if (!studentId || !sessionId || !groupId || !collegeYear || !dateEntry || !dateLeave ){
             return res.status(400).send({
                 error : "BadRequest"
             })
         }
-        const activatedPresence = await StudentPresence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : true}, { new : true})
+        const activatedPresence = await StudentPresence.findOneAndUpdate({ session :  new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : true}, { new : true})
         if (activatedPresence){
+            await StudentAbsence.findOneAndUpdate({ session : new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : false}, { new : true})
+            console.log("existing one")
+            console.log(activatedPresence)
             return res.status(200).send(activatedPresence)
         }
         const presence = await StudentPresence.create({
             student : studentId,
             group: groupId,
             session: sessionId,
-            dateEntry: new Date(dateEntry) || null,
-            dateLeave: new Date(dateLeave) || null,
+            dateEntry: dateEntry,
+            dateLeave: dateLeave,
             extra : extra || false,
             collegeYear : collegeYear,
             active : true
         })
         await presence.save()
-        await StudentPresence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : false}, { new : true})
+        await StudentAbsence.findOneAndUpdate({ session : new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : false}, { new : true})
+        console.log("new one")
+        console.log(presence)
         return res.status(200).send(presence)
     }catch(e) {
         console.log(e)
@@ -42,26 +48,30 @@ exports.saveStudentPresence = async (req,res) => {
 //studentAbsence
 exports.saveStudentAbsence = async (req,res) => {
     try{
-        const { studentId, sessionId, groupId, collegeYear, justified} = req.body
+        const { studentId, sessionId, groupId, collegeYear} = req.body
         if (!studentId || !sessionId || !groupId || !collegeYear){
             return res.status(400).send({
                 error : "BadRequest"
             })
         }
-        const activatedAbsence = await StudentAbsence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : true}, { new : true})
+        const activatedAbsence = await StudentAbsence.findOneAndUpdate({ session : new Types.ObjectId(sessionId), student : new Types.ObjectId(studentId)}, { active : true}, { new : true})
         if (activatedAbsence){
+            await StudentPresence.findOneAndUpdate({ session :  new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : false}, { new : true})
+            console.log("existing one")
+            console.log(activatedAbsence)
             return res.status(200).send(activatedAbsence)
         }
         const absence = await StudentAbsence.create({
             student : studentId,
             group: groupId,
             session: sessionId,
-            justified : justified || false,
             collegeYear: collegeYear,
             active: true
         })
         await absence.save()
-        await StudentPresence.findOneAndUpdate({ session : sessionId, student : studentId}, { active : false}, { new : true})
+        await StudentPresence.findOneAndUpdate({ session :  new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : false}, { new : true})
+        console.log("new one")
+        console.log(absence)
         return res.status(200).send(absence)
     }catch(e) {
         console.log(e)
@@ -137,21 +147,39 @@ exports.getStudentsAbsenceAndPresence = async(req,res) => {
                 error : "BadRequest"
             })
         }
-        const studentsAbsence = await StudentAbsence.find({session : sessionId, active : true})
-        const studentsPresence = await StudentPresence.find({ session : sessionId, active : true})
-        if (!studentsAbsence){
+        var studentsAbsence = await StudentAbsence.find({session : sessionId, active : true})
+        var allStudentsPresence = await StudentPresence.find({ session : sessionId, active : true}).populate({ path : "student", select: { password : 0}})
+        var extraPresences = []
+        var studentsPresence = []
+        if (studentsAbsence){
+            for ( let i =0; i<studentsAbsence.length; i++){
+                studentsAbsence[i] = studentsAbsence[i].student
+            }
+        }else{
             return res.status(204).send({
                 absence : true
             })
         }
-        if (!studentsPresence){
+        if (allStudentsPresence){
+            let y =0
+            for ( let i =0; i<allStudentsPresence.length; i++){
+                console.log(allStudentsPresence[i])
+                if (allStudentsPresence[i].extra === true){
+                    extraPresences[y] = allStudentsPresence[i].student
+                    y++
+                }else{
+                    studentsPresence[i] = allStudentsPresence[i].student._id
+                }
+            }
+        }else {
             return res.status(204).send({
                 presence : true
             })
         }
         return res.status(200).send({
             studentsAbsence,
-            studentsPresence
+            studentsPresence,
+            extraPresences
         })
     }catch(e){
         console.log(e)

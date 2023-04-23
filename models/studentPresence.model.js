@@ -20,10 +20,10 @@ const StudentPresence = Schema(
             required: [true, "groupRequired"]
         },
         dateEntry: {
-            type: Date,
+            type: Number,
         },
         dateLeave: {
-            type: Date,
+            type: Number,
         },
         extra : {
             type: Boolean

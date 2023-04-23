@@ -183,7 +183,11 @@ exports.addStudent = async (req, res) => {
             error: "studentNotFound"
         })
         if (group.students?.find((element) => element.toString() == studentId)) return res.status(409).json({ error: "studentConflict" })
-        group.students?.push(new Types.ObjectId(studentId))
+        if (group?.students){
+            group.students.push(new Types.ObjectId(studentId))
+        }else{
+            group.students = [ new Types.ObjectId(studentId)]
+        }
         await group.save()
         return res.status(201).json({
             success: true
