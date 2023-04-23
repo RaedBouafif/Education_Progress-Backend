@@ -1228,10 +1228,10 @@ exports.getCurrentTeacherPlanning = async(req,res) => {
         if (year) {
             const templates = await Template.find({collegeYear : new Types.ObjectId(collegeYear)}, "sessions").populate({ path: "sessions", match: {teacher: idTeacher}, select: { password: 0, image : 0}, options: { sort: { dateBegin: 1 } } })
             if (templates){
-                const teacherSessions = await templates?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? templates?.filter((element) => Array.isArray(element.sessions)) : []
+                const teacherSessions = templates?.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? templates?.filter((element) => Array.isArray(element?.sessions)) : []
                 var checkTeacherHavePlanning = false
                 for ( let i =0 ; i< teacherSessions.length; i++){
-                    if(teacherSessions[i].sessions.length > 0){
+                    if(teacherSessions[i].sessions?.length > 0){
                         checkTeacherHavePlanning = true
                     }
                 }
@@ -1252,33 +1252,36 @@ exports.getCurrentTeacherPlanning = async(req,res) => {
                             .populate({ path: "group",populate: [{ path: "section" }, { path : "students", select : {password: 0} }]})
                             .populate("collegeYear")
                             .populate({ path: "sessions",match: {teacher :idTeacher}, populate: [{ path: "teacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} },{ path : "group", populate : [{ path : "students", select : { password : 0}}, { path : "section"}]}, { path: "subTeacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path: "subject" }, { path: "classroom" }] })
-                        if (!currentPlannings) {
+                        if (!currentPlannings.length) {
+                            console.log(1)
                             const initialPlannings = await Planning.find({collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                                 .populate({ path: "group" , populate: [{ path: "section" }, { path : "students", select : {password: 0} }]})
                                 .populate("collegeYear")
                                 .populate({ path: "sessions", match: {teacher :idTeacher}, populate: [{ path: "teacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path : "group", populate : [{ path : "students", select : { password : 0}}, { path : "section"}]}, { path: "subTeacher", select: { password: 0 }, populate : { path : "subjects", select: { image : 0}} }, { path: "subject" }, { path: "classroom" }] })
-                            if (!initialPlannings) {
+                            if (!initialPlannings.length) {
                                 return res.status(404).json({
                                     message: "PlannigNotFound"
                                 })
                             }
-                            var finalInitialPlanning = currentPlannings[0]
-                            teacherPlannings = currentPlannings?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? currentPlannings?.filter((element) => Array.isArray(element.sessions)) : []
-                            teacherPlannings = teacherPlannings.filter(element => element.sessions.length != 0)
-                            const sessions = currentPlannings.flatMap(teacherPlannings => teacherPlannings.sessions);
-                            finalInitialPlanning.sessions = sessions
+                            var finalInitialPlanning1 = initialPlannings[0]
+                            teacherPlannings = initialPlannings.filter((element) => Array.isArray(element.sessions) && element?.sessions?.length).length ? currentPlannings?.filter((element) => Array.isArray(element?.sessions)) : []
+                            teacherPlannings = teacherPlannings.filter(element => element.sessions?.length != 0)
+                            const sessions = initialPlannings.flatMap(teacherPlanning => teacherPlanning.sessions);
+                            finalInitialPlanning1.sessions = sessions
                             return res.status(200).json({
-                                planning: finalInitialPlanning,
+                                planning: finalInitialPlanning1,
                                 initialSemester: year.semesters[0].name,
                                 numberTotalOfWeeks: numberTotalOfWeeks,
                                 infos
                             })
                         } else {
                             var finalCurrentPlanning = currentPlannings[0]
-                            teacherPlannings = currentPlannings?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? currentPlannings?.filter((element) => Array.isArray(element.sessions)) : []
-                            teacherPlannings = teacherPlannings.filter(element => element.sessions.length != 0)
-                            const sessions = currentPlannings.flatMap(teacherPlannings => teacherPlannings.sessions);
-                            finalCurrentPlanning.sessions = sessions
+                            console.log(finalCurrentPlanning)
+                            teacherPlannings = currentPlannings.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? currentPlannings?.filter((element) => Array.isArray(element?.sessions)) : []
+                            teacherPlannings = teacherPlannings.filter(element => element?.sessions?.length != 0)
+                            console.log(teacherPlannings)
+                            const sessions = currentPlannings.flatMap(teacherPlanning => teacherPlanning.sessions);
+                            finalCurrentPlanning.sessions = sessions || []
                             return res.status(200).send({
                                 planning: finalCurrentPlanning,
                                 initialSemester: year.semesters[0].name,
@@ -1298,7 +1301,7 @@ exports.getCurrentTeacherPlanning = async(req,res) => {
             })
         }
     }catch(e){
-        console.log(e.message)
+        console.log(e)
         return res.status(500).send({
             error : "Server Error"
         })
