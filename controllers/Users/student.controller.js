@@ -3,7 +3,9 @@ const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
 const Parent = require("../../models/Users/parent.model");
 const Group = require("../../models/group.model")
-const { Types } = require("mongoose");
+const { Types, default: mongoose } = require("mongoose");
+const { populate } = require("../../models/Users/student.model");
+const ReportModel = require("../../models/reports.model");
 require("dotenv").config();
 
 
@@ -44,6 +46,12 @@ exports.createStudent = async (req, res) => {
                 //     { $push: { students: new Types.ObjectId(data._id) } },
                 //     { new: true, runValidators: true }
                 // )
+
+
+                var parent = await Parent.findById(data.parent).populate("students")
+                console.log(data._id)
+                parent.students.push(data._id)
+                await parent.save()
                 return res.status(201).send({
                     _id: data._id,
                     firstName: data.firstName,
@@ -58,6 +66,7 @@ exports.createStudent = async (req, res) => {
             }
             )
             .catch((err) => {
+                console.log(err)
                 if (err.keyValue?.username) {
                     return res.status(409).json({
                         error: "conflictUsername",
@@ -505,6 +514,39 @@ exports.findAllStudentsWithFilter = async (req, res) => {
         });
     }
 };
+
+
+exports.getStudentProfile = async (req, res) => {
+    try {
+        const studentId = req.params.studentId
+        var student = await Student.findById(studentId, { password: 0 })
+            .populate({ path: "group", populate: { path: "section" } })
+            .populate({ path: "parent", select: { password: 0 } })
+        //find the nbr of absence require here 
+        const reports = await ReportModel.find({
+            students: {
+                $in: [studentId]
+            }
+        }).sort({ createdAt: -1 })
+        if (student) return res.status(200).json({ student, reports, nbrAbsence: 555 })
+        return res.status(404).json({})
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 exports.countDocsss = async (req, res) => {
     try {

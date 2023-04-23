@@ -32,7 +32,7 @@ exports.reportStudentFromSession = async (req, res) => {
                         error: "Student with id : " + studentId + " NotFound"
                     })
                 }
-                await nodeMailer(student.parent.email)
+                nodeMailer(student.parent.email)
                 //ending the mail send process
             }
             report = await Reports.create({
@@ -56,7 +56,7 @@ exports.reportStudentFromSession = async (req, res) => {
                         error: "Student with id : " + studentId + " NotFound"
                     })
                 }
-                await nodeMailer(student.parent.email)
+                nodeMailer(student.parent.email)
                 //ending the mail send process
             }
             report = await Reports.create({
@@ -109,7 +109,7 @@ exports.reportActors = async (req, res) => {
             if (!parent) {
                 console.log("parent not found")
             }
-            await nodeMailer(parent.email)
+            nodeMailer(parent.email)
             //ending the mail send process
         }
         for (let teacher of reported["teacher"]) {
@@ -117,7 +117,7 @@ exports.reportActors = async (req, res) => {
             if (!reportedTeacher) {
                 console.log("teacher not found")
             }
-            await nodeMailer(reportedTeacher.email)
+            nodeMailer(reportedTeacher.email)
             //ending the mail send process
         }
         report = await Reports.create({

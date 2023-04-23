@@ -372,7 +372,7 @@ exports.getParentById = async (req, res) => {
       return res.status(400).json({ error: "parentIdRequired" });
     const parent = await ParentModel.findById(
       req.params.parentId,
-      "firstName lastName email tel"
+      "firstName lastName email tel image"
     );
     if (parent) return res.status(200).json({ found: true, parent });
     else return res.status(404).json({ found: false })
@@ -522,6 +522,22 @@ exports.deleteParent = (req, res) => {
   }
 };
 
+
+
+exports.getParentProfile = async (req, res) => {
+  try {
+    const parentId = req.params.parentId
+    var parent = await ParentModel.findById(parentId, { password: 0 })
+      .populate({ path: "students", populate: { path: "group", populate: { path: "section" } }, select: { password: 0 } })
+    if (parent) return res.status(200).json(parent)
+    return res.status(404).json({})
+  } catch (e) {
+    console.log(e)
+    return res.status(500).json({
+      error: "serverSideError"
+    })
+  }
+}
 
 // exports.filterParents = async (req,res) => {
 //   try{
