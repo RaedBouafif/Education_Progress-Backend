@@ -1,4 +1,4 @@
-const { createSession, findSessions, findSessionById, createManualSession, createTemplateSession,
+const { createSession, findSessions, startManually, findSessionById, createManualSession, createTemplateSession,
     settingStartedDate,
     getSessionDetails,
     settingEndedDate
@@ -15,4 +15,5 @@ const Router = require('express').Router()
 Router.route("/startingSession/:sessionId/:startedAt").get(settingStartedDate)
 Router.route("/endingSesiion/:sessionId/:endedAt").get(settingEndedDate)
 Router.route("/getSessionDetails").get(getSessionDetails)
+Router.route("/startManually/:sessionId/:startsAt/:endsAt").get(startManually)
 module.exports = Router

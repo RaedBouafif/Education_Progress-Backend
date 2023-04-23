@@ -22,13 +22,14 @@ const sessionLogsRouter = require("./routers/sessionLogs.router")
 const templateRouter = require("./routers/template.router")
 const reportsRouter = require("./routers/reports.router")
 const studentPresenceRouter = require("./routers/studentPresence.router")
+const messageRouter = require("./routers/message.router")
 
 const { base } = require("./models/session.model")
 var app = express()
 app.use(cookieParser())
-app.use(express.json( {limit : '50mb' }))
-app.use(bodyParser.json({ limit : '50mb'}))
-app.use(express.urlencoded({ limit : '50mb' , extended : true}))
+app.use(express.json({ limit: '50mb' }))
+app.use(bodyParser.json({ limit: '50mb' }))
+app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.use(cors(
     {
         credentials: true,
@@ -53,10 +54,11 @@ app.use(`${baseURL}/semester`, semesterRouter)
 app.use(`${baseURL}/session`, sessionRouter)
 app.use(`${baseURL}/collegeYear`, collegeYearRouter)
 app.use(`${baseURL}/teacherAbsence`, teacherAbsenceRouter)
-app.use(`${baseURL}/sessionLogs` , sessionLogsRouter)
-app.use(`${baseURL}/template` , templateRouter)
+app.use(`${baseURL}/sessionLogs`, sessionLogsRouter)
+app.use(`${baseURL}/template`, templateRouter)
 app.use(`${baseURL}/reports`, reportsRouter)
 app.use(`${baseURL}/studentPresence`, studentPresenceRouter)
+app.use(`${baseURL}/messaging`, messageRouter)
 
 mongoose.set('strictQuery', true)
 

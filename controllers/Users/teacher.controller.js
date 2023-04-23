@@ -1,5 +1,6 @@
 const TeacherModel = require("../../models/Users/teacher.model");
 const { Subject } = require("../../models/subject.model");
+const ReportModel = require("../../models/reports.model")
 const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
 const { Schema } = require("mongoose");
@@ -83,7 +84,29 @@ exports.create = async (req, res) => {
         }
     }
 };
-
+exports.findTeacherByName = async (req, res) => {
+    try {
+        const { word } = req.params
+        const regex = new RegExp(word, "i");
+        const teachers = await TeacherModel.find({
+            $expr: {
+                $regexMatch: {
+                    input: { $concat: ["$firstName", " ", "$lastName"] },
+                    regex: regex,
+                },
+            }
+        }, { password: 0 }).sort({ createdAt: -1 })
+        if (teachers.length) {
+            return res.status(200).json(teachers)
+        }
+        else {
+            return res.status(204).json([])
+        }
+    } catch (e) {
+        console.log(e);
+        return res.status(500).json({ error: "serverSideError" });
+    }
+}
 exports.getTeacherById = async (req, res) => {
     //WithSubjects
     try {
@@ -91,7 +114,7 @@ exports.getTeacherById = async (req, res) => {
             return res.status(400).json({ error: "teacherIdRequired" });
         const teacher = await TeacherModel.findById(
             req.params.teacherId,
-            "firstName lastName email tel gender maritalStatus"
+            "firstName lastName email tel gender maritalStatus image"
         ).populate("subjects");
         if (teacher) return res.status(200).json({ found: true, teacher });
         else return res.status(404).json({ found: false });
@@ -364,6 +387,33 @@ exports.removeSubject = async (req, res) => {
         });
     }
 }
+
+
+exports.getTeacherProfile = async (req, res) => {
+    try {
+        const teacherId = req.params.teacherId
+        var prof = await TeacherModel.findById(teacherId, { password: 0 })
+            .populate({ path: "subjects" })
+        //find the nbr of absence require here 
+        const reports = await ReportModel.find({
+            teachers: {
+                $in: [teacherId]
+            }
+        }).sort({ createdAt: -1 })
+        if (prof) return res.status(200).json({ prof, reports, nbrAbsence: 555 })
+        return res.status(404).json({})
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
+
+
+
 
 
 exports.countDocsss = async (req, res) => {

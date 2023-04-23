@@ -8,7 +8,7 @@ const generateToken = require('../../functions/generateToken')
 exports.createAdmin = async (req, res) => {
     try {
         const { username, password, role, firstName, lastName, tel, email, gender, adresse, birth, file, note } = req.body
-        if (!username || !password || !role || !firstName || !lastName || !tel || !email || !birth ) {
+        if (!username || !password || !role || !firstName || !lastName || !tel || !email || !birth) {
             return res.status(400).send({
                 error: 'Bad Request!'
             })
@@ -23,29 +23,29 @@ exports.createAdmin = async (req, res) => {
             username: username,
             password: encryptedPassword,
             role: role,
-            firstName : firstName,
+            firstName: firstName,
             lastName: lastName,
             tel: tel,
-            email : email,
+            email: email,
             birth: birth,
-            gender : gender || null,
-            adresse : adresse || null,
-            image : file || null,
-            note : note  || null
+            gender: gender || null,
+            adresse: adresse || null,
+            image: file || null,
+            note: note || null
         })
         admin.save().then(data => {
-            if (data){
+            if (data) {
                 console.log(data)
                 return res.status(201).send({
-                    created : true,
+                    created: true,
                     admin
-                 })
+                })
             }
         }).catch(err => {
             console.log(err.message)
-            if ( err.code === 11000) {
+            if (err.code === 11000) {
                 return res.status(409).send({
-                  error : "BadRequest"
+                    error: "BadRequest"
                 })
             }
             if (err.keyValue?.username) {
@@ -53,19 +53,19 @@ exports.createAdmin = async (req, res) => {
                     error: "conflictUsername",
                     message: "username already exist"
                 })
-            }else if ( err.keyValue?.tel) {
+            } else if (err.keyValue?.tel) {
                 return res.status(409).json({
-                    error :"conflictTel",
-                    message : "Phone number already exist"
+                    error: "conflictTel",
+                    message: "Phone number already exist"
                 })
-            } else if (err.keyValue?.email){
+            } else if (err.keyValue?.email) {
                 return res.status(409).send({
-                    error :"conflictEmail",
+                    error: "conflictEmail",
                     message: "Email already exist"
                 })
-            } else if ( err.error?.email){
+            } else if (err.error?.email) {
                 return res.status(400).send({
-                    error : "InvalidEmail"
+                    error: "InvalidEmail"
                 })
             }
             else {
@@ -204,7 +204,11 @@ exports.login = async (req, res) => {
             if (admin && encryptedPassword) {
                 const token = generateToken({
                     username: admin.username,
-                    role: admin.role
+                    role: admin.role,
+                    _id: admin._id,
+                    image: admin.image,
+                    firstName: admin.firstName,
+                    lastName: admin.lastName
                 }, '3d')
                 res.cookie("tck", token, {
                     httpOnly: true,
@@ -336,12 +340,12 @@ exports.logout = async (req, res) => {
 }
 
 exports.countDocsss = async (req, res) => {
-    try{
+    try {
         const countAdmin = await Admin.countDocuments()
-        return res.status(200).send({number : countAdmin || 0})
-    }catch(e) {
+        return res.status(200).send({ number: countAdmin || 0 })
+    } catch (e) {
         return res.status(500).send({
-            error : "Server Error!"
+            error: "Server Error!"
         })
     }
 }

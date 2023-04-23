@@ -10,74 +10,74 @@ const Planning = require('../models/Planning.model')
 
 
 // startedSession
-exports.settingStartedDate = async (req,res) =>{
-    try{
+exports.settingStartedDate = async (req, res) => {
+    try {
         //StartedAt is a number , if it should be a date .....
         const { sessionId, startedAt } = req.params.sessionId
-        if (!sessionId ){
+        if (!sessionId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const sessionStarted = await Session.findByIdAndUpdate(sessionId, { startedAt : startedAt}, { new : true, runValidators : true})
+        const sessionStarted = await Session.findByIdAndUpdate(sessionId, { startedAt: startedAt }, { new: true, runValidators: true })
         return res.status(200).send(sessionStarted)
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
-    } 
-} 
+    }
+}
 
 // startedSession
-exports.settingEndedDate = async (req,res) =>{
-    try{
+exports.settingEndedDate = async (req, res) => {
+    try {
         //StartedAt is a number , if it should be a date .....
         const { sessionId, endedAt } = req.params.sessionId
-        if (!sessionId ){
+        if (!sessionId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const sessionStarted = await Session.findByIdAndUpdate(sessionId, { endedAt : endedAt}, { new : true, runValidators : true})
+        const sessionStarted = await Session.findByIdAndUpdate(sessionId, { endedAt: endedAt }, { new: true, runValidators: true })
         return res.status(200).send(sessionStarted)
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
-    } 
-} 
+    }
+}
 
 // get all sessionDetails
-exports.getSessionDetails = async (req,res) => {
+exports.getSessionDetails = async (req, res) => {
     const { sessionId, groupId } = req.params.sessionId
-    try{
-        if (!sessionId){
+    try {
+        if (!sessionId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
         const sessionInfos = await Session.findById(sessionId)
-            .populate({ path : "teacher", select : { password : 0}})
+            .populate({ path: "teacher", select: { password: 0 } })
             .populate({ path: "subTeacher", select: { password: 0 } })
             .populate("subject")
             .populate("classroom")
         const listOfStudents = await Group.findById(groupId)
-            .populate({ path : "students", select: { password : 0, username : 0}})
-        if (!listOfStudents){
+            .populate({ path: "students", select: { password: 0, username: 0 } })
+        if (!listOfStudents) {
             return res.status(404).send({
-                error : "groupNotFound"
+                error: "groupNotFound"
             })
         }
         return res.status(200).send({
-            infos : sessionInfos,
-            students : listOfStudents
+            infos: sessionInfos,
+            students: listOfStudents
         })
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
@@ -405,3 +405,16 @@ exports.getSessionDetails = async (req,res) => {
 
 
 
+exports.startManually = async (req, res) => {
+    try {
+        const { startsAt, endsAt, sessionId } = req.params
+        const session = await Session.findByIdAndUpdate(sessionId, { startedAt: Number(startsAt), endedAt: Number(endsAt) })
+        if (session) return res.status(200).json({ found: true })
+        else return res.status(404).json({ found: false })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "serverSideError"
+        })
+    }
+} 
