@@ -1,50 +1,51 @@
-const { Types ,Schema, model} = require("mongoose")
+const { Types, Schema, model } = require("mongoose")
 
 const Notification = Schema({
-    recievers : [{
-        type : Object,
-        recieverId : {
-            type : Types.ObjectId
+    receivers: [{
+        type: Object,
+        receiverId: {
+            type: Types.ObjectId
         },
-        recieverPath : {
-            type : String,
-            enum : ["Student", "Parent", "Teacher", "Admin"]
+        receiverPath: {
+            type: String,
+            enum: ["Student", "Parent", "Teacher", "Admin"]
         }
     }],
-    sender : {
-        type : Object,
-        senderId : {
-            type : Types.ObjectId
+    sender: {
+        type: Object,
+        senderId: {
+            type: Types.ObjectId
         },
-        senderPath : {
+        senderPath: {
             type: String,
-            enum : ["Student", "Parent", "Teacher", "Admin"]
+            enum: ["Student", "Parent", "Teacher", "Admin"]
         }
     },
-    studentAbsence : {
-        type : Types.ObjectId,
-        ref : "StudentAbsence"
+    studentAbsence: {
+        type: Types.ObjectId,
+        ref: "StudentAbsence"
     },
-    teacherAbsence : {
-        type : Types.ObjectId,
-        ref : "TeacherAbsence"
+    teacherAbsence: {
+        type: Types.ObjectId,
+        ref: "TeacherAbsence"
     },
-    content : {
+    content: {
         type: String
     },
-    object : {
-        type : String
-    }, 
-    report : {
-        type : Types.ObjectId,
-        ref : "Reports"
+    object: {
+        type: String
     },
-    notificationType : {
-        type : String
+    report: {
+        type: Types.ObjectId,
+        ref: "Reports"
     },
-    session : {
-        type : Types.ObjectId,
-        ref : "Session"
+    notificationType: {
+        type: String,
+        enum: ["newSession", "updateSession", "absence", "report", "catchupSession", "cancelSession"]
+    },
+    session: {
+        type: Types.ObjectId,
+        ref: "Session"
     }
 })
 
