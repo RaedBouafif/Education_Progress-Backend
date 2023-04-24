@@ -148,7 +148,7 @@ exports.getStudentsAbsenceAndPresence = async(req,res) => {
             })
         }
         var studentsAbsence = await StudentAbsence.find({session : sessionId, active : true})
-        var allStudentsPresence = await StudentPresence.find({ session : sessionId, active : true}).populate({ path : "student", select: { password : 0}})
+        var allStudentsPresence = await StudentPresence.find({ session : sessionId, active : true}).populate({ path : "student", select: { password : 0, image : 0}})
         var extraPresences = []
         var studentsPresence = []
         if (studentsAbsence){
