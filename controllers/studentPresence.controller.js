@@ -4,6 +4,9 @@ const StudentPresence = require("../models/studentPresence.model")
 const  Group = require("../models/group.model")
 const Session = require("../models/session.model")
 const StudentAbsence = require("../models/studentAbsence.model")
+const Studend = require("../models/Users/student.model")
+const Parent = require("../models/Users/parent.model")
+const { notify } = require("../functions/Notify")
 const { Types } =require("mongoose")
 
 //studentPresence
@@ -18,7 +21,7 @@ exports.saveStudentPresence = async (req,res) => {
         const activatedPresence = await StudentPresence.findOneAndUpdate({ session :  new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : true}, { new : true})
         if (activatedPresence){
             await StudentAbsence.findOneAndUpdate({ session : new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : false}, { new : true})
-            console.log("existing one")
+            console.log("existing one dqsdqs")
             console.log(activatedPresence)
             return res.status(200).send(activatedPresence)
         }
@@ -45,18 +48,67 @@ exports.saveStudentPresence = async (req,res) => {
     }
 }
 
+
+const transformToTime = (minutes) => {
+    var firstPart = Math.floor(minutes / 60) < 10 ? "0" + Math.floor(minutes / 60) : Math.floor(minutes / 60)
+    var secondPart = minutes % 60 < 10 ? "0" + (minutes % 60) : (minutes % 60)
+    return firstPart + ":" + secondPart
+}
 //studentAbsence
 exports.saveStudentAbsence = async (req,res) => {
     try{
-        const { studentId, sessionId, groupId, collegeYear} = req.body
-        if (!studentId || !sessionId || !groupId || !collegeYear){
+        const { studentId, sessionId, groupId, collegeYear, dateBegin} = req.body
+        if (!studentId || !sessionId || !groupId || !collegeYear || !dateBegin){
             return res.status(400).send({
                 error : "BadRequest"
             })
         }
+        console.log(studentId)
+        console.log(sessionId)
+        console.log(groupId)
+        console.log(collegeYear)
+
+        var dateBegin1 = new Date(dateBegin)
+        console.log(dateBegin)
+
+        //notificationType : "absence" , receiver : student/parent , message : ( nom de l'éleve : ---- prof : --- \n salle : --- \n matiere : ---|type de matiere \n group de l'éleve : section + groupName \n Date de séance---durée de séance(startsAtH - endsAtH) ), , object : Absence dans la séance { date de séance } 
+
+        // studentModel.populate(parent) -- sessionModel.populate(prof/salle/matiere/planning.find)
+
+        var notification = {}
         const activatedAbsence = await StudentAbsence.findOneAndUpdate({ session : new Types.ObjectId(sessionId), student : new Types.ObjectId(studentId)}, { active : true}, { new : true})
         if (activatedAbsence){
             await StudentPresence.findOneAndUpdate({ session :  new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : false}, { new : true})
+            //part of setting up the notif
+            const student = await Studend.findById(new Types.ObjectId(studentId), {select : { password : 0, image : 0}}).populate({ path : "parent", select: { password :0, image : 0}})
+            const session = await Session.findById(new Types.ObjectId(sessionId)).populate([{path : "teacher", select : { password : 0, image : 0}}, {path : "classroom"}, {path : "subject", select : { image : 0}}])
+            if (student && session){
+                try{
+                    var realDay = session.day === 0 ? 7 : session.day
+                    dateBegin1.setDate(dateBegin1.getDate() + realDay - 1)
+                    const finalDate = dateBegin1.toDateString()
+                    notification = {
+                        ...notification,
+                        notficationType : "absence",
+                        receivers : [
+                            {
+                                recieverId: new Types.ObjectId(studentId),
+                                recieverPath: "Student"
+                            },
+                            {
+                                recieverId: new Types.ObjectId(student.parent._id),
+                                receiver: "Parent"
+                            }
+                        ],
+                        object :  `Absence dans la séance ${finalDate}`,
+                        StudentAbsence : new Types.ObjectId(activatedAbsence._id),
+                        content: `Nom de l'éleve : ${student.firstName} ${student.lastName} \n Enseignant : ${student.parent.firstName} ${student.parent.lastName} \n Mtiere : ${session.subject.subjectName} \n Type séance : ${session.sessionType} \n Salle : ${session?.classroom?.classroomName} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(session?.startsAt)}H - ${transformToTime(session?.endsAt)}H`
+                    }
+                    notify(notification)
+                }catch(e){
+                    console.log(e)
+                }
+            }
             console.log("existing one")
             console.log(activatedAbsence)
             return res.status(200).send(activatedAbsence)
@@ -72,6 +124,37 @@ exports.saveStudentAbsence = async (req,res) => {
         await StudentPresence.findOneAndUpdate({ session :  new Types.ObjectId(sessionId), student :  new Types.ObjectId(studentId)}, { active : false}, { new : true})
         console.log("new one")
         console.log(absence)
+        // absence part
+        const student = await Studend.findById(studentId, {select : { password : 0, image : 0}}).populate({ path : "parent", select: { password :0, image : 0}})
+        const session = await Session.findById(sessionId).populate([{path : "teacher", select : { password : 0, image : 0}}, {path : "classroom"}, {path : "subject", select : { image : 0}}])
+        if (student && session){
+            try{
+                var realDay = session.day === 0 ? 7 : session.day
+                dateBegin.setDate(dateBegin.getDate() + realDay - 1)
+                const finalDate = dateBegin.toDateString()
+                notification = {
+                    ...notification,
+                    notficationType : "absence",
+                    receivers : [
+                        {
+                            recieverId: new Types.ObjectId(studentId),
+                            type: "Student"
+                        },
+                        {
+                            recieverId: new Types.ObjectId(student.parent._id),
+                            type: "Parent"
+                        }
+                    ],
+                    StudentAbsence : new Types.ObjectId(activatedAbsence._id),
+                    object :  `Absence dans la séance ${finalDate}`,
+                    content: `Nom de l'éleve : ${student.firstName} ${student.lastName} \n Enseignant : ${student.parent.firstName} ${student.parent.lastName} \n Mtiere : ${session.subject.subjectName} \n Type séance : ${session.sessionType} \n Salle : ${session?.classroom?.classroomName} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(session?.startsAt)}H - ${transformToTime(session?.endsAt)}H`,
+                    seen : false
+                }
+                notify(notification)
+            }catch(e){
+                console.log(e)
+            }
+        }
         return res.status(200).send(absence)
     }catch(e) {
         console.log(e)

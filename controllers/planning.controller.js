@@ -622,8 +622,10 @@ exports.addSessionToPlanning = async (req, res) => {
                     const finalDate = margeDate.toDateString()
                     notificationData = {
                         ...notificationData,
-                        receivers: [{ receiverId: teacher, receiverPath: "Teacher" }, ...updatedPlanning.group.students?.map((element) => ({ receiverId: element, receiverPath: "Student" })), ...otherGroupsData.map((element) => element.students ? element.students : []).flatMap((element) => element).map((element) => ({ receiverId: element, receiverPath: "Student" }))],
-                        content: `Prof : ${teacherName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Groupes : ${[...otherGroupsData.map((element) => element?.section?.sectionName + " " + element.groupName), updatedPlanning.group?.section?.sectionName + " " + updatedPlanning.group?.groupName].join(" - ")} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`
+                        receivers: [{ receiverId: new Types.ObjectId(teacher), type: "Teacher" }, ...updatedPlanning.group.students?.map((element) => ({ receiverId: new Types.ObjectId(element), type: "Student" })), ...otherGroupsData.map((element) => element.students ? element.students : []).flatMap((element) => element).map((element) => ({ receiverId: new Types.ObjectId(element), type: "Student" }))],
+                        content: `Prof : ${teacherName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Groupes : ${[...otherGroupsData.map((element) => element?.section?.sectionName + " " + element.groupName), updatedPlanning.group?.section?.sectionName + " " + updatedPlanning.group?.groupName].join(" - ")} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`,
+                        seen: false,
+                        session : new Types.ObjectId(session._id)
                     }
                     notify(notificationData)
                 } catch (e) {
@@ -693,6 +695,9 @@ exports.updateSessionFromPlanning = async (req, res) => {
         if (!initialSubGroup) {
             initialSubGroup = "All"
         }
+        var notificationData = {}
+        notificationData = { ...notificationData, notificationType: "updateSession", object: "une Séance a été modifiée dans votre emploi de temps", }
+
         const plannings = await Planning.find({ group, collegeYear, week: { $gte: week, $lt: (Number(week) + Number(WeeksDuration)) } })
             .populate({ path: "sessions", match: { day: oldDay, startsAt: oldStartsAt, endsAt: oldEndsAt, classroom: oldClassroom, subject: oldSubject, teacher: oldTeacher } })
         console.log("length : " + plannings.length)
