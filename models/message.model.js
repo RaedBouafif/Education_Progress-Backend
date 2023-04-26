@@ -24,6 +24,10 @@ const Message = Schema({
         type: String,
         enum: ["Teacher", "Parent", "Admin"]
     },
+    seen: {
+        type: Boolean,
+        default: false
+    },
     active: {
         type: Boolean,
         default: true

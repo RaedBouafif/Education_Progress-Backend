@@ -29,12 +29,19 @@ exports.createMessage = async (req, res) => {
 exports.getMessages = async (req, res) => {
     try {
         const { user1, user2 } = req.params
-        const messages = await MessageModel.find({
+        var messages = await MessageModel.updateMany({
+            $or: [
+                { sender: user1, receiver: user2 },
+                { sender: user2, receiver: user1 },
+            ]
+        }, { seen: true })
+        messages = await MessageModel.find({
             $or: [
                 { sender: user1, receiver: user2 },
                 { sender: user2, receiver: user1 },
             ]
         }).sort({ dateSend: 1 })
+        console.log(messages)
         if (messages.length) {
             return res.status(200).json(messages)
         } else {
