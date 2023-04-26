@@ -41,7 +41,7 @@ const Notification = Schema({
     },
     notificationType: {
         type: String,
-        enum: ["newSession", "updateSession", "absence", "report", "catchupSession", "cancelSession"]
+        enum: ["newSession", "updateSession", "presence", "absence", "report", "catchupSession", "cancelSession"]
     },
     session: {
         type: Types.ObjectId,
