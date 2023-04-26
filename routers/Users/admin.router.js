@@ -7,6 +7,7 @@ const {
     updateAdmin,
     welcome,
     logout,
+    findAdminByName,
     countDocsss
 } = require("../../controllers/Users/admin.controller");
 const authMiddleWare = require("../../middlewares/auth");
@@ -18,6 +19,7 @@ Router.route("/login").post(login);
 //get
 Router.route("/getAll").get(findAllAdmins);
 Router.route("/getById/:adminId").get(findOneAdmin);
+Router.route("/findAdminByName/:word").get(findAdminByName)
 //put
 Router.route("/update/:adminId").put(updateAdmin);
 //delete
