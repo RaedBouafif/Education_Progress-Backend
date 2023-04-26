@@ -8,12 +8,20 @@ const Reports = require("../models/reports.model")
 const Parent = require("../models/Users/parent.model")
 const { Types } = require("mongoose")
 const nodeMailer = require("../functions/nodeMailer")
+const { notify } = require("../functions/Notify")
 const { CommandStartedEvent } = require('mongodb')
 
 
 
 // "teacher default reporter" report student from session
 // need to add mailer to parent student
+const transformDateTime = (d) => {
+
+    d = d.toJSON()
+    const datePart = d.split("T")[0].split("-").reverse().join("-")
+    const timePart = d.split("T")[1].split(":").slice(0, 2).join(":") + "H"
+    return datePart + " " + timePart
+}
 exports.reportStudentFromSession = async (req, res) => {
     try {
         const { sessionId, studentIds, allTheStudents, groupId, object, type, content, senderId, senderType, senderFirstName, senderLastName } = req.body
@@ -23,7 +31,10 @@ exports.reportStudentFromSession = async (req, res) => {
             })
         }
         //sending the mail phase
+        var receivers = []
+        var studentNames = []
         var report
+        var notificationData
         if (!allTheStudents.length) {
             for (let studentId of studentIds) {
                 const student = await Student.findById(new Types.ObjectId(studentId)).populate("parent")
@@ -34,6 +45,12 @@ exports.reportStudentFromSession = async (req, res) => {
                 }
                 nodeMailer(student.parent.email)
                 //ending the mail send process
+                try {
+                    receivers = [...receivers, { receiverId: new Types.ObjectId(studentId), receiverPath: "Student" }, { receiverId: new Types.ObjectId(student.parent._id), receiverPath: "Parent" }]
+                    studentNames = [...studentNames, student.firstName + " " + student.lastName]
+                } catch (e) {
+                    console.log(e)
+                }
             }
             report = await Reports.create({
                 object,
@@ -47,6 +64,17 @@ exports.reportStudentFromSession = async (req, res) => {
                 { path: "students", select: { password: 0 } },
                 { path: "groups", populate: { path: "section" } }
             ])
+            notificationData = {
+                report: new Types.ObjectId(report._id),
+                object: `Rapport${report.type != "autre" ? " " + report.type : ""} pour : ${studentNames.join(" , ")}`,
+                notificationType: "report",
+                receivers,
+                content: `${report.object}\n\n${report.content}`,
+                seen: false,
+                sender : { senderId : new Types.ObjectId(senderId), senderPath : "Admin" }
+
+            }
+            notify(notificationData)
         }
         else {
             for (let studentId of allTheStudents) {
@@ -58,6 +86,12 @@ exports.reportStudentFromSession = async (req, res) => {
                 }
                 nodeMailer(student.parent.email)
                 //ending the mail send process
+                try {
+                    receivers = [...receivers, { receiverId: new Types.ObjectId(studentId), receiverPath: "Student" }, { receiverId: new Types.ObjectId(student.parent._id), receiverPath: "Parent" }]
+                    studentNames = [...studentNames, student.firstName + " " + student.lastName]
+                } catch (e) {
+                    console.log(e)
+                }
             }
             report = await Reports.create({
                 object,
@@ -71,6 +105,20 @@ exports.reportStudentFromSession = async (req, res) => {
                 { path: "students", select: { password: 0 } },
                 { path: "groups", populate: { path: "section" } }
             ])
+            try {
+                notificationData = {
+                    report: new Types.ObjectId(report._id),
+                    object: `Rapport${report.type != "autre" ? " " + report.type : ""} pour : ${studentNames.join(" , ")}`,
+                    notificationType: "report",
+                    receivers,
+                    content: `${report.object}\n\n${report.content}`,
+                    seen: false,
+                    sender : { senderId : new Types.ObjectId(senderId), senderPath : "Admin" }
+                }
+                notify(notificationData)
+            } catch (e) {
+                console.log(e)
+            }
         }
         if (!report) {
             return res.status(400).send({
@@ -92,25 +140,30 @@ exports.reportStudentFromSession = async (req, res) => {
 
 exports.reportActors = async (req, res) => {
     try {
-        const { reportedIds, object, type, content, senderId, senderType, senderFirstName, senderLastName } = req.body
+        var { reportedIds, object, type, content, senderId, senderType, senderFirstName, senderLastName } = req.body
         if (!reportedIds || !content || !senderId || !object) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
+        // need to change after redux
         var reported = {}
         reported["teacher"] = reportedIds.filter((element) => element.actor === "Teacher")
         reported["parent"] = reportedIds.filter((element) => element.actor === "Parent")
         reported["student"] = reportedIds.filter((element) => element.actor === "Student")
         //sending the mail phase
         var report
+        var reportedNames = []
+        var receivers = []
         for (let student of reported["student"]) {
-            const parent = await Parent.findById(new Types.ObjectId(student.parent))
-            if (!parent) {
+            const foundStudent = await Student.findById(new Types.ObjectId(student._id)).populate({ path : "parent", select : { password : 0}})
+            if (!foundStudent) {
                 console.log("parent not found")
             }
-            nodeMailer(parent.email)
+            nodeMailer(foundStudent.parent.email)
+            receivers = [...receivers, { receiverId: new Types.ObjectId(student._id), receiverPath: "Student" }, { receiverId: new Types.ObjectId(foundStudent.parent._id), receiverPath: "Parent" }]
             //ending the mail send process
+            reportedNames = [...reportedNames, foundStudent.firstName + " " + foundStudent.lastName]
         }
         for (let teacher of reported["teacher"]) {
             const reportedTeacher = await Teacher.findById(new Types.ObjectId(teacher._id))
@@ -119,6 +172,14 @@ exports.reportActors = async (req, res) => {
             }
             nodeMailer(reportedTeacher.email)
             //ending the mail send process
+            receivers = [...receivers, { receiverId: new Types.ObjectId(teacher._id), receiverPath: "Teacher" }]
+            reportedNames = [...reportedNames, reportedTeacher.firstName + " " + reportedTeacher.lastName]
+        }
+        for (let parent of reported["parent"]) {
+            const foundParent = await Parent.findById(new Types.ObjectId(parent._id))
+            nodeMailer(foundParent.email)
+            receivers = [...receivers, { receiverId: new Types.ObjectId(parent._id), receiverPath: "Parent" }]
+            reportedNames = [...reportedNames, foundParent.firstName + " " + foundParent.lastName]
         }
         report = await Reports.create({
             object,
@@ -135,6 +196,20 @@ exports.reportActors = async (req, res) => {
             { path: "teachers", select: { password: 0 } },
             { path: "parents", select: { password: 0 } },
         ])
+        try {
+            var notificationData = {
+                report: new Types.ObjectId(report._id),
+                object: `Rapport${report.type != "autre" ? " " + report.type : ""} pour : ${reportedNames.join(" , ")}`,
+                notificationType: "report",
+                receivers,
+                content: `${report.object}\n${report.content}`,
+                seen : false,
+                sender : { senderId : new Types.ObjectId(senderId), senderPath : "Admin" }
+            }
+            notify(notificationData)
+        } catch (e) {
+            console.log(e)
+        }
         if (!report) {
             return res.status(400).send({
                 error: "Some error occured while saving the report"

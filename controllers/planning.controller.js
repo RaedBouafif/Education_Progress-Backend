@@ -685,7 +685,6 @@ exports.addSessionToPlanning = async (req, res) => {
 exports.updateSessionFromPlanning = async (req, res) => {
     try {
         console.log("-- update planning --")
-        console.log(req.body)
         const { group, oldClassroom, oldStartsAt, oldDay, oldEndsAt, oldSubject, oldTeacher, week, collegeYear, teacher, subject, classroom, startsAt, endsAt, sessionType, initialSubGroup, WeeksDuration } = req.body
         if (!group || !week) {
             return res.status(400).send({
@@ -699,13 +698,12 @@ exports.updateSessionFromPlanning = async (req, res) => {
         notificationData = { ...notificationData, notificationType: "updateSession", object: "une Séance a été modifiée dans votre emploi de temps", }
 
         const plannings = await Planning.find({ group, collegeYear, week: { $gte: week, $lt: (Number(week) + Number(WeeksDuration)) } })
-            .populate({ path: "sessions", match: { day: oldDay, startsAt: oldStartsAt, endsAt: oldEndsAt, classroom: oldClassroom, subject: oldSubject, teacher: oldTeacher } })
+            .populate({ path: "sessions", match: { day: oldDay, startsAt: oldStartsAt, endsAt: oldEndsAt, classroom: oldClassroom, subject: oldSubject, $or: [{ teacher: oldTeacher }, { subTeacher: oldTeacher }] } })
         console.log("length : " + plannings.length)
         var sessions = []
         for (var pl of plannings) {
             sessions = [...sessions, ...pl?.sessions]
         }
-        console.log(sessions)
         for (let session of sessions) {
             session = await Session.findById(session._id)
             if (session.teacher == teacher) {
@@ -740,6 +738,39 @@ exports.updateSessionFromPlanning = async (req, res) => {
             .populate("collegeYear")
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
             .populate("group")
+        try {
+            const findedPlanning = newPlannings.find((element) => element.sessions?.find((element2) => element2._id.toString() === sessions[0]._id.toString()))
+            console.log(findedPlanning)
+            const findedSession = findedPlanning.sessions?.find((element) => element._id.toString() === sessions[0]._id.toString())
+            var margeDate = new Date()
+            var realDay = findedSession.day === 0 ? 7 : findedSession.day
+            margeDate.setDate(margeDate.getDate() + realDay - 1)
+            const finalDate = margeDate.toDateString()
+            if (findedSession.subTeacher) {
+                notificationData = {
+                    session: new Types.ObjectId(findedSession._id),
+                    object: 'Une séance a été modifiée dans votre emploi du temps',
+                    notificationType: "updateSession",
+                    receivers: [{ receiverId: new Types.ObjectId(findedSession.teacher._id), receiverPath: "Teacher" }, { receiverId: new Types.ObjectId(findedSession.subTeacher._id), receiverPath: "Teacher" }, ...findedPlanning.group.students?.map((element) => ({ receiverId: new Types.ObjectId(element), receiverPath: "Student" }))],
+                    content: `Prof : ${findedSession.subTeacher.firstName + " " + findedSession.subTeacher.lastName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`,
+                    seen : false,
+                }
+            } else
+                notificationData = {
+                    session: new Types.ObjectId(findedSession._id),
+                    object: 'Une séance a été modifiée dans votre emploi du temps',
+                    notificationType: "updateSession",
+                    receivers: [{ receiverId: new Types.ObjectId(findedSession.teacher._id), receiverPath: "Teacher" }, ...findedPlanning.group.students?.map((element) => ({ receiverId: new Types.ObjectId(element), receiverPath: "Student" }))],
+                    content: `Prof : ${findedSession.teacher.firstName + " " + findedSession.teacher.lastName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`,
+                    seen : false
+
+                }
+            notify(notificationData)
+
+        } catch (e) {
+            console.log(e)
+            console.log("error in modification")
+        }
         return res.status(200).json(newPlannings)
     } catch (e) {
         console.log(e)
@@ -1229,8 +1260,36 @@ exports.checkSessionDurationAvailability = async (req, res) => {
 exports.toggleCancelSession = async (req, res) => {
     try {
         const { sessionId, status } = req.params
-        const updateSession = await Session.findOneAndUpdate(sessionId, { canceled: status }, { runValidators: true, new: true })
-        if (updateSession) return res.status(200).json({ updated: true })
+        const updateSession = await Session.findByIdAndUpdate(sessionId, { canceled: status }, { runValidators: true, new: true })
+            .populate("group")
+            .populate("teacher", "firstName lastName")
+            .populate("classroom")
+            .populate("subject")
+        var notificationData= {}
+        if ( status == "true" ){
+            notificationData = { ...notificationData, object: `Une séance a été annuler`}
+        }else{
+            notificationData = { ...notificationData, object: `Une séance a été activer`}
+        }
+        console.log("hedhaaa")
+        console.log(status)
+        if (updateSession) {
+            try {
+                notificationData = {
+                    ...notificationData,
+                    session: new Types.ObjectId(updateSession._id),
+                    content: `Prof : ${updateSession.teacher.firstName + " " + updateSession.teacher.lastName} \n Salle : ${updateSession?.classroom?.classroomName} \n Matiere : ${updateSession?.subject?.subjectName} \n Type séance : ${updateSession.sessionType} \n Durée de séance : ${transformToTime(updateSession?.startsAt)}H - ${transformToTime(updateSession?.endsAt)}H`,
+                    receivers: [{ receiverId: new Types.ObjectId(updateSession.teacher._id), receiverPath: "Teacher" }, ...(updateSession.group.students ? updateSession.group.students.map((element) => ({ receiverId: new Types.ObjectId(element), receiverPath: "Student" })) : [])],
+                    notificationType: "cancelSession",
+                    seen : false
+                }
+                notify(notificationData)
+            } catch (e) {
+                console.log(e)
+                console.log("notif error in cancel controller")
+            }
+            return res.status(200).json({ updated: true })
+        }
         return res.status(404).json({ error: "sessionNotFound" })
 
     } catch (e) {

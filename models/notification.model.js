@@ -1,10 +1,11 @@
-const { Types, Schema, model } = require("mongoose")
+const { Types, Schema, model, Document} = require("mongoose")
 
 const Notification = Schema({
     receivers: [{
         type: Object,
         receiverId: {
-            type: Types.ObjectId
+            type: Types.ObjectId,
+            refParh : "receivers.receiverPath"
         },
         receiverPath: {
             type: String,
@@ -12,9 +13,9 @@ const Notification = Schema({
         }
     }],
     sender: {
-        type: Object,
         senderId: {
-            type: Types.ObjectId
+            type: Types.ObjectId,
+            refPath: "sender.senderPath"
         },
         senderPath: {
             type: String,
@@ -41,7 +42,7 @@ const Notification = Schema({
     },
     notificationType: {
         type: String,
-        enum: ["newSession", "updateSession", "absence", "report", "catchupSession", "cancelSession"]
+        enum: ["newSession", "updateSession", "presence", "absence", "report", "catchupSession", "cancelSession"]
     },
     session: {
         type: Types.ObjectId,

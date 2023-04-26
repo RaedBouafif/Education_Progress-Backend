@@ -52,9 +52,9 @@ exports.getNotificationsWithDetails = async(req,res) => {
         }
         // sender need test on populate
         const notifications = await Notification.find({ receivers : {$elemMatch : { receiverId : new Types.ObjectId(actorId)}}}).sort( {createdAt : -1 })
-            .populate({
-                path: 'sender.senderId'
-            })
+            .populate(
+                'sender.senderId'
+            )
             .populate("studentAbsence")
             .populate("teacherAbsence")
             .populate("report")
@@ -80,8 +80,15 @@ exports.seenNotification = async(req,res) => {
             })
         }
         const notification = await Notification.findByIdAndUpdate(new Types.ObjectId(notifId), { seen : true }, { runValidators : true , new : true})
+            .populate(
+                'sender.senderId'
+            )
+            .populate("studentAbsence")
+            .populate("teacherAbsence")
+            .populate("report")
+            .populate("session")
         console.log(notification)
-        return (notification) ? res.status(200).send({seen : true}) :  res.status(204).send({ message : "There is no Notifications id: "+notifId})
+        return (notification) ? res.status(200).send(notification) :  res.status(204).send({ message : "There is no Notifications id: "+notifId})
     }catch(e){
         console.log(e)
             return res.status(500).send({

@@ -1,7 +1,7 @@
 
 const { restart } = require("nodemon")
 const MessageModel = require("../models/message.model")
-
+const { Types } = require("mongoose")
 
 
 
@@ -38,6 +38,95 @@ exports.getMessages = async (req, res) => {
         if (messages.length) {
             return res.status(200).json(messages)
         } else {
+            return res.status(204).json([])
+        }
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+
+exports.getMyAllLastMessages = async (req, res) => {
+    try {
+        const id = req.params.id
+        var distinctReceiver = await MessageModel.aggregate([
+            {
+                $match: {
+                    receiver: new Types.ObjectId(id)
+                }
+            },
+            {
+                $sort: {
+                    "dateSend": -1
+                }
+            },
+            {
+                $lookup: {
+                    from: "teachers", // Replace with the actual collection name for Teacher documents
+                    localField: "sender",
+                    foreignField: "_id",
+                    as: "senderTeacher"
+                }
+            },
+            {
+                $lookup: {
+                    from: "parents", // Replace with the actual collection name for Parent documents
+                    localField: "sender",
+                    foreignField: "_id",
+                    as: "senderParent"
+                }
+            },
+            {
+                $lookup: {
+                    from: "admins", // Replace with the actual collection name for Parent documents
+                    localField: "sender",
+                    foreignField: "_id",
+                    as: "senderAdmin"
+                }
+            },
+            {
+                $addFields: {
+                    senderData: {
+                        $switch: {
+                            branches: [
+                                {
+                                    case: { $eq: ["$senderPath", "Teacher"] },
+                                    then: { $arrayElemAt: ["$senderTeacher", 0] }
+                                },
+                                {
+                                    case: { $eq: ["$senderPath", "Parent"] },
+                                    then: { $arrayElemAt: ["$senderParent", 0] }
+                                },
+                                {
+                                    case: { $eq: ["$senderPath", "Admin"] },
+                                    then: { $arrayElemAt: ["$senderAdmin", 0] }
+                                }
+                            ],
+                            default: null
+                        }
+                    }
+                }
+            },
+            {
+                $group: {
+                    _id: "$sender",
+                    document: { $first: "$$ROOT" }
+                }
+            },
+            {
+                $sort: {
+                    "document.dateSend": -1
+                }
+            }
+        ])
+        console.log(distinctReceiver)
+        if (distinctReceiver?.length) {
+            return res.status(200).json(distinctReceiver.map((element) => element.document).flatMap((element) => element))
+        }
+        else {
             return res.status(204).json([])
         }
     } catch (e) {
