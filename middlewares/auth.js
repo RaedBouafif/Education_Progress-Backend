@@ -21,5 +21,4 @@ const authMiddleWare = (req, res, next) => {
     return next();
 }
 
-
 module.exports = authMiddleWare

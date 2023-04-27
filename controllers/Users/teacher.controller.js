@@ -413,9 +413,6 @@ exports.getTeacherProfile = async (req, res) => {
 
 
 
-
-
-
 exports.countDocsss = async (req, res) => {
     try {
         const countTeachers = await TeacherModel.countDocuments()
@@ -424,6 +421,84 @@ exports.countDocsss = async (req, res) => {
         console.log(e)
         return res.status(500).send({
             error: "Server Error!"
+        })
+    }
+}
+
+//login teacher
+exports.login = async(req,res) => {
+    try{
+        const { email, password} = req.body
+        if (!email || !password){
+            return res.status(400).send({
+                error : "BadRequest"
+            })
+        }
+        const teacher = await TeacherModel.findOne({ email : email})
+        if (!teacher){
+            return res.status(404).send({
+                error: "Teacher Not Found"
+            })
+        }else{
+            const encryptedPassword = await (bcrypt.compare(password, teacher.password))
+            if (encryptedPassword){
+                const token = generateToken({
+                    email : teacher.email,
+                    firstName : teacher.firstName,
+                    lastName: teacher.lastName,
+                    tel: teacher.tel,
+                    image: teacher.image,
+                    role : "teacher"
+                }, "3d")
+                res.cookies("tck", token, {
+                    httpOnly: true,
+                    sameSite: "Strict",
+                    secure: true,
+                    maxAge:  365 * 24 * 60 * 60 * 1000
+                })
+                return res.status(200).json({ logged: true })
+            }else{
+                return res.status(404).json({ logged: false })
+            }
+        }
+    }catch(e){
+        console.log(e)
+        if (e.kind === 'ObjectId' || e.name == "NotFound") {
+            return res.status(404).send({
+                error: "Teacher with username:" + email + " not found!"
+            })
+        }
+        return res.status(500).send({
+            error: e.message,
+            message: "Server error!"
+        })
+    }
+}
+
+
+//welcome
+exports.welcome = async (req, res) => {
+    try {
+        return res.status(200).json({
+            data: req.body.decodedToken
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
+        })
+    }
+}
+
+//logout
+exports.logout = async (req, res) => {
+    try {
+        res.clearCookie('tck')
+        return res.status(200).json({ success: true })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({
+            error: "serverSideError"
         })
     }
 }

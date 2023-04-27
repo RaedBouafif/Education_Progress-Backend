@@ -11,12 +11,18 @@ const {
     countDocsss,
     getListOfTeachers,
     findTeacherByName,
-    getTeacherProfile
+    getTeacherProfile,
+    welcome,
+    logout
+
 } = require("../../controllers/Users/teacher.controller");
+const authMiddleWare = require("../../middlewares/auth");
+
 
 //---posts requests---
 Router.route("/create").post(create);
 Router.route("/login").post(login);
+
 //---put requests---
 Router.route("/update/:teacherId").put(updateTeacher);
 //---get requests---
@@ -27,6 +33,10 @@ Router.route("/addSubject/:teacherId/:subjectId").get(addSubject);
 Router.route("/count").get(countDocsss)
 Router.route("/getListOfTeachers").get(getListOfTeachers)
 Router.route("/getTeacherProfile/:teacherId").get(getTeacherProfile)
+Router.route("/welcome").get(authMiddleWare, welcome);
+Router.route("/logout").get(logout);
+
+
 //---delete requests---//
 Router.route("/delete/:teacherId").delete(deleteTeacher)
 Router.route("/removeSubject/:teacherId/:subjectId").delete(removeSubject)
