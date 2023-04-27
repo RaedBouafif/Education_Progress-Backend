@@ -1,6 +1,8 @@
 const Admin = require('../../models/Users/admin.model')
 const bcrypt = require("bcryptjs")
 const generateToken = require('../../functions/generateToken')
+const sharp = require('sharp');
+
 
 
 
@@ -225,11 +227,18 @@ exports.login = async (req, res) => {
             const encryptedPassword = await (bcrypt.compare(password, admin.password))
             console.log(encryptedPassword)
             if (admin && encryptedPassword) {
+                var img = null
+                if (admin.image){
+                    const imageBuffer = Buffer.from(admin.image, 'base64')
+                    img = await sharp(imageBuffer)
+                    .resize({ width : 60, height: 60})
+                    .toBuffer()   
+                }
                 const token = generateToken({
                     username: admin.username,
                     role: admin.role,
                     _id: admin._id,
-                    image: admin.image,
+                    image: img?.toString('base64'),
                     firstName: admin.firstName,
                     lastName: admin.lastName
                 }, '3d')
