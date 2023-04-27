@@ -23,7 +23,7 @@ exports.getNotifications = async (req,res) => {
                 error : "BadRequest"
             })
         }
-        const notifications = await Notification.find({ receivers : {$elemMatch : { receiverId : new Types.ObjectId(actorId)}}}).sort( {createdAt : -1 })
+        const notifications = await Notification.find({ receivers : {$elemMatch : { receiverId : new Types.ObjectId(actorId)}}, seen : false}).sort( {createdAt : -1 })
         if (!notifications){
             return res.status(204).send({
                 available : false
