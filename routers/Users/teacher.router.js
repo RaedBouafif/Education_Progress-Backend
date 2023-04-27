@@ -33,7 +33,6 @@ Router.route("/addSubject/:teacherId/:subjectId").get(addSubject);
 Router.route("/count").get(countDocsss)
 Router.route("/getListOfTeachers").get(getListOfTeachers)
 Router.route("/getTeacherProfile/:teacherId").get(getTeacherProfile)
-Router.route("/welcome").get(authMiddleWare, welcome);
 Router.route("/logout").get(logout);
 
 

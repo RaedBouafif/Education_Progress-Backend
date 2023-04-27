@@ -426,42 +426,42 @@ exports.countDocsss = async (req, res) => {
 }
 
 //login teacher
-exports.login = async(req,res) => {
-    try{
-        const { email, password} = req.body
-        if (!email || !password){
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body
+        if (!email || !password) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const teacher = await TeacherModel.findOne({ email : email})
-        if (!teacher){
+        const teacher = await TeacherModel.findOne({ email: email })
+        if (!teacher) {
             return res.status(404).send({
                 error: "Teacher Not Found"
             })
-        }else{
+        } else {
             const encryptedPassword = await (bcrypt.compare(password, teacher.password))
-            if (encryptedPassword){
+            if (encryptedPassword) {
                 const token = generateToken({
-                    email : teacher.email,
-                    firstName : teacher.firstName,
+                    email: teacher.email,
+                    firstName: teacher.firstName,
                     lastName: teacher.lastName,
                     tel: teacher.tel,
                     image: teacher.image,
-                    role : "teacher"
+                    role: "teacher"
                 }, "3d")
                 res.cookies("tck", token, {
                     httpOnly: true,
                     sameSite: "Strict",
                     secure: true,
-                    maxAge:  365 * 24 * 60 * 60 * 1000
+                    maxAge: 365 * 24 * 60 * 60 * 1000
                 })
                 return res.status(200).json({ logged: true })
-            }else{
+            } else {
                 return res.status(404).json({ logged: false })
             }
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
         if (e.kind === 'ObjectId' || e.name == "NotFound") {
             return res.status(404).send({
