@@ -4,7 +4,8 @@ const ReportModel = require("../../models/reports.model")
 const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
 const { Schema } = require("mongoose");
-
+const sharp = require('sharp');
+const SessionModel = require("../../models/session.model")
 exports.create = async (req, res) => {
     try {
         const { firstName, lastName, email, tel, password, gender, maritalStatus, note, image, adresse, subjects, birth } = req.body;
@@ -161,35 +162,6 @@ exports.getListOfTeachers = async (req, res) => {
 };
 
 
-exports.login = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        if (!email || !password)
-            return res.status(400).json({
-                error: "credentialsRequired",
-            });
-        const teacher = await TeacherModel.findOne({ email: email.toLowerCase().trim() });
-        if (teacher && (await bcrypt.compare(password, teacher.password))) {
-            const token = generateToken(
-                {
-                    email: teacher.email.toLowerCase().trim(),
-                    firstName: teacher.firstName,
-                    lastName: teacher.lastName,
-                    tel: teacher.tel,
-                    gender: teacher.gender,
-                    maritalStatus: teacher.maritalStatus
-                },
-                "3d"
-            );
-            return res.status(200).json({ logged: true, token });
-        } else {
-            return res.status(404).json({ logged: false });
-        }
-    } catch (e) {
-        console.log(e);
-        return res.status(500).json({ error: "serverSideError" });
-    }
-};
 exports.deleteTeacher = async (req, res) => {
     try {
         if (!req.params.teacherId) {
@@ -199,13 +171,14 @@ exports.deleteTeacher = async (req, res) => {
         }
         const { teacherId } = req.params;
         TeacherModel.findByIdAndRemove(teacherId)
-            .then((teacher) => {
+            .then(async (teacher) => {
                 if (!teacher) {
                     return res.status(404).send({
                         message: "teacher not found with id " + teacherId,
                         deleted: false,
                     });
                 }
+                await SessionModel.deleteMany({ teacher: teacher._id })
                 return res.status(200).send({
                     message: "teacher deleted Successfully!!",
                     deleted: true,
@@ -442,20 +415,30 @@ exports.login = async (req, res) => {
         } else {
             const encryptedPassword = await (bcrypt.compare(password, teacher.password))
             if (encryptedPassword) {
+                var img = null
+                if (teacher.image) {
+                    const imageBuffer = Buffer.from(teacher.image, 'base64')
+                    img = await sharp(imageBuffer)
+                        .resize({ width: 60, height: 60 })
+                        .toBuffer()
+                }
                 const token = generateToken({
+                    _id: teacher._id,
                     email: teacher.email,
                     firstName: teacher.firstName,
                     lastName: teacher.lastName,
                     tel: teacher.tel,
-                    image: teacher.image,
+                    image: img?.toString('base64'),
                     role: "teacher"
                 }, "3d")
-                res.cookies("tck", token, {
+                res.cookie("tck", token, {
                     httpOnly: true,
                     sameSite: "Strict",
                     secure: true,
                     maxAge: 365 * 24 * 60 * 60 * 1000
                 })
+                console.log(img?.toString('base64'))
+
                 return res.status(200).json({ logged: true })
             } else {
                 return res.status(404).json({ logged: false })
@@ -476,29 +459,31 @@ exports.login = async (req, res) => {
 }
 
 
-//welcome
-exports.welcome = async (req, res) => {
-    try {
-        return res.status(200).json({
-            data: req.body.decodedToken
-        })
-    } catch (e) {
-        console.log(e)
-        return res.status(500).json({
-            error: "serverSideError"
-        })
-    }
-}
+// //welcome
+// exports.welcome = async (req, res) => {
+//     try {
+//         console.log(req.body)
+//         return res.status(200).json({
+//             data: req.body.decodedToken
+//         })
+//     } catch (e) {
+//         console.log(e)
+//         return res.status(500).json({
+//             error: "serverSideError"
+//         })
+//     }
+// }
 
 //logout
-exports.logout = async (req, res) => {
-    try {
-        res.clearCookie('tck')
-        return res.status(200).json({ success: true })
-    } catch (e) {
-        console.log(e)
-        return res.status(500).json({
-            error: "serverSideError"
-        })
-    }
-}
+// exports.logout = async (req, res) => {
+//     try {
+//         console.log("hello logut")
+//         res.clearCookie('tck')
+//         return res.status(200).json({ success: true })
+//     } catch (e) {
+//         console.log(e)
+//         return res.status(500).json({
+//             error: "serverSideError"
+//         })
+//     }
+// }

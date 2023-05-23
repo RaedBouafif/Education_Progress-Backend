@@ -4,7 +4,8 @@ const Section = require('../models/section.model')
 const TeacherModel = require("../models/Users/teacher.model");
 const Session = require("../models/session.model")
 const Template = require("../models/template.model")
-const { Types } = require("mongoose")
+const { Types } = require("mongoose");
+const sessionModel = require('../models/session.model');
 
 
 
@@ -206,13 +207,14 @@ exports.deleteSubject = (req, res) => {
                 error: "Bad Request!"
             })
         }
-        Subject.findByIdAndDelete(subjectId).then((subject) => {
+        Subject.findByIdAndDelete(subjectId).then(async (subject) => {
             if (!subject) {
                 return res.status(404).send({
                     message: "Subject with id " + subjectId + "Not found!",
                     deleted: false
                 })
             }
+            await sessionModel.deleteMany({ subject: subject._id })
             subject.teachers.forEach(async (teacher, index) => {
                 await TeacherModel.findByIdAndUpdate(teacher[index], { $pull: { $subjects: subject._id } }, { runValidators: true, new: true })
             })

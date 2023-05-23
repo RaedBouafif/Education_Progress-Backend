@@ -57,10 +57,12 @@ exports.deleteById = async (req, res) => {
     try {
         const { classroomId } = req.params
         const classroom = await ClassroomModel.findByIdAndDelete(classroomId)
-        if (classroom)
+        if (classroom) {
+            await Session.deleteMany({ classroom: classroom._id })
             return res.status(200).json({
                 found: true, classroom
             });
+        }
         else
             return res.status(404).json({
                 found: false,

@@ -58,7 +58,7 @@ exports.reportStudentFromSession = async (req, res) => {
                 students: studentIds?.map((element) => new Types.ObjectId(element)),
                 type: type || null,
                 content: content,
-                sender: { id: senderId, senderType: senderType || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
+                sender: { id: senderId, senderType: senderType.toLowerCase() || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
             })
             report = await Reports.populate(report, [
                 { path: "students", select: { password: 0 } },
@@ -71,7 +71,7 @@ exports.reportStudentFromSession = async (req, res) => {
                 receivers,
                 content: `${report.object}\n\n${report.content}`,
                 seen: false,
-                sender : { senderId : new Types.ObjectId(senderId), senderPath : "Admin" }
+                sender: { senderId: new Types.ObjectId(senderId), senderPath: senderType }
 
             }
             notify(notificationData)
@@ -99,7 +99,7 @@ exports.reportStudentFromSession = async (req, res) => {
                 groups: [new Types.ObjectId(groupId)],
                 type: type || null,
                 content: content,
-                sender: { id: senderId, senderType: senderType || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
+                sender: { id: senderId, senderType: senderType.toLowerCase() || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
             })
             report = await Reports.populate(report, [
                 { path: "students", select: { password: 0 } },
@@ -113,7 +113,7 @@ exports.reportStudentFromSession = async (req, res) => {
                     receivers,
                     content: `${report.object}\n\n${report.content}`,
                     seen: false,
-                    sender : { senderId : new Types.ObjectId(senderId), senderPath : "Admin" }
+                    sender: { senderId: new Types.ObjectId(senderId), senderPath: senderType }
                 }
                 notify(notificationData)
             } catch (e) {
@@ -156,7 +156,7 @@ exports.reportActors = async (req, res) => {
         var reportedNames = []
         var receivers = []
         for (let student of reported["student"]) {
-            const foundStudent = await Student.findById(new Types.ObjectId(student._id)).populate({ path : "parent", select : { password : 0}})
+            const foundStudent = await Student.findById(new Types.ObjectId(student._id)).populate({ path: "parent", select: { password: 0 } })
             if (!foundStudent) {
                 console.log("parent not found")
             }
@@ -188,7 +188,7 @@ exports.reportActors = async (req, res) => {
             parents: reported["parent"] ? reported["parent"]?.map((element) => new Types.ObjectId(element._id)) : null,
             type: type || null,
             content: content,
-            sender: { id: senderId, senderType: senderType || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
+            sender: { id: senderId, senderType: senderType.toLowerCase() || "admin", senderFirstName: senderFirstName || null, senderLastName: senderLastName || null }
         })
         report = await Reports.populate(report, [
             { path: "students", select: { password: 0 } },
@@ -203,8 +203,8 @@ exports.reportActors = async (req, res) => {
                 notificationType: "report",
                 receivers,
                 content: `${report.object}\n${report.content}`,
-                seen : false,
-                sender : { senderId : new Types.ObjectId(senderId), senderPath : "Admin" }
+                seen: false,
+                sender: { senderId: new Types.ObjectId(senderId), senderPath: senderType }
             }
             notify(notificationData)
         } catch (e) {
