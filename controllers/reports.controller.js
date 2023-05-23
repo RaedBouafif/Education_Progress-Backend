@@ -43,7 +43,12 @@ exports.reportStudentFromSession = async (req, res) => {
                         error: "Student with id : " + studentId + " NotFound"
                     })
                 }
-                nodeMailer(student.parent.email)
+                try{
+                    nodeMailer(student.parent.email)
+                }catch(e){
+                    console.log(e.mes)
+                }
+                
                 //ending the mail send process
                 try {
                     receivers = [...receivers, { receiverId: new Types.ObjectId(studentId), receiverPath: "Student" }, { receiverId: new Types.ObjectId(student.parent._id), receiverPath: "Parent" }]
@@ -84,7 +89,12 @@ exports.reportStudentFromSession = async (req, res) => {
                         error: "Student with id : " + studentId + " NotFound"
                     })
                 }
-                nodeMailer(student.parent.email)
+                try{
+                    nodeMailer(student.parent.email)
+                }catch(e){
+                    console.log(e.mes)
+                }
+                
                 //ending the mail send process
                 try {
                     receivers = [...receivers, { receiverId: new Types.ObjectId(studentId), receiverPath: "Student" }, { receiverId: new Types.ObjectId(student.parent._id), receiverPath: "Parent" }]
@@ -160,7 +170,11 @@ exports.reportActors = async (req, res) => {
             if (!foundStudent) {
                 console.log("parent not found")
             }
-            nodeMailer(foundStudent.parent.email)
+            try{
+                nodeMailer(foundStudent.parent.email)
+            }catch(e){
+                console.log(e.mes)
+            }
             receivers = [...receivers, { receiverId: new Types.ObjectId(student._id), receiverPath: "Student" }, { receiverId: new Types.ObjectId(foundStudent.parent._id), receiverPath: "Parent" }]
             //ending the mail send process
             reportedNames = [...reportedNames, foundStudent.firstName + " " + foundStudent.lastName]
@@ -170,15 +184,24 @@ exports.reportActors = async (req, res) => {
             if (!reportedTeacher) {
                 console.log("teacher not found")
             }
-            nodeMailer(reportedTeacher.email)
+            try{
+                nodeMailer(reportedTeacher.email)
+            }catch(e){
+                console.log(e.mes)
+            }
             //ending the mail send process
             receivers = [...receivers, { receiverId: new Types.ObjectId(teacher._id), receiverPath: "Teacher" }]
             reportedNames = [...reportedNames, reportedTeacher.firstName + " " + reportedTeacher.lastName]
         }
         for (let parent of reported["parent"]) {
             const foundParent = await Parent.findById(new Types.ObjectId(parent._id))
-            nodeMailer(foundParent.email)
-            receivers = [...receivers, { receiverId: new Types.ObjectId(parent._id), receiverPath: "Parent" }]
+            try{
+                nodeMailer(foundParent.email)
+  
+            }catch(e){
+                console.log(e.mes)
+            }
+                      receivers = [...receivers, { receiverId: new Types.ObjectId(parent._id), receiverPath: "Parent" }]
             reportedNames = [...reportedNames, foundParent.firstName + " " + foundParent.lastName]
         }
         report = await Reports.create({

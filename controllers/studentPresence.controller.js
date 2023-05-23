@@ -6,6 +6,7 @@ const Student = require('../models/Users/student.model')
 const Parent = require("../models/Users/parent.model")
 const { Types } =require("mongoose")
 const { notify } = require("../functions/Notify")
+const nodeMailer = require("../functions/nodeMailer")
 
 //studentPresence
 exports.saveStudentPresence = async (req, res) => {
@@ -93,6 +94,7 @@ exports.saveStudentAbsence = async (req,res) => {
                         seen : false,
                         sender : { senderId : new Types.ObjectId(senderId), senderPath : senderType }
                     }
+                    nodeMailer(student.parent.email)
                     notify(notification)
                 }catch(e){
                     console.log(e)
@@ -140,6 +142,7 @@ exports.saveStudentAbsence = async (req,res) => {
                     seen : false,
                     sender : { senderId : new Types.ObjectId(senderId), senderPath : senderType }
                 }
+                nodeMailer(student.parent.email)
                 notify(notification)
             }catch(e){
                 console.log(e)

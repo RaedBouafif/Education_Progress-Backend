@@ -1,9 +1,11 @@
 const TeacherModel = require("../../models/Users/teacher.model");
 const { Subject } = require("../../models/subject.model");
 const ReportModel = require("../../models/reports.model")
+const TeacherAbsence = require("../../models/teacherAbsence.model")
+const CollegeYear = require("../../models/collegeYear.model")
 const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
-const { Schema } = require("mongoose");
+const { Schema, Types } = require("mongoose");
 const sharp = require('sharp');
 
 exports.create = async (req, res) => {
@@ -114,8 +116,7 @@ exports.getTeacherById = async (req, res) => {
         if (!req.params.teacherId)
             return res.status(400).json({ error: "teacherIdRequired" });
         const teacher = await TeacherModel.findById(
-            req.params.teacherId,
-            "firstName lastName email tel gender maritalStatus image"
+            req.params.teacherId
         ).populate("subjects");
         if (teacher) return res.status(200).json({ found: true, teacher });
         else return res.status(404).json({ found: false });
@@ -371,8 +372,9 @@ exports.getTeacherProfile = async (req, res) => {
             teachers: {
                 $in: [teacherId]
             }
-        }).sort({ createdAt: -1 })
-        if (prof) return res.status(200).json({ prof, reports, nbrAbsence: 555 })
+        }).sort({ createdAt: -1 })        
+        const nbrAbsence = await TeacherAbsence.countDocuments({teacher: new Types.ObjectId(teacherId)})
+        if (prof) return res.status(200).json({ prof, reports, nbrAbsence: nbrAbsence })
         return res.status(404).json({})
     } catch (e) {
         console.log(e)
@@ -436,7 +438,6 @@ exports.login = async(req,res) => {
                     secure: true,
                     maxAge:  365 * 24 * 60 * 60 * 1000
                 })
-                console.log(img.toString('base64'))
 
                 return res.status(200).json({ logged: true })
             }else{

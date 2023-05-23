@@ -24,7 +24,7 @@ const Session = Schema(
         group: {
             type: Schema.Types.ObjectId,
             ref: "Group",
-            required: [true, "groupRequired"]
+            required: [true, "groupRequired"]   
         },
         day: {
             type: Number,

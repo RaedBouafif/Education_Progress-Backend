@@ -274,7 +274,7 @@ exports.getTeacherTemplate = async (req, res) => {
         if (templates) {
             teacherTemplate = templates?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? templates?.filter((element) => Array.isArray(element.sessions)) : []
             teacherTemplate = teacherTemplate.filter(element => element.sessions.length != 0)
-            const sessions = templates.flatMap(teacherTemplate => teacherTemplate.sessions);
+            const sessions = templates?.flatMap(teacherTemplate => teacherTemplate?.sessions);
             return res.status(200).send(sessions)
         } else {
             return res.status(404).send({
@@ -308,8 +308,8 @@ exports.getListOfTeachers = async (req, res) => {
                 })
         if (listOfTeachers) {
             listOfTeachers = listOfTeachers.subjects
-            const finalTeachers = listOfTeachers.flatMap((subject) => subject.teachers);
-            const uniqueTeachers = [...new Set(finalTeachers.map((teacher) => teacher._id))].map(
+            const finalTeachers = listOfTeachers?.flatMap((subject) => subject.teachers);
+            const uniqueTeachers = [...new Set(finalTeachers?.map((teacher) => teacher._id))].map(
                 (_id) => finalTeachers.find((teacher) => teacher._id === _id)
             );
             return res.status(200).send(uniqueTeachers)

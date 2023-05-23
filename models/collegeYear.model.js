@@ -15,7 +15,7 @@ const CollegeYear = mongoose.Schema(
             }
         ],
         note : {
-
+            tyàe: String
         },
         active: {
             type: Boolean,
