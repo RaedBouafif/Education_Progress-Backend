@@ -32,13 +32,13 @@ exports.createCollegeYearWithSemesters = async (req, res) => {
             })
         }
         const dateBegin1 = DateTime.fromISO(semester1.dateBegin, { zone: 'utc' })
-        var begin1 = dateBegin.toISO({ includeOffset: false })
+        var begin1 = dateBegin1.toISO({ includeOffset: false })
         const finishDate1 = DateTime.fromISO(semester1.dateEnd, { zone: 'utc' })
-        var finish1 = dateEnd.toISO({ includeOffset: false })
+        var finish1 = finishDate1.toISO({ includeOffset: false })
         const dateBegin2 = DateTime.fromISO(semester2.dateBegin, { zone: 'utc' })
-        var begin2 = dateBegin.toISO({ includeOffset: false })
+        var begin2 = dateBegin2.toISO({ includeOffset: false })
         const finishDate2 = DateTime.fromISO(semester2.dateEnd, { zone: 'utc' })
-        var finish2 = dateEnd.toISO({ includeOffset: false })
+        var finish2 = finishDate2.toISO({ includeOffset: false })
         begin1 = new Date(begin1)
         finish1 = new Date(finish1)
         begin2 = new Date(begin2)
@@ -92,6 +92,26 @@ exports.createCollegeYearWithSemesters = async (req, res) => {
     }
 }
 
+//find all college years without population
+exports.findAllToPlot = async (req,res) => {
+    try{
+        var collegeYears = await CollegeYear.find({}, {semesters: 0, note : 0})
+        if (!collegeYears){
+            return res.status(204).send({
+                message: "No CollegeYears yet"
+            })
+        }
+        collegeYears.sort((a, b) => (a.year > b.year) ? 1 : -1)
+        returnedData = collegeYears.map((element) => element.year)
+        return res.status(200).send(returnedData)
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error : e.message,
+            message: "Server Error"
+        })
+    }
+}
 
 // GET All college years 
 exports.findAllCollegeYears = (req, res) => {
@@ -230,44 +250,44 @@ exports.updateCollegeYear = async (req, res) => {
 
 
 // Delete college Year
-exports.deleteCollegeYear = (req, res) => {
-    try {
-        if (!req.params.yearId) {
-            return res.status(400).send({
-                error: "Bad Request!"
-            })
-        }
-        const { yearId } = req.params
-        CollegeYear.findByIdAndRemove(yearId).then(collegeYear => {
-            if (!collegeYear) {
-                return res.status(404).send({
-                    message: "student not found with id " + adminId,
-                    deleted: false
-                })
-            }
-            collegeYear.semesters.forEach((semester) => {
-                Semester.findByIdAndRemove(semester._id).then(deletedSemester => {
-                    if (!deletedSemester) {
-                        return res.status(404).send({
-                            error: "Semester is not found"
-                        })
-                    }
-                })
-            })
-            return res.status(200).send({
-                message: "CollegeYear deleted Successfully!!",
-                deleted: true
-            })
-        }).catch(err => {
-            return res.status(400).send({
-                error: err.message
-            })
-        })
-    } catch (e) {
-        return res.status(500).send({
-            error: e.message,
-            message: "Server error!"
-        })
-    }
-}
+// exports.deleteCollegeYear = (req, res) => {
+//     try {
+//         if (!req.params.yearId) {
+//             return res.status(400).send({
+//                 error: "Bad Request!"
+//             })
+//         }
+//         const { yearId } = req.params
+//         CollegeYear.findByIdAndRemove(yearId).then(collegeYear => {
+//             if (!collegeYear) {
+//                 return res.status(404).send({
+//                     message: "student not found with id " + adminId,
+//                     deleted: false
+//                 })
+//             }
+//             collegeYear.semesters.forEach((semester) => {
+//                 Semester.findByIdAndRemove(semester._id).then(deletedSemester => {
+//                     if (!deletedSemester) {
+//                         return res.status(404).send({
+//                             error: "Semester is not found"
+//                         })
+//                     }
+//                 })
+//             })
+//             return res.status(200).send({
+//                 message: "CollegeYear deleted Successfully!!",
+//                 deleted: true
+//             })
+//         }).catch(err => {
+//             return res.status(400).send({
+//                 error: err.message
+//             })
+//         })
+//     } catch (e) {
+//         return res.status(500).send({
+//             error: e.message,
+//             message: "Server error!"
+//         })
+//     }
+// }
 

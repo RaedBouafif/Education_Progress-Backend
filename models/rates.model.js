@@ -26,6 +26,6 @@ const Rates = Schema({
     }
 })
 
-module.exports = model("Reports", Reports)
+module.exports = model("Rates", Rates)
 
 

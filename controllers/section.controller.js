@@ -2,7 +2,8 @@ const sectionModel = require('../models/section.model')
 const Section = require('../models/section.model')
 const { Subject } = require('../models/subject.model')
 const { Types } = require('mongoose')
-
+const groupModel = require("../models/group.model")
+const sessionModel = require("../models/session.model")
 
 
 //create a new section
@@ -14,10 +15,11 @@ exports.createSection = async (req, res) => {
                 error: "Bad Request!"
             })
         }
-        const section = await Section.create({
-            sectionName : req.body.sectionName,
-            subjects : req?.body?.subjects?.split(',') || null
+        var section = await Section.create({
+            sectionName: req.body.sectionName,
+            subjects: req?.body?.subjects?.split(',') || null
         })
+        section = await Section.populate(section, { path : "subjects"})
         section.save().then(data => {
             res.status(201).send(data)
         }).catch(err => {
@@ -33,7 +35,7 @@ exports.createSection = async (req, res) => {
                 message: "Section with name " + req.body.sectionName + " allready exists!"
             })
         }
-        if (e.code === 11000){
+        if (e.code === 11000) {
             return res.status(409).send({
                 error: "BadRequest",
                 message: "Section with name " + req.body.sectionName + " allready exists!"
@@ -157,10 +159,15 @@ exports.deleteById = async (req, res) => {
     try {
         const { sectionId } = req.params
         const section = await sectionModel.findByIdAndDelete(sectionId)
-        if (section)
+        if (section) {
+            const groups = (await groupModel.find({ section: section._id }))?.map((element) => element._id)
+            await groupModel.deleteMany({ section: section._id })
+            await sessionModel.deleteMany({ group: { $in: groups } })
             return res.status(200).json({
                 found: true, section
             });
+        }
+
         else
             return res.status(404).json({
                 found: false,
@@ -328,35 +335,35 @@ exports.removeSubject = async (req, res) => {
 
 
 //Update section
-exports.updateSection = async (req,res) => {
-   
-    try{
-        if (!req.params.sectionId){
+exports.updateSection = async (req, res) => {
+
+    try {
+        if (!req.params.sectionId) {
             return res.status(400).send({
-                error :"BadRequest"
+                error: "BadRequest"
             })
         }
-        if (!req.body){
+        if (!req.body) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        if (req.body.subjects){
+        if (req.body.subjects) {
             req.body.subjects = req.body.subjects?.split(",")
         }
-        else{
+        else {
             req.body.subjects = null
         }
-        const updatedSection = await Section.findByIdAndUpdate(req.params.sectionId, req.body, { new : true, runValidators : true})
+        const updatedSection = await Section.findByIdAndUpdate(req.params.sectionId, req.body, { new: true, runValidators: true }).populate("subjects")
         if (!updatedSection) {
             return res.status(404).send({
-                error : "NotFound"  
+                error: "NotFound"
             })
         }
         return res.status(200).json(
             updatedSection
         )
-    }catch(e) {       
+    } catch (e) {
         console.log(e)
         if (e.keyValue?.sectionName) {
             return res.status(409).send({
@@ -365,8 +372,8 @@ exports.updateSection = async (req,res) => {
             })
         }
         return res.status(500).send({
-            error : e.message,
-            message : "Server Error!"
+            error: e.message,
+            message: "Server Error!"
         })
     }
 }

@@ -2,6 +2,8 @@ const Admin = require('../../models/Users/admin.model')
 const bcrypt = require("bcryptjs")
 const generateToken = require('../../functions/generateToken')
 const sharp = require('sharp');
+const { logData } = require("../../functions/logging")
+
 
 
 
@@ -37,6 +39,11 @@ exports.createAdmin = async (req, res) => {
         })
         admin.save().then(data => {
             if (data) {
+                try{
+                    logData(admin._id, "Admin", "insert")
+                }catch(e){
+                    console.log(e.message)
+                }
                 console.log(data)
                 return res.status(201).send({
                     created: true,
@@ -190,6 +197,11 @@ exports.deleteAdmin = (req, res) => {
                     deleted: false
                 })
             }
+            try{
+                logData(admin._id, "Admin", "delete")
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).send({
                 message: "Student deleted Successfully!!",
                 deleted: true
@@ -228,11 +240,11 @@ exports.login = async (req, res) => {
             console.log(encryptedPassword)
             if (admin && encryptedPassword) {
                 var img = null
-                if (admin.image){
+                if (admin.image) {
                     const imageBuffer = Buffer.from(admin.image, 'base64')
                     img = await sharp(imageBuffer)
-                    .resize({ width : 60, height: 60})
-                    .toBuffer()   
+                        .resize({ width: 60, height: 60 })
+                        .toBuffer()
                 }
                 const token = generateToken({
                     username: admin.username,
@@ -244,9 +256,9 @@ exports.login = async (req, res) => {
                 }, '3d')
                 res.cookie("tck", token, {
                     httpOnly: true,
-                    sameSite: "Strict",
+                    sameSite: "None",
                     secure: true,
-                    maxAge: 365 * 24 * 60 * 60 * 1000
+                    maxAge: 365 * 24 * 60 * 15 * 1000
                 })
                 return res.status(200).json({ logged: true })
             } else {
@@ -295,6 +307,11 @@ exports.updateAdmin = async (req, res) => {
                     message: "Admin with id: " + req.params.adminId + " not found",
                     updated: false
                 })
+            }
+            try{
+                logData(admin._id, "Admin", "update")
+            }catch(e){
+                console.log(e.message)
             }
             return res.status(200).send({
                 updated: true,
@@ -373,9 +390,12 @@ exports.logout = async (req, res) => {
 
 exports.countDocsss = async (req, res) => {
     try {
+        const decoded = await jwt.verify(req.cookies.tck, process.env.TOKEN_KEY)
+        console.log(decoded)
         const countAdmin = await Admin.countDocuments()
         return res.status(200).send({ number: countAdmin || 0 })
     } catch (e) {
+        console.log(e)
         return res.status(500).send({
             error: "Server Error!"
         })

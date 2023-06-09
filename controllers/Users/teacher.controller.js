@@ -7,6 +7,8 @@ const bcrypt = require("bcryptjs");
 const generateToken = require("../../functions/generateToken");
 const { Schema, Types } = require("mongoose");
 const sharp = require('sharp');
+const SessionModel = require("../../models/session.model")
+const { logData } = require("../../functions/logging")
 
 exports.create = async (req, res) => {
     try {
@@ -41,6 +43,11 @@ exports.create = async (req, res) => {
                 sbj.teachers.push(teacher._id)
                 await sbj.save()
             }
+        }
+        try{
+            logData(teacher._id, "Teacher", "insert")
+        }catch(e){
+            console.log(e.message)
         }
         return res.status(201).json({
             _id: teacher._id,
@@ -172,12 +179,18 @@ exports.deleteTeacher = async (req, res) => {
         }
         const { teacherId } = req.params;
         TeacherModel.findByIdAndRemove(teacherId)
-            .then((teacher) => {
+            .then(async (teacher) => {
                 if (!teacher) {
                     return res.status(404).send({
                         message: "teacher not found with id " + teacherId,
                         deleted: false,
                     });
+                }
+                await SessionModel.deleteMany({ teacher: teacher._id })
+                try{
+                    logData(teacher._id, "Teacher", "delete")
+                }catch(e){
+                    console.log(e.message)
                 }
                 return res.status(200).send({
                     message: "teacher deleted Successfully!!",
@@ -250,6 +263,11 @@ exports.updateTeacher = async (req, res) => {
                     await sbj2.save()
                 }
             }
+            try{
+                logData(oldTeacher._id, "Teacher", "update")
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).json({
                 found: true,
             });
@@ -311,12 +329,22 @@ exports.addSubject = async (req, res) => {
                 //teacher already have this subject
                 teacher.subjects.push(subjectId);
                 await teacher.save();
+                try{
+                    logData(teacher._id, "Teacher", "Adding subject to the teacher")
+                }catch(e){
+                    console.log(e.message)
+                }
                 return res
                     .status(200)
                     .json({ teacherFound: true, subjectFound: true, subjectExist: false });
                 //subject exist mean that teacher already have this subject
             } else {
                 //teacher don't have the subject
+                try{
+                    logData(teacher._id, "Teacher", "Adding subject to the teacher")
+                }catch(e){
+                    console.log(e.message)
+                }
                 return res
                     .status(200)
                     .json({
@@ -351,6 +379,11 @@ exports.removeSubject = async (req, res) => {
         } else {
             teacher.subjects = teacher.subjects.filter(element => element.toString() !== subjectId)
             await teacher.save()
+            try{
+                logData(teacher._id, "Teacher", "Removing subject from the teacher")
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).json({ teacherFound: true, subjectFound: true })
         }
     } catch (e) {
@@ -400,51 +433,52 @@ exports.countDocsss = async (req, res) => {
 }
 
 //login teacher
-exports.login = async(req,res) => {
-    try{
-        const { email, password} = req.body
-        if (!email || !password){
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body
+        if (!email || !password) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const teacher = await TeacherModel.findOne({ email : email})
-        if (!teacher){
+        const teacher = await TeacherModel.findOne({ email: email })
+        if (!teacher) {
             return res.status(404).send({
                 error: "Teacher Not Found"
             })
-        }else{
+        } else {
             const encryptedPassword = await (bcrypt.compare(password, teacher.password))
-            if (encryptedPassword){
+            if (encryptedPassword) {
                 var img = null
-                if (teacher.image){
+                if (teacher.image) {
                     const imageBuffer = Buffer.from(teacher.image, 'base64')
                     img = await sharp(imageBuffer)
-                    .resize({ width : 60, height: 60})
-                    .toBuffer()   
+                        .resize({ width: 60, height: 60 })
+                        .toBuffer()
                 }
                 const token = generateToken({
                     _id: teacher._id,
-                    email : teacher.email,
-                    firstName : teacher.firstName,
+                    email: teacher.email,
+                    firstName: teacher.firstName,
                     lastName: teacher.lastName,
                     tel: teacher.tel,
                     image: img?.toString('base64'),
-                    role : "teacher"
+                    role: "teacher"
                 }, "3d")
                 res.cookie("tck", token, {
                     httpOnly: true,
                     sameSite: "Strict",
                     secure: true,
-                    maxAge:  365 * 24 * 60 * 60 * 1000
+                    maxAge: 365 * 24 * 60 * 60 * 1000
                 })
+                console.log(img?.toString('base64'))
 
                 return res.status(200).json({ logged: true })
-            }else{
+            } else {
                 return res.status(404).json({ logged: false })
             }
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
         if (e.kind === 'ObjectId' || e.name == "NotFound") {
             return res.status(404).send({

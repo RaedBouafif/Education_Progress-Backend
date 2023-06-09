@@ -7,6 +7,8 @@ const { Types, default: mongoose } = require("mongoose");
 const { populate } = require("../../models/Users/student.model");
 const ReportModel = require("../../models/reports.model");
 require("dotenv").config();
+const { logData } = require("../../functions/logging")
+
 
 
 //Create a new student
@@ -52,6 +54,11 @@ exports.createStudent = async (req, res) => {
                 console.log(data._id)
                 parent.students.push(data._id)
                 await parent.save()
+                try{
+                    logData(student._id, "Student", "insert")
+                }catch(e){
+                    console.log(e.message)
+                }
                 return res.status(201).send({
                     _id: data._id,
                     firstName: data.firstName,
@@ -285,6 +292,11 @@ exports.deleteStudent = (req, res) => {
                         deleted: false,
                     });
                 }
+                try{
+                    logData(student._id, "Student", "delete")
+                }catch(e){
+                    console.log(e.message)
+                }
                 return res.status(200).send({
                     message: "Student deleted Successfully!!",
                     deleted: true,
@@ -383,6 +395,11 @@ exports.updateStudent = async (req, res) => {
                         message: "Student with id: " + req.params.studentId + " not found",
                         updated: false,
                     });
+                }
+                try{
+                    logData(student._id, "Student", "update")
+                }catch(e){
+                    console.log(e.message)
                 }
                 return res.status(200).send({
                     updated: true,
@@ -539,6 +556,22 @@ exports.getStudentProfile = async (req, res) => {
     }
 }
 
+exports.getLatestStudents = async (req,res) => {
+    try{
+        const students = await Student.find({}, { password : 0}).sort({ createdAt : -1}).limit(10)
+        return (students) ? res.status(200).send(students)
+        :
+        res.status(204).send({
+            message: "There is no students in database"
+        })
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error : e.message,
+            message : "Server Error"
+        })
+    }
+}
 
 
 

@@ -76,7 +76,7 @@ exports.reportStudentFromSession = async (req, res) => {
                 receivers,
                 content: `${report.object}\n\n${report.content}`,
                 seen: false,
-                sender : { senderId : new Types.ObjectId(senderId), senderPath : senderType }
+                sender: { senderId: new Types.ObjectId(senderId), senderPath: senderType }
 
             }
             notify(notificationData)
@@ -123,7 +123,7 @@ exports.reportStudentFromSession = async (req, res) => {
                     receivers,
                     content: `${report.object}\n\n${report.content}`,
                     seen: false,
-                    sender : { senderId : new Types.ObjectId(senderId), senderPath : senderType }
+                    sender: { senderId: new Types.ObjectId(senderId), senderPath: senderType }
                 }
                 notify(notificationData)
             } catch (e) {
@@ -166,7 +166,7 @@ exports.reportActors = async (req, res) => {
         var reportedNames = []
         var receivers = []
         for (let student of reported["student"]) {
-            const foundStudent = await Student.findById(new Types.ObjectId(student._id)).populate({ path : "parent", select : { password : 0}})
+            const foundStudent = await Student.findById(new Types.ObjectId(student._id)).populate({ path: "parent", select: { password: 0 } })
             if (!foundStudent) {
                 console.log("parent not found")
             }
@@ -226,8 +226,8 @@ exports.reportActors = async (req, res) => {
                 notificationType: "report",
                 receivers,
                 content: `${report.object}\n${report.content}`,
-                seen : false,
-                sender : { senderId : new Types.ObjectId(senderId), senderPath : senderType }
+                seen: false,
+                sender: { senderId: new Types.ObjectId(senderId), senderPath: senderType }
             }
             notify(notificationData)
         } catch (e) {

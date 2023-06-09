@@ -3,6 +3,9 @@ const StudentModel = require("./../../models/Users/student.model")
 const bcrypt = require("bcryptjs");
 const generateToken = require("./../../functions/generateToken.js");
 require("dotenv").config();
+const { logData } = require("../../functions/logging")
+const {Types} = require("mongoose")
+
 
 
 exports.createParent = async (req, res) => {
@@ -31,6 +34,11 @@ exports.createParent = async (req, res) => {
       note: note || null
     });
     await parent.save();
+    try{
+      logData(parent._id, "Parent", "insert")
+    }catch(e){
+        console.log(e.message)
+    }
     return res.status(201).json({
       created: true,
       parent
@@ -94,8 +102,9 @@ exports.findParentsByName = async (req, res) => {
 //get All parents with filtering
 exports.getAllParents = async (req, res) => {
   try {
+    console.log("hellpo")
     const { offset } = req.query
-    if (Object.keys(req.body).length === 0) {
+    if (Object.keys(req.body).length === 1) {
       console.log("dqsdqs")
       const numberOfParents = await ParentModel.countDocuments()
       // const totalPages = Math.ceil(numberOfParents / process.env.PAGE_LIMIT)
@@ -126,7 +135,7 @@ exports.getAllParents = async (req, res) => {
       // req.body is not empty => i have a filter
       const fieldKeys = Object.keys(req.body)
       console.log(fieldKeys.length)
-      if (fieldKeys.length === 3) {
+      if (fieldKeys.length === 4) {
         // if (req.body.firstName && req.body.lastName && req.body.tel){
         const filter = {
           firstName: { $regex: req.body.firstName, $options: 'i' },
@@ -155,210 +164,15 @@ exports.getAllParents = async (req, res) => {
               message: "NoParents",
             })
         }
-        // }else{
-        //   return res.status(400).send({
-        //     error: "BadRequest",
-        //     message : "We cannot filter with a non valid attribute"
-        //   })
-        // }
-        // }else if (fieldKeys.length === 2 ){
-        //   let firstNameCheck = false
-        //   let lastNameCheck = false
-        //   let telCheck = false
-        //   if (req.body.firstName){
-        //     firstNameCheck = true
-        //   }
-        //   if (req.body.lastName){
-        //     lastNameCheck = true
-        //   }
-        //   if (req.body.tel){
-        //     telCheck = true
-        //   }
-        //   if ( (firstNameCheck && lastNameCheck) ){
-        //     //firstName and lastName
-        //     const filter = {
-        //       firstName : { $regex: req.body.firstName, $options : 'i' },
-        //       lastName : { $regex: req.body.lastName, $options : 'i' }
-        //     }
-        //     const numberOfParents = await ParentModel.countDocuments(filter)
-        //     if (numberOfParents === 0) {
-        //       res.status(204).send({
-        //         countDocs : numberOfParents,
-        //         found : false,
-        //         message : "NoParents",
-        //       })
-        //     }else{
-        //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
-        //       return (parents.length > 0) ? 
-        //         res.status(200).send({
-        //           countDocs : numberOfParents,
-        //           found : true,
-        //           parents
-        //         })
-        //         :
-        //         res.status(204).send({
-        //           countDocs : numberOfParents,
-        //           found : false,
-        //           message : "NoParents",
-        //       })
-        //     }
-        //   }else if ( (firstNameCheck && telCheck) ){
-        //     //firstName and tel
-        //     const filter = {
-        //       firstName : { $regex: req.body.firstName, $options : 'i' },
-        //       tel : { $regex: req.body.tel, $options : 'i' }
-        //     }
-        //     const numberOfParents = await ParentModel.countDocuments(filter)
-        //     if (numberOfParents === 0) {
-        //       res.status(204).send({
-        //         countDocs : numberOfParents,
-        //         found : false,
-        //         message : "NoParents",
-        //       })
-        //     }else{
-        //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
-        //       return (parents.length > 0) ? 
-        //         res.status(200).send({
-        //           countDocs : numberOfParents,
-        //           found : true,
-        //           parents
-        //         })
-        //         :
-        //         res.status(204).send({
-        //           countDocs : numberOfParents,
-        //           found : false,
-        //           message : "NoParents",
-        //       })
-        //     }
-        //   } else if ( (telCheck && lastNameCheck) ){
-        //     //lastName and tel
-        //     const filter = {
-        //       tel : { $regex: req.body.tel, $options : 'i' },
-        //       lastName : { $regex: req.body.lastName, $options : 'i' }
-        //     }
-        //     const numberOfParents = await ParentModel.countDocuments(filter)
-        //     if (numberOfParents === 0) {
-        //       res.status(204).send({
-        //         countDocs : numberOfParents,
-        //         found : false,
-        //         message : "NoParents",
-        //       })
-        //     }else{
-        //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
-        //       return (parents.length > 0) ? 
-        //         res.status(200).send({
-        //           countDocs : numberOfParents,
-        //           found : true,
-        //           parents
-        //         })
-        //         :
-        //         res.status(204).send({
-        //           countDocs : numberOfParents,
-        //           found : false,
-        //           message : "NoParents",
-        //       })
-        //     }
-        //   }else {
-        //     return res.status(400).send({
-        //       error : "BadRequest",
-        //       message : "We cannot filter with an non existing attribute"
-        //     })
-        //   }
-        // }else if (fieldKeys.length === 1 ){
-        //   // firstName filter
-        //   if (req.body.firstName){
-        //     const filter ={
-        //       firstName : { $regex: req.body.firstName, $options : 'i' }
-        //     }
-        //     const numberOfParents = await ParentModel.countDocuments(filter) 
-        //     if (numberOfParents === 0) {
-        //       res.status(204).send({
-        //         countDocs : numberOfParents,
-        //         found : false,
-        //         message : "NoParents",
-        //       })
-        //     }else{
-        //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
-        //       return (parents.length > 0) ? 
-        //         res.status(200).send({
-        //           countDocs : numberOfParents,
-        //           found : true,
-        //           parents
-        //         })
-        //         :
-        //         res.status(204).send({
-        //           countDocs : numberOfParents,
-        //           found : false,
-        //           message : "NoParents",
-        //       })
-        //     }
-        //   } else if (req.body.lastName){
-        //      // lastName filter
-        //      const filter ={
-        //       lastName : { $regex: req.body.lastName, $options : 'i' }
-        //     }
-        //     const numberOfParents = await ParentModel.countDocuments(filter) 
-        //     if (numberOfParents === 0) {
-        //       res.status(204).send({
-        //         countDocs : numberOfParents,
-        //         found : false,
-        //         message : "NoParents",
-        //       })
-        //     }else{
-        //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
-        //       return (parents.length > 0) ? 
-        //         res.status(200).send({
-        //           countDocs : numberOfParents,
-        //           found : true,
-        //           parents
-        //         })
-        //         :
-        //         res.status(204).send({
-        //           countDocs : numberOfParents,
-        //           found : false,
-        //           message : "NoParents",
-        //       })
-        //     }
-        //   }else if (req.body.tel) {
-        //      // tel filter
-        //     const filter ={
-        //       lastName : { $regex: req.body.lastName, $options : 'i' }
-        //     }
-        //     const numberOfParents = await ParentModel.countDocuments(filter) 
-        //     if (numberOfParents === 0) {
-        //       res.status(204).send({
-        //         countDocs : numberOfParents,
-        //         found : false,
-        //         message : "NoParents",
-        //       })
-        //     }else{
-        //       const parents = await ParentModel.find(filter, {password : 0}).skip( offset * 10).limit(process.env.PAGE_LIMIT)
-        //       return (parents.length > 0) ? 
-        //         res.status(200).send({
-        //           countDocs : numberOfParents,
-        //           found : true,
-        //           parents
-        //         })
-        //         :
-        //         res.status(204).send({
-        //           countDocs : numberOfParents,
-        //           found : false,
-        //           message : "NoParents",
-        //       })
-        //     }
       } else {
         return res.status(400).send({
           error: "BadRequest",
           message: "We cannot filter with an non valid Attribute"
         })
       }
-      // }else{
-      //   return res.status(400).send({
-      //     error : "BadRequest"
-      //   })
-      // }
     }
-  } catch {
+  } catch (e) {
+    console.log(e)
     return res.status(500).json({ error: "serverSideError" });
   }
 }
@@ -454,10 +268,17 @@ exports.updateParent = async (req, res) => {
       fields: { password: 0 }
     });
     if (newParent)
+      {
+        try{
+        logData(newParent._id, "Parent", "update")
+        }catch(e){
+            console.log(e.message)
+        }
       return res.status(200).json({
         found: true,
         newParent
       });
+    }
     else
       return res.status(404).json({
         found: false,
@@ -498,6 +319,11 @@ exports.deleteParent = (req, res) => {
             message: "Parent not found with id " + parentId,
             deleted: false,
           });
+        }
+        try{
+          logData(Types.ObjectId(parentId), "Parent", "delete")
+        }catch(e){
+          console.log(e.message)
         }
         return res.status(200).send({
           message: "Parent deleted Successfully!!",
