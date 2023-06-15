@@ -3,6 +3,8 @@ const bcrypt = require("bcryptjs")
 const generateToken = require('../../functions/generateToken')
 const sharp = require('sharp');
 const { logData } = require("../../functions/logging")
+const jwt = require("jsonwebtoken")
+
 
 
 
