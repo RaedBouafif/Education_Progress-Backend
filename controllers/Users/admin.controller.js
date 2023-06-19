@@ -42,7 +42,7 @@ exports.createAdmin = async (req, res) => {
         admin.save().then(data => {
             if (data) {
                 try{
-                    logData(admin._id, "Admin", "insert")
+                    logData({ modelId: admin._id, modelPath: "Admin", action: "Created new admin: " +admin._id.toString()})
                 }catch(e){
                     console.log(e.message)
                 }
@@ -200,7 +200,7 @@ exports.deleteAdmin = (req, res) => {
                 })
             }
             try{
-                logData(admin._id, "Admin", "delete")
+                logData({ modelId: admin._id, modelPath: "Admin", action: "Deleted admin: " +admin._id.toString() })
             }catch(e){
                 console.log(e.message)
             }
@@ -306,12 +306,12 @@ exports.updateAdmin = async (req, res) => {
         Admin.findByIdAndUpdate(req.params.adminId, req.body, { new: true, runValidators: true, fields: { password: 0 } }).then(admin => {
             if (admin.length == 0) {
                 return res.status(404).send({
-                    message: "Admin with id: " + req.params.adminId + " not found",
+                    message: "Admin with id: " + req.params.adminId + "not found",
                     updated: false
                 })
             }
             try{
-                logData(admin._id, "Admin", "update")
+                logData({ modelId: admin._id, modelPath: "Admin", action: "Updated admin " +admin._id.toString()})
             }catch(e){
                 console.log(e.message)
             }

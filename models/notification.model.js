@@ -9,7 +9,7 @@ const Notification = Schema({
         },
         receiverPath: {
             type: String,
-            enum: ["Student", "Parent", "Teacher", "Admin"]
+            enum: ["Student", "Parent", "Teacher", "Admin", "Group", "Section"]
         }
     }],
     sender: {
@@ -42,7 +42,7 @@ const Notification = Schema({
     },
     notificationType: {
         type: String,
-        enum: ["newSession", "updateSession", "presence", "absence", "report", "catchupSession", "cancelSession"]
+        enum: ["newSession", "updateSession", "teacherAbsence", "studentAbsence", "teacherAbsenceDeclared", "studentAbsenceDeclared", "report", "catchupSession", "cancelSession", "exclu", "exam", "event", "meeting", "nonStartedSession", "homework", "coursContent", "evaluation" ]
     },
     session: {
         type: Types.ObjectId,

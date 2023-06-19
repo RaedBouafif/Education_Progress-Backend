@@ -11,6 +11,8 @@ const { Subject } = require("../models/subject.model")
 const Classroom = require("../models/classroom.model")
 const { Types } = require("mongoose")
 const { notify } = require("../functions/Notify")
+const { logData } = require("../functions/logging")
+
 
 
 // création de planning
@@ -281,6 +283,11 @@ exports.create = async (req, res) => {
                             // }
                         }
                         if (returnedPlanning && infos.length) {
+                            try{
+                                logData({modelId: planning._id, modelPath: "Planning", action: "Creating a new Planning: " +planning._id.toString()})
+                            }catch(e){
+                                console.log(e.message)
+                            }   
                             return res.status(200).send({
                                 cteated: true
                                 // planning: returnedPlanning,
@@ -664,6 +671,11 @@ exports.addSessionToPlanning = async (req, res) => {
                         }
                     }
                 }
+                try{
+                    logData({modelId: Types.ObjectId(idPlanning), modelPath: "Planning", secondModelId: session._id, secondModelPath: "Session", action: "Creating a new Session: " +session._id.toString()+ " to planning: " +idPlanning} )
+                }catch(e){
+                    console.log(e.message)
+                }   
                 return res.status(200).send(newPlannings)
             } else {
                 return res.status(404).send({
@@ -771,6 +783,13 @@ exports.updateSessionFromPlanning = async (req, res) => {
             console.log(e)
             console.log("error in modification")
         }
+        findedPlanning
+        findedSession
+        try{
+            logData({modelId: findedPlanning._id, modelPath: "Planning", secondModelId: findedSession._id, secondModelPath: "Session", action: "Updating a session: " +findedPlanning._id.toString()+ " from Planning: " +findedSession._id.toString()})
+        }catch(e){
+            console.log(e.message)
+        }   
         return res.status(200).json(newPlannings)
     } catch (e) {
         console.log(e)
@@ -799,6 +818,11 @@ exports.deleteSessionFromPlanning = async (req, res) => {
                 console.log(deletedSession)
                 if (deletedSession?.catched) {
                     await Session.findByIdAndUpdate(deletedSession.catched, { catchedBy: null })
+                }
+                try{
+                    logData({ modelId :planning._id, modelPath: "Planning", secondModelId: Types.ObjectId(sessionId), secondModelPath: "Session", action: "Deleting a session: " +sessionId+ " from Planning: " +planning._id.toString()})
+                }catch(e){
+                    console.log(e.message)
                 }
                 return res.status(200).json({ deleted: true })
             }
@@ -842,6 +866,11 @@ exports.switchSessionsFromPlanning = async (req, res) => {
                     message: "the other Planning with id : " + otherPlanning + " Issue."
                 })
             }
+            try{
+                logData({modelId: newInitialPlanning._id, modelPath: "Planning", secondModelId: newOtherPlanning._id, secondModelPath: "Planning", action: "Switching session: " +Types.ObjectId(otherSessionId)+ "from planning: " +newInitialPlanning._id.toString()+ " to planning: " +newOtherPlanning._id.toString()})
+            }catch(e){
+                console.log(e.message)
+            }   
             return res.status(200).send(newInitialPlanning)
         } else {
             return res.status(400).send({

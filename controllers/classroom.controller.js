@@ -2,11 +2,18 @@ const ClassroomModel = require("../models/classroom.model");
 const Template = require("../models/template.model")
 const Session = require("../models/session.model")
 const { Types } = require('mongoose')
+const { logData } = require("../functions/logging")
+
 
 exports.create = async (req, res) => {
     try {
         const classroom = await ClassroomModel.create(req.body);
         await classroom.save();
+        try{
+            logData({ modelId: classroom._id, modelPath: "Classroom", action: "Created a new classroom: "+ classroom._id.toString()})
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(201).json({ classroom });
     } catch (e) {
         console.log(e);
@@ -59,6 +66,11 @@ exports.deleteById = async (req, res) => {
         const classroom = await ClassroomModel.findByIdAndDelete(classroomId)
         if (classroom) {
             await Session.deleteMany({ classroom: classroom._id })
+            try{
+                logData({ modelId: Types.ObjectId(classroomId), modelPath: "Classroom", action: "Deleted a classroom: "+ classroomId})
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).json({
                 found: true, classroom
             });
@@ -97,7 +109,14 @@ exports.update = async (req, res) => {
             req.params.classroomId, req.body,
             { new: true, runValidators: true }
         )
-        if (classroom) return res.status(200).json({ found: true, classroom })
+        if (classroom) {
+            try{
+                logData({ modelId: Types.ObjectId(req.params.classroomId), modelPath: "Classroom", action: "Updated a classroom: "+req.params.classroomId  })
+            }catch(e){
+                console.log(e.message)
+            }
+            return res.status(200).json({ found: true, classroom })
+        }
         else return res.status(404).json({ found: false })
     } catch (e) {
         if (e.keyValue?.classroomName) {

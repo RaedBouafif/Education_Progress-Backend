@@ -3,6 +3,8 @@ const StudentModel = require("../models/Users/student.model")
 const TemplateModel = require("../models/template.model")
 const CollegeYear = require("../models/collegeYear.model")
 const { Types } = require('mongoose')
+const { logData } = require("../functions/logging")
+
 
 function groupStudents(arr) {
     let result = [];
@@ -48,6 +50,11 @@ exports.create = async (req, res) => {
                 gp.students = gp?.students.filter((element)=>!currentGroupWithStudents.students.includes(element.toString()))
                 await gp.save()
             })
+        }
+        try{
+            logData({modelId: group._id, modelPath: "Group", /*User with id 251551515, */ action: "Created a new Group: " +group._id.toString()})
+        }catch(e){
+            console.log(e.message)
         }   
         return res.status(201).json(group);
     } catch (e) {
@@ -149,7 +156,16 @@ exports.update = async (req, res) => {
                 runValidators: true
             }
         )
-        return group ? res.status(200).json({ found: true, group }) : res.status(404).json({ found: false })
+        if (group){
+            try{
+                logData({modelId: group._id, modelPath: "Group", action: "Updated Group: " +group._id.toString()})
+            }catch(e){
+                console.log(e.message)
+            }
+            return res.status(200).json({ found : true, group})
+        }else{
+            return res.status(404).json({ found : false})
+        }
     }
     catch (e) { 
         console.log(e);
@@ -175,10 +191,16 @@ exports.deleteById = async (req, res) => {
     try {
         const { groupId } = req.params
         const group = await GroupModel.findByIdAndDelete(groupId)
-        if (group)
+        if (group){
+            try{
+                logData({modelId: Types.ObjectId(groupId), modelPath: "Group", action: "Delete a group: " +groupId})
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).json({
                 found: true
             });
+        }
         else
             return res.status(404).json({
                 found: false,
@@ -213,6 +235,11 @@ exports.addStudent = async (req, res) => {
             group.students = [ new Types.ObjectId(studentId)]
         }
         await group.save()
+        try{
+            logData({modelId: group._id, modelPath: "Group", secondModelId: student._id, secondModelPath: "Student", action:"Affected student with id : " +studentId+ " to group: " +groupId})
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(201).json({
             success: true
         })
@@ -240,6 +267,11 @@ exports.deleteStudent = async (req, res) => {
         if (!group.students?.find((element) => element == studentId)) return res.status(404).json({ error: "studentNotInGroup" })
         group.students = group.students.filter((element) => element != studentId)
         await group.save()
+        try{
+            logData({modelId: group._id, modelPath: "Group", secondModelId: student._id, secondModelPath: "Student", action: "Disaffected student with id : " +studentId+ " from group: " +groupId})
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(200).json({
             success: true
         })

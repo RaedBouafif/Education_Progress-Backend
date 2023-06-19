@@ -1,4 +1,5 @@
 const SemesterModel = require("../models/semester.model")
+const { logData } = require("../functions/logging")
 
 
 exports.create = async (req, res) => {

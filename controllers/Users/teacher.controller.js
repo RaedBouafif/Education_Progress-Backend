@@ -45,7 +45,7 @@ exports.create = async (req, res) => {
             }
         }
         try{
-            logData(teacher._id, "Teacher", "insert")
+            logData({ modelId: teacher._id, modelPath: "Teacher", action: "Created a new Teacher: " +teacher._id.toString() })
         }catch(e){
             console.log(e.message)
         }
@@ -188,7 +188,7 @@ exports.deleteTeacher = async (req, res) => {
                 }
                 await SessionModel.deleteMany({ teacher: teacher._id })
                 try{
-                    logData(teacher._id, "Teacher", "delete")
+                    logData({ modelId: teacher._id, modelPath: "Teacher", action: "Deleted teacher: " +teacher._id.toString() })
                 }catch(e){
                     console.log(e.message)
                 }
@@ -264,7 +264,7 @@ exports.updateTeacher = async (req, res) => {
                 }
             }
             try{
-                logData(oldTeacher._id, "Teacher", "update")
+                logData({ modelId: oldTeacher._id, modelPath: "Teacher", action: "Updated teacher: "+ oldTeacher._id.toString() })
             }catch(e){
                 console.log(e.message)
             }
@@ -330,7 +330,7 @@ exports.addSubject = async (req, res) => {
                 teacher.subjects.push(subjectId);
                 await teacher.save();
                 try{
-                    logData(teacher._id, "Teacher", "Adding subject to the teacher")
+                    logData({ modelId: teacher._id, modelPath: "Teacher", action: "Added subject: " +subjectId+ "to teacher: " +teacher._id.toString() })
                 }catch(e){
                     console.log(e.message)
                 }
@@ -341,7 +341,7 @@ exports.addSubject = async (req, res) => {
             } else {
                 //teacher don't have the subject
                 try{
-                    logData(teacher._id, "Teacher", "Adding subject to the teacher")
+                    logData({modelId: teacher._id, modelPath: "Teacher", action: "Affected subject: " +subjectId+ " to teacher: " +teacher._id.toString()})
                 }catch(e){
                     console.log(e.message)
                 }
@@ -380,7 +380,7 @@ exports.removeSubject = async (req, res) => {
             teacher.subjects = teacher.subjects.filter(element => element.toString() !== subjectId)
             await teacher.save()
             try{
-                logData(teacher._id, "Teacher", "Removing subject from the teacher")
+                logData({modelId: teacher._id, modelPath: "Teacher", secondModelId: Types.ObjectId(subjectId), secondModelPath: "Subject", action: "Disaffected subject: " +subjectId+ " from teacher: " +teacher._id.toString() })
             }catch(e){
                 console.log(e.message)
             }

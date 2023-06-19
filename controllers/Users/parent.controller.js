@@ -35,7 +35,7 @@ exports.createParent = async (req, res) => {
     });
     await parent.save();
     try{
-      logData(parent._id, "Parent", "insert")
+      logData({ modelId: parent._id, modelPath: "Parent", action: "Created parent: " +parent._id.toString() })
     }catch(e){
         console.log(e.message)
     }
@@ -270,7 +270,7 @@ exports.updateParent = async (req, res) => {
     if (newParent)
       {
         try{
-        logData(newParent._id, "Parent", "update")
+        logData({ modelId: newParent._id, modelPath: "Parent", action: "Updated parent: " + newParent._id.toString() })
         }catch(e){
             console.log(e.message)
         }
@@ -321,7 +321,7 @@ exports.deleteParent = (req, res) => {
           });
         }
         try{
-          logData(Types.ObjectId(parentId), "Parent", "delete")
+          logData({ modelId: Types.ObjectId(parentId), modelPath: "Parent", action: "Deleted parent: " +parentId })
         }catch(e){
           console.log(e.message)
         }

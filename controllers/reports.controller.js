@@ -10,6 +10,8 @@ const { Types } = require("mongoose")
 const nodeMailer = require("../functions/nodeMailer")
 const { notify } = require("../functions/Notify")
 const { CommandStartedEvent } = require('mongodb')
+const { logData } = require("../functions/logging")
+
 
 
 
@@ -46,7 +48,7 @@ exports.reportStudentFromSession = async (req, res) => {
                 try{
                     nodeMailer(student.parent.email)
                 }catch(e){
-                    console.log(e.mes)
+                    console.log(e.message)
                 }
                 
                 //ending the mail send process
@@ -137,6 +139,11 @@ exports.reportStudentFromSession = async (req, res) => {
         }
         //sending the mail
         console.log(report)
+        try{
+            logData({ modelId: report._id, modelPath: "Report", action: "Sent report: " +report._id.toString()})
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)
@@ -240,6 +247,11 @@ exports.reportActors = async (req, res) => {
         }
         //sending the mail
         console.log(report)
+        try{
+            logData({modelId: report._id, modelPath: "Report", action: "Sent report: " +report._id.toString()})
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)
@@ -317,6 +329,11 @@ exports.reportTeacherFromSession = async (req, res) => {
                 error: "Some error occured while saving the report"
             })
         }
+        try{
+            logData({modelId: report._id, modelPath: "Report", secondModelId: Types.ObjectId(teacherId), secondModelPath: "Teacher", action: "Sent report: " +report._id.toString()+ " on Teacher: " +teacherId})
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)
@@ -350,6 +367,11 @@ exports.reportGroupsFromSession = async (req, res) => {
                 error: "Some error occured while saving the report"
             })
         }
+        try{
+            logData({ modelId: report._id, modelPath: "Report", /*User with id 251551515, */ action: "Sent report: " +report._id.toString()})
+        }catch(e){
+            console.log(e.message)
+        }  
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)
@@ -382,6 +404,11 @@ exports.reportSectionsFromSession = async (req, res) => {
                 error: "Some error occured while saving the report"
             })
         }
+        try{
+            logData({ modelId: report._id, modelPath: "Report", /*User with id 251551515, */ action: " Sent report: " +report._id.toString()})
+        }catch(e){
+            console.log(e.message)
+        }  
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)

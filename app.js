@@ -24,6 +24,7 @@ const reportsRouter = require("./routers/reports.router")
 const studentPresenceRouter = require("./routers/studentPresence.router")
 const messageRouter = require("./routers/message.router")
 const notificationRouter = require("./routers/notification.router")
+const declaredAbsenceRouter = require("./routers/declarationAbsence.router")
 
 const { base } = require("./models/session.model")
 var app = express()
@@ -61,6 +62,7 @@ app.use(`${baseURL}/reports`, reportsRouter)
 app.use(`${baseURL}/studentPresence`, studentPresenceRouter)
 app.use(`${baseURL}/messaging`, messageRouter)
 app.use(`${baseURL}/notification`, notificationRouter)
+app.use(`${baseURL}/declaredAbsence`, declaredAbsenceRouter)
 
 mongoose.set('strictQuery', true)
 

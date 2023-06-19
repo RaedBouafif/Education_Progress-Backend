@@ -7,6 +7,9 @@ const Parent = require("../models/Users/parent.model")
 const { Types } =require("mongoose")
 const { notify } = require("../functions/Notify")
 const nodeMailer = require("../functions/nodeMailer")
+const { logData } = require("../functions/logging")
+
+
 
 //studentPresence
 exports.saveStudentPresence = async (req, res) => {
@@ -38,6 +41,11 @@ exports.saveStudentPresence = async (req, res) => {
         await StudentAbsence.findOneAndUpdate({ session: new Types.ObjectId(sessionId), student: new Types.ObjectId(studentId) }, { active: false }, { new: true })
         console.log("new one")
         console.log(presence)
+        try{
+            logData({ modelId: presence._id, modelPath: "StudentAbsence", secondModelId: Types.ObjectId(studentId), secondModelPath: "Student", action: "Saved Presence: " +presence._id.toString()+ " on student: " +studentId})
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(200).send(presence)
     } catch (e) {
         console.log(e)
@@ -147,6 +155,11 @@ exports.saveStudentAbsence = async (req,res) => {
             }catch(e){
                 console.log(e)
             }
+        }
+        try{
+            logData({ modelId: absence._id, modelPath: "StudentAbsence", secondModelId: Types.ObjectId(studentId), secondModelPath: "Student", action: "Saved absence: " +absence._id.toString()+ " on student: " +studentId })
+        }catch(e){
+            console.log(e.message)
         }
         return res.status(200).send(absence)
     } catch (e) {

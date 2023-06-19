@@ -2,6 +2,8 @@ const CollegeYear = require("../models/collegeYear.model")
 const Semester = require("../models/semester.model")
 const moment = require("moment-timezone")
 const { DateTime } = require('luxon')
+const { logData } = require("../functions/logging")
+
 // create a new collegeYear
 exports.createCollegeYear = async (req, res) => {
     try {
@@ -12,6 +14,11 @@ exports.createCollegeYear = async (req, res) => {
         }
         const collegeYear = await CollegeYear.create(req.body)
         await collegeYear.save()
+        try{
+            logData({modelId: collegeYear._id, modelPath: "CollegeYear", action: "Created a new CollegeYear: " +collegeYear._id.toString() })
+        }catch(e){
+            console.log(e.message)
+        }
         return res.status(201).json(collegeYear)
     } catch (e) {
         console.log(e.message)
@@ -58,6 +65,11 @@ exports.createCollegeYearWithSemesters = async (req, res) => {
                 sem2.collegeYear = collegeYear._id
                 await sem1.save()
                 await sem2.save()
+                try{
+                    logData({modelId: collegeYear._id, modelPath: "CollegeYear", action: "Created a new CollegeYear: " +collegeYear._id.toString()+ " with semesters"})
+                }catch(e){
+                    console.log(e.message)
+                }
                 return res.status(201).send({
                     collegeYear,
                     created: true
@@ -202,6 +214,11 @@ exports.updateCollegeYear = async (req, res) => {
                 }
             }
             await collegeYear.save()
+            try{
+                logData({modelId: collegeYear._id, modelPath: "CollegeYear", action: "Updated CollegeYear: " +collegeYear._id.toString() })
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).send(collegeYear)
         } else {
             return res.status(404).send({

@@ -4,6 +4,7 @@ const { Subject } = require('../models/subject.model')
 const { Types } = require('mongoose')
 const groupModel = require("../models/group.model")
 const sessionModel = require("../models/session.model")
+const { logData } = require("../functions/logging")
 
 
 //create a new section
@@ -21,6 +22,11 @@ exports.createSection = async (req, res) => {
         })
         section = await Section.populate(section, { path : "subjects"})
         section.save().then(data => {
+            try{
+                logData({ modelId: data._id, modelPath: "Section", action: "Created section: " +data._id.toString()})
+            }catch(e){
+                console.log(e.message)
+            }
             res.status(201).send(data)
         }).catch(err => {
             return res.status(400).send({
@@ -131,6 +137,11 @@ exports.changeSectionState = (req, res) => {
                     updated: false
                 })
             }
+            try{
+                logData( {modelId: section._id, modelPath: "Section", action: "Activated/Disactivated section: " +section._id.toString()})
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).send({
                 section,
                 updated: true
@@ -163,6 +174,11 @@ exports.deleteById = async (req, res) => {
             const groups = (await groupModel.find({ section: section._id }))?.map((element) => element._id)
             await groupModel.deleteMany({ section: section._id })
             await sessionModel.deleteMany({ group: { $in: groups } })
+            try{
+                logData( {modelId: Types.ObjectId(sectionId), modelPath: "Section", action: "Deleting section: " +sectionId})
+            }catch(e){
+                console.log(e.message)
+            }
             return res.status(200).json({
                 found: true, section
             });
@@ -221,6 +237,11 @@ exports.addSubject = async (req, res) => {
             } else {
                 section.subjects.push(subjectId)
                 section.save().then(data => {
+                    try{
+                        logData( {modelId: Types.ObjectId(data._id), modelPath: "Section", secondModelId: subject._id, secondModelType: "Subject", action: "Adding subject: " +subject._id.toString()+ " to Section: " +data._id.toString() })
+                    }catch(e){
+                        console.log(e.message)
+                    }
                     return res.status(201).send({
                         data,
                         subjectAdded: true
@@ -295,6 +316,11 @@ exports.removeSubject = async (req, res) => {
             if (tempSubjects.length !== filteredSubjects.length) {
                 section.subjects = filteredSubjects
                 section.save().then(data => {
+                    try{
+                        logData( {modelId: Types.ObjectId(data._id), modelPath: "Section", secondModelId: Types.ObjectId(subjectId), secondModelType: "Subject", action: "Removing subject: " +subjectId+ " from Section: " +data._id.toString() })
+                    }catch(e){
+                        console.log(e.message)
+                    }
                     return res.status(201).send({
                         section,
                         subjectRemoved: true
@@ -359,6 +385,11 @@ exports.updateSection = async (req, res) => {
             return res.status(404).send({
                 error: "NotFound"
             })
+        }
+        try{
+            logData( {modelId: updatedSection._id, modelPath: "Section", action: "Updated subject: " +updatedSection._id.toString()})
+        }catch(e){
+            console.log(e.message)
         }
         return res.status(200).json(
             updatedSection

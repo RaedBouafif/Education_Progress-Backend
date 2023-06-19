@@ -55,7 +55,7 @@ exports.createStudent = async (req, res) => {
                 parent.students.push(data._id)
                 await parent.save()
                 try{
-                    logData(student._id, "Student", "insert")
+                    logData({ modelId: student._id, modelPath: "Student", action: "Created student: " +student._id.toString() })
                 }catch(e){
                     console.log(e.message)
                 }
@@ -293,7 +293,7 @@ exports.deleteStudent = (req, res) => {
                     });
                 }
                 try{
-                    logData(student._id, "Student", "delete")
+                    logData({ modelId: student._id, modelPath: "Student", action: "Deleted student: " +student._id.toString() })
                 }catch(e){
                     console.log(e.message)
                 }
@@ -397,7 +397,7 @@ exports.updateStudent = async (req, res) => {
                     });
                 }
                 try{
-                    logData(student._id, "Student", "update")
+                    logData({ modelId: student._id, modelPath: "Student", action: "Update student: " +student._id.toString()})
                 }catch(e){
                     console.log(e.message)
                 }

@@ -23,6 +23,16 @@ const Logs = Schema({
     },
     action : {
         type: String,
+    },
+    secondModel: {
+        modelId: {
+            type : Types.ObjectId,
+            refPath : "secondModel.modelPath"
+        },
+        modelPath: {
+            type: String,
+            enum : ["Admin", "Student", "Teacher", "Parent", "Classroom", "CollegeYear", "Group", "Message", "Notification", "Planning", "Reports", "Rates", "Section", "Semester", "Session", "SessionLogsSchema", "StudentAbsence", "StudentPresence", "Subject", "teacherAbsence", "Template"]
+        }
     }
 },
     {

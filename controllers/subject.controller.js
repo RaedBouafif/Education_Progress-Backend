@@ -6,6 +6,8 @@ const Session = require("../models/session.model")
 const Template = require("../models/template.model")
 const { Types } = require("mongoose");
 const sessionModel = require('../models/session.model');
+const { logData } = require("../functions/logging")
+
 
 
 
@@ -26,6 +28,11 @@ exports.createSubject = async (req, res) => {
             image: image || null
         })
         subject.save().then(data => {
+            try{
+                logData({ modelId: data._id, modelPath: "Subject", action: "Created Subject: " +data._id.toString()})
+            }catch(e){
+                console.log(e.message)
+            }
             res.status(201).send(data)
         }).catch(err => {
             if (err instanceof mongoose.Error.ValidationError) {
