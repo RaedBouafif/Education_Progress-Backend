@@ -96,3 +96,32 @@ exports.seenNotification = async(req,res) => {
             })
     }
 }
+
+exports.changeNotificationState = async (async, res) => {
+    try{
+        const { notificationId } = req.params
+        if (!notificationId){
+            return res.status(400).send({
+                error: "Server error"
+            })
+        } 
+        const notification = await Notification.findById(Types.ObjectId(notificationId))
+        if (!notification){
+            return res.status(404).send({
+                eroor: "Not Found",
+                message: "Notification with id: " +notificationId+ " does not exist!"
+            })
+        }
+        notification.active = !notification.active
+        await notification.save()
+        return res.status(200).send({
+            changed: true,
+            notification
+        })
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error : "Server Error"
+        })
+    }
+}

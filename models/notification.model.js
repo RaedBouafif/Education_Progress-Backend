@@ -52,6 +52,9 @@ const Notification = Schema({
         type : Boolean,
         default : false
     },
+    active: {
+        type: Boolean
+    }
 },
 {
     timestamps: true
