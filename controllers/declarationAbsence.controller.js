@@ -4,10 +4,10 @@ const Student = require("../models/Users/student.model")
 const DeclarationAbsence = require("../models/declarationAbsence.model")
 const multer = require("multer")
 
-exports.create = async (req,res) => {
-    try{
-        const { dateDeb, dateFin, category, description, studentId, teacherId, active } = req.body
-        if ( !dateDeb || !dateFin || !category ){
+exports.create = async (req, res) => {
+    try {
+        const { dateDeb, dateFin, description, studentId, teacherId, active } = req.body
+        if (!dateDeb || !dateFin) {
             return res.status(400).send({
                 error: "Bad Request"
             })
@@ -17,22 +17,22 @@ exports.create = async (req,res) => {
             teacherId: teacherId || null,
             dateDeb: dateDeb,
             dateFin: dateFin,
-            category: category,
             description: description,
-            file: { name : req.file.filename, path: req.file.path } || null,
+            file: req.file ? { name: req.file?.filename, path: req.file.path } : null,
             active: active
         })
         await declarationAbsence.save()
-        if (!declarationAbsence){
+        if (!declarationAbsence) {
             return res.status(400).send({
-                message: "Some error occured while creating the absence" 
+                message: "Some error occured while creating the absence"
             })
         }
         return res.status(201).send({
             created: true,
             declarationAbsence
         })
-    }catch(e) {
+    } catch (e) {
+        console.log(e)
         return res.status(500).send({
             error: e.message,
             message: "Server error!"
@@ -40,45 +40,45 @@ exports.create = async (req,res) => {
     }
 }
 
-exports.deleteDeclarationAbsence = async (req,res) => {
-    try{
+exports.deleteDeclarationAbsence = async (req, res) => {
+    try {
         const { idAbsence } = req.params
-        if (!idAbsence){
+        if (!idAbsence) {
             return res.status(400).send({
-                error : "Bad Request"
+                error: "Bad Request"
             })
         }
         const deletedAbsence = await DeclarationAbsence.findByIdAndDelete(Types.ObjectId(idAbsence))
-        if (!deletedAbsence){
+        if (!deletedAbsence) {
             return res.status(404).send({
-                error : "Not Found!",
-                message: "Declared Absence with id: " +idAbsence+ " Not found!"
+                error: "Not Found!",
+                message: "Declared Absence with id: " + idAbsence + " Not found!"
             })
-        } 
+        }
         return res.status(200).send({
             deleted: true
         })
-    }catch(e){
+    } catch (e) {
         return res.status(500).send({
-            error : e.message,
+            error: e.message,
             message: "Server errror"
         })
     }
 }
 
-exports.changeAbsenceStatus = async (req,res) => {
-    try{
+exports.changeAbsenceStatus = async (req, res) => {
+    try {
         const { idAbsence } = req.params
-        if (!idAbsence){
+        if (!idAbsence) {
             return res.status(400).send({
                 error: "Bad Request"
             })
         }
         const updatedAbsence = await DeclarationAbsence.findById(Types.ObjectId(idAbsence))
-        if (!updatedAbsence){
+        if (!updatedAbsence) {
             return res.status(404).send({
                 error: "Not Found",
-                message: "Declared Absence with id: " +idAbsence+ " Not found!"
+                message: "Declared Absence with id: " + idAbsence + " Not found!"
             })
         }
         updatedAbsence.active = !updatedAbsence.active
@@ -87,7 +87,7 @@ exports.changeAbsenceStatus = async (req,res) => {
             updated: true,
             updatedAbsence
         })
-    }catch(e){
+    } catch (e) {
         return res.status(500).send({
             error: e.message,
             message: "Server Error"
