@@ -37,4 +37,4 @@ const DeclarationAbsence = mongoose.Schema(
     }
 )
 
-module.exports = mongoose.model("x", DeclarationAbsence)
+module.exports = mongoose.model("DeclarationAbsence", DeclarationAbsence)

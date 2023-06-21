@@ -7,11 +7,11 @@ const { notify } = require("../functions/Notify")
 const jwt = require("jsonwebtoken")
 
 
-exports.create = async (req,res) => {
+exports.createDeclaration = async (req,res) => {
     try{
         console.log(req.body)
         const { dateDeb, dateFin, description, studentId, teacherId, active } = req.body
-        if ( (!dateDeb && dateDeb != "undefined") || (!dateFin && dateFin != "undefined") ){
+        if ( (!dateDeb) || (!dateFin) ){
             return res.status(400).send({
                 error: "Bad Request"
             })
@@ -20,14 +20,16 @@ exports.create = async (req,res) => {
         var finalDateDeb = new Date(dateDeb)
         var finalDateFin = new Date(dateFin)
         const declarationAbsence = await DeclarationAbsence.create({
-            studentId: studentId || null,
-            teacherId: teacherId || null,
+            student: studentId || null,
+            teacher: teacherId || null,
             dateDeb: finalDateDeb,
             dateFin: finalDateFin,
             description: description,
             file: { name : req.file?.originalname, path: req.file?.path } || null
         })
         await declarationAbsence.save()
+        console.log("---------------------------------")
+        console.log(declarationAbsence)
         if (!declarationAbsence){
             return res.status(400).send({
                 message: "Some error occured while creating the absence" 
