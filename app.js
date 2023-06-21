@@ -39,7 +39,6 @@ app.use(cors(
         optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
     }
 ))
-
 const baseURL = "/api/v1"
 
 

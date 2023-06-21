@@ -30,9 +30,6 @@ const DeclarationAbsence = mongoose.Schema(
             path: {
                 type: String
             }
-        },
-        active: {
-            type: Boolean
         }
     },
     {
@@ -40,4 +37,4 @@ const DeclarationAbsence = mongoose.Schema(
     }
 )
 
-module.exports = mongoose.model("DeclarationAbsence", DeclarationAbsence)
+module.exports = mongoose.model("x", DeclarationAbsence)

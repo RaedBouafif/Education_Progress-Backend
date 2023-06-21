@@ -21,7 +21,12 @@ const logData = async ({modelId, modelType, secondModelId, secondModelType, acti
             }
         })
         await log.save()
-    }else return false
+    }else {
+        res.clearCookie('tck')
+        return res.status(403).json({
+            "name": "NoTokenProvided"
+        })
+    }
 }
 
 module.exports = logData
