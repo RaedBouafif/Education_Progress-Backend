@@ -22,7 +22,7 @@ function groupStudents(arr) {
 }
   
 exports.create = async (req, res) => {
-    var students =  JSON.parse(req.body.students)
+    var students =  req.body.students
     try {
         var group = await GroupModel.create({
             groupName: req.body.groupName,

@@ -7,6 +7,8 @@ const StudentAbsence = require("../models/studentAbsence.model")
 const TeacherAbsence = require("../models/teacherAbsence.model")
 const Reports = require("../models/reports.model")
 const Session = require("../models/session.model")
+const Planning = require("../models/Planning.model")
+const DeclarationAbsence = require("../models/declarationAbsence.model")
 
 
 
@@ -139,13 +141,88 @@ exports.validateNotification = async (req,res) => {
 }
 
 
-exports.getNotificationsDeclaration = async(req,res) => {
+// exports.getNotificationsDeclaration = async(req,res) => {
+//     try{
+//         const notifications = await Notification.find({declarationAbsence : { $exists: true}})
+//         return notifications ? res.status(200).send(notifications) : res.status(404).send({ message : "There is no notifications of declarationAbsence in database"})
+//     }catch(e)
+//     {
+//         console.log(e.message)
+//         return res.status(500).send({
+//             error: "Server Error"
+//         }) 
+//     }
+// }
+
+
+function addDays(dateString, numDays) {
+    const date = new Date(dateString);
+    date.setDate(date.getDate() + numDays);
+    return date.toISOString();
+}
+
+function addMinutes(dateString, numMinutes) {
+    const date = new Date(dateString);
+    date.setTime(date.getTime() + numMinutes * 60000);
+    return date.toISOString();
+}
+
+function resetTimeToMidnight(dateString) {
+    const date = new Date(dateString);
+    date.setUTCHours(0, 0, 0, 0);
+    return date.toISOString();
+}
+
+exports.getNotificationDeclaredWithDetails = async(req,res) => {
     try{
-        const notifications = await Notification.find({declarationAbsence : { $exists: true}})
-        return notifications ? res.status(200).send(notifications) : res.status(404).send({ message : "There is no notifications of declarationAbsence in database"})
-    }catch(e)
-    {
-        console.log(e.message)
+        const { idNotification } = req.params
+        console.log(idNotification)
+        const notification = await Notification.findById(idNotification).populate({ path: "declarationAbsence", populate: { path: "teacher" }})
+        if (notification){
+            var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb) 
+            var dateFinDeclaration = new Date(notification.declarationAbsence.dateFin)
+            var teacher = notification.declarationAbsence.teacher
+            const plannings = await Planning.find(
+                {
+                    $or: [
+                        { dateBegin: { $lte: dateDebDeclaration}, dateEnd: { $gte: dateDebDeclaration}},
+                        { dateBegin: { $lte: dateFinDeclaration}, dateEnd: { $gte: dateFinDeclaration}},
+                        { dateBegin: { $gte: dateDebDeclaration}, dateEnd: { $lte: dateFinDeclaration}}
+                    ] 
+            })
+            .populate({ path: "sessions", match: { teacher: Types.ObjectId(teacher._id) }, populate : { path: "group"} })
+            var consernedSessions = []
+            for (let i=0; i<plannings.length ; i++){
+                let planning_starting= plannings[i].dateBegin
+                // const sessions = plannings[i].sessions?.filter((element) => Array.isArray(element) && element.length).length ? plannings[i].sessions.filter((element) => Array.isArray(element.sessions)) : []
+                const sessions = plannings[i].sessions
+                for (let j=0 ; j<sessions.length; j++){
+                    if (sessions[j]){
+                        currentSession = sessions[j]
+                        var session_startsAt_v1 = addDays(planning_starting, Number(currentSession.day))
+                        var session_startsAt_resetedTomidNight = resetTimeToMidnight(session_startsAt_v1)
+                        var session_endsAt = session_startsAt_resetedTomidNight
+                        var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
+                        var session_endsAt_v2 = addMinutes(session_endsAt, Number(currentSession.endsAt))
+                        if ( dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2) ){
+                            consernedSessions.push(currentSession)
+                        }
+                    }
+                }
+            }
+            const finalData = {
+                sessions: consernedSessions,
+                teacher: teacher,
+                declarationAbsence : notification.declarationAbsence
+            }
+            return res.status(200).send(finalData)
+        }else{
+            return res.status(404).send({
+                message : "Session with id: " +idNotification+ " Not found"
+            })
+        }
+    }catch(e){
+        console.log(e)
         return res.status(500).send({
             error: "Server Error"
         }) 

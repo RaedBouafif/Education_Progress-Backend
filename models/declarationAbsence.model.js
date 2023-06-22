@@ -21,7 +21,7 @@ const DeclarationAbsence = mongoose.Schema(
         required: [true, "dateDebRequired"]
        },
        description: {
-        type: String
+        type: String    
        },
        file: {
             name: {
