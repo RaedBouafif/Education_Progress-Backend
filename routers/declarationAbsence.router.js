@@ -4,7 +4,7 @@ const { createDeclaration, deleteDeclarationAbsence, changeAbsenceStatus} = requ
 const upload = require("../middlewares/upload")
 
 Router.route("/create").post(upload.single('file') ,createDeclaration)
-Router.route("/delete/:idAbsence").delete(deleteDeclarationAbsence)
-Router.route("/changeState/:idAbsence").get(authMiddleWare(["admin", "super", "owner"]) ,changeAbsenceStatus)
+Router.route("/delete/:idAbsence").delete(authMiddleWare(["admin", "super", "owner", "teacher"]), deleteDeclarationAbsence)
+Router.route("/changeState/:idAbsence").get(authMiddleWare(["admin", "super", "owner", "teahcer"]) ,changeAbsenceStatus)
 
 module.exports = Router

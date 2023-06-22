@@ -49,7 +49,33 @@ exports.settingEndedDate = async (req, res) => {
     }
 }
 
-// get all sessionDetails
+//get all sessions extra for test
+exports.getAllSessions = async(req,res) => {
+    try{
+        const sessions = await Session.find({suspended : true})
+        return sessions ? res.status(200).send(sessions) : res.status(204).send({ message: "Empty dataBase"})
+    }catch(e){
+        return res.status(500).send({
+            error : e.message,
+            message: "Server Error!"
+        })
+    }
+}
+
+//get all sessions extra for test
+exports.deleteSuspendedSessions = async(req,res) => {
+    try{
+        const sessions = await Session.deleteMany({suspended : true})
+        return sessions ? res.status(200).send(sessions) : res.status(204).send({ message: "Empty dataBase"})
+    }catch(e){
+        return res.status(500).send({
+            error : e.message,
+            message: "Server Error!"
+        })
+    }
+}
+
+// get all sessionDetails 
 exports.getSessionDetails = async (req, res) => {
     const { sessionId, groupId } = req.params.sessionId
     try {

@@ -30,6 +30,10 @@ const Notification = Schema({
         type: Types.ObjectId,
         ref: "TeacherAbsence"
     },
+    declarationAbsence: {
+        type: Types.ObjectId,
+        ref: "declarationAbsence"
+    },
     content: {
         type: String
     },

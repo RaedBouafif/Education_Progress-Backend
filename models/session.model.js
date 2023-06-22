@@ -103,6 +103,10 @@ const Session = Schema(
         catched: {
             type: Schema.Types.ObjectId,
             ref: "Session",
+        },
+        suspended: {
+            type: Boolean,
+            default: false
         }
     },
     {
