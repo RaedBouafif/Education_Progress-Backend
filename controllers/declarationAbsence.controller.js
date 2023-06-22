@@ -30,8 +30,8 @@ exports.create = async (req, res) => {
         //     })
         // }
         const declarationAbsence = await DeclarationAbsence.create({
-            studentId: studentId || null,
-            teacherId: teacherId || null,
+            student: studentId || null,
+            teacher: teacherId || null,
             dateDeb: dateDeb,
             dateFin: dateFin,
             description: description,
