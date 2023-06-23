@@ -32,7 +32,7 @@ const Notification = Schema({
     },
     declarationAbsence: {
         type: Types.ObjectId,
-        ref: "declarationAbsence"
+        ref: "DeclarationAbsence"
     },
     content: {
         type: String
@@ -58,6 +58,10 @@ const Notification = Schema({
     },
     active: {
         type: Boolean
+    },
+    canceled: {
+        type: Boolean,
+        default : false
     }
 },
 {

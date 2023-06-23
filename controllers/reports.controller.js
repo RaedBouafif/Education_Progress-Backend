@@ -45,12 +45,12 @@ exports.reportStudentFromSession = async (req, res) => {
                         error: "Student with id : " + studentId + " NotFound"
                     })
                 }
-                try{
+                try {
                     nodeMailer(student.parent.email)
-                }catch(e){
+                } catch (e) {
                     console.log(e.message)
                 }
-                
+
                 //ending the mail send process
                 try {
                     receivers = [...receivers, { receiverId: new Types.ObjectId(studentId), receiverPath: "Student" }, { receiverId: new Types.ObjectId(student.parent._id), receiverPath: "Parent" }]
@@ -91,12 +91,12 @@ exports.reportStudentFromSession = async (req, res) => {
                         error: "Student with id : " + studentId + " NotFound"
                     })
                 }
-                try{
+                try {
                     nodeMailer(student.parent.email)
-                }catch(e){
+                } catch (e) {
                     console.log(e.mes)
                 }
-                
+
                 //ending the mail send process
                 try {
                     receivers = [...receivers, { receiverId: new Types.ObjectId(studentId), receiverPath: "Student" }, { receiverId: new Types.ObjectId(student.parent._id), receiverPath: "Parent" }]
@@ -139,9 +139,9 @@ exports.reportStudentFromSession = async (req, res) => {
         }
         //sending the mail
         console.log(report)
-        try{
-            logData({ modelId: report._id, modelPath: "Report", action: "Sent report: " +report._id.toString()})
-        }catch(e){
+        try {
+            logData({ modelId: report._id, modelPath: "Report", action: "Sent report: " + report._id.toString() })
+        } catch (e) {
             console.log(e.message)
         }
         return res.status(200).send(report)
@@ -177,9 +177,9 @@ exports.reportActors = async (req, res) => {
             if (!foundStudent) {
                 console.log("parent not found")
             }
-            try{
+            try {
                 nodeMailer(foundStudent.parent.email)
-            }catch(e){
+            } catch (e) {
                 console.log(e.mes)
             }
             receivers = [...receivers, { receiverId: new Types.ObjectId(student._id), receiverPath: "Student" }, { receiverId: new Types.ObjectId(foundStudent.parent._id), receiverPath: "Parent" }]
@@ -191,9 +191,9 @@ exports.reportActors = async (req, res) => {
             if (!reportedTeacher) {
                 console.log("teacher not found")
             }
-            try{
+            try {
                 nodeMailer(reportedTeacher.email)
-            }catch(e){
+            } catch (e) {
                 console.log(e.mes)
             }
             //ending the mail send process
@@ -202,13 +202,13 @@ exports.reportActors = async (req, res) => {
         }
         for (let parent of reported["parent"]) {
             const foundParent = await Parent.findById(new Types.ObjectId(parent._id))
-            try{
+            try {
                 nodeMailer(foundParent.email)
-  
-            }catch(e){
+
+            } catch (e) {
                 console.log(e.mes)
             }
-                      receivers = [...receivers, { receiverId: new Types.ObjectId(parent._id), receiverPath: "Parent" }]
+            receivers = [...receivers, { receiverId: new Types.ObjectId(parent._id), receiverPath: "Parent" }]
             reportedNames = [...reportedNames, foundParent.firstName + " " + foundParent.lastName]
         }
         report = await Reports.create({
@@ -247,9 +247,9 @@ exports.reportActors = async (req, res) => {
         }
         //sending the mail
         console.log(report)
-        try{
-            logData({modelId: report._id, modelPath: "Report", action: "Sent report: " +report._id.toString()})
-        }catch(e){
+        try {
+            logData({ modelId: report._id, modelPath: "Report", action: "Sent report: " + report._id.toString() })
+        } catch (e) {
             console.log(e.message)
         }
         return res.status(200).send(report)
@@ -329,9 +329,9 @@ exports.reportTeacherFromSession = async (req, res) => {
                 error: "Some error occured while saving the report"
             })
         }
-        try{
-            logData({modelId: report._id, modelPath: "Report", secondModelId: Types.ObjectId(teacherId), secondModelPath: "Teacher", action: "Sent report: " +report._id.toString()+ " on Teacher: " +teacherId})
-        }catch(e){
+        try {
+            logData({ modelId: report._id, modelPath: "Report", secondModelId: Types.ObjectId(teacherId), secondModelPath: "Teacher", action: "Sent report: " + report._id.toString() + " on Teacher: " + teacherId })
+        } catch (e) {
             console.log(e.message)
         }
         return res.status(200).send(report)
@@ -367,11 +367,11 @@ exports.reportGroupsFromSession = async (req, res) => {
                 error: "Some error occured while saving the report"
             })
         }
-        try{
-            logData({ modelId: report._id, modelPath: "Report", /*User with id 251551515, */ action: "Sent report: " +report._id.toString()})
-        }catch(e){
+        try {
+            logData({ modelId: report._id, modelPath: "Report", /*User with id 251551515, */ action: "Sent report: " + report._id.toString() })
+        } catch (e) {
             console.log(e.message)
-        }  
+        }
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)
@@ -404,11 +404,11 @@ exports.reportSectionsFromSession = async (req, res) => {
                 error: "Some error occured while saving the report"
             })
         }
-        try{
-            logData({ modelId: report._id, modelPath: "Report", /*User with id 251551515, */ action: " Sent report: " +report._id.toString()})
-        }catch(e){
+        try {
+            logData({ modelId: report._id, modelPath: "Report", /*User with id 251551515, */ action: " Sent report: " + report._id.toString() })
+        } catch (e) {
             console.log(e.message)
-        }  
+        }
         return res.status(200).send(report)
     } catch (e) {
         console.log(e)
