@@ -11,7 +11,7 @@ Router.route("/getById/:groupId").get(authMiddleWare(["owner", "admin", "teacher
 Router.route("/addStudent/:groupId/:studentId").get(authMiddleWare(["admin", "super", "owner"]), addStudent)
 Router.route("/count").get(countDocsss)
 Router.route("/getAvailableSubjects/:groupId").get(authMiddleWare(["owner", "admin", "teacher", "super"]), findAllAvailableSubjects)
-Router.route("/getNumberStudentsPerYear").get(authMiddleWare(["owner", "admin", "super"]), getNumberStudentsPerYear)
+// Router.route("/getNumberStudentsPerYear").get(authMiddleWare(["owner", "admin", "super"]), getNumberStudentsPerYear)
 //---DELETE---//
 Router.route("/deleteById/:groupId").delete(authMiddleWare(["admin", "super", "owner"]), deleteById)
 Router.route("/deleteStudent/:groupId/:studentId").delete(authMiddleWare(["admin", "super", "owner"]), deleteStudent)

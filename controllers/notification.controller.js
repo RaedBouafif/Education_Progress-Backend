@@ -125,3 +125,29 @@ exports.changeNotificationState = async (async, res) => {
         })
     }
 }
+
+exports.validateNotification = async (req,res) => {
+    const { daclarationAbsenceId } = req.params 
+    try{
+        const notification = await Notification.findOneAndUpdate({ declarationAbsence: Types.ObjectId(daclarationAbsenceId) }, { active: true})
+        return notification ? res.status(200).send({ activated: true, notification}) : res.status(204).send({ message : "Empty database"})
+    }catch(e){
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+
+exports.getNotificationsDeclaration = async(req,res) => {
+    try{
+        const notifications = await Notification.find({declarationAbsence : { $exists: true}})
+        return notifications ? res.status(200).send(notifications) : res.status(404).send({ message : "There is no notifications of declarationAbsence in database"})
+    }catch(e)
+    {
+        console.log(e.message)
+        return res.status(500).send({
+            error: "Server Error"
+        }) 
+    }
+}
