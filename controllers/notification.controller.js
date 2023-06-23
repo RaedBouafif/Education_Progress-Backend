@@ -199,7 +199,8 @@ exports.getNotificationDeclaredWithDetails = async(req,res) => {
                 for (let j=0 ; j<sessions.length; j++){
                     if (sessions[j]){
                         currentSession = sessions[j]
-                        var session_startsAt_v1 = addDays(planning_starting, Number(currentSession.day))
+                        var realDay = currentSession.day === 0 ? 7 : currentSession.day
+                        var session_startsAt_v1 = addDays(planning_starting, Number(realDay - 1))
                         var session_startsAt_resetedTomidNight = resetTimeToMidnight(session_startsAt_v1)
                         var session_endsAt = session_startsAt_resetedTomidNight
                         var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
@@ -212,7 +213,6 @@ exports.getNotificationDeclaredWithDetails = async(req,res) => {
             }
             const finalData = {
                 sessions: consernedSessions,
-                teacher: teacher,
                 declarationAbsence : notification.declarationAbsence
             }
             return res.status(200).send(finalData)
@@ -226,5 +226,60 @@ exports.getNotificationDeclaredWithDetails = async(req,res) => {
         return res.status(500).send({
             error: "Server Error"
         }) 
+    }
+}
+
+exports.cancelNotification = async(req,res) => {
+    try{
+        const { idNotification } = req.params
+        const notification = await Notification.findById(idNotification).populate({path: "declarationAbsence"})
+        if (notification){
+            var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb) 
+            var dateFinDeclaration = new Date(notification.declarationAbsence.dateFin)
+            const plannings = await Planning.find(
+                {
+                    $or: [
+                        { dateBegin: { $lte: dateDebDeclaration}, dateEnd: { $gte: dateDebDeclaration}},
+                        { dateBegin: { $lte: dateFinDeclaration}, dateEnd: { $gte: dateFinDeclaration}},
+                        { dateBegin: { $gte: dateDebDeclaration}, dateEnd: { $lte: dateFinDeclaration}}
+                    ] 
+            })
+            .populate({ path: "sessions", match: { teacher: Types.ObjectId(notification.declarationAbsence.teacher) }})
+            for (let i=0; i<plannings.length ; i++){
+                let planning_starting= plannings[i].dateBegin
+                // const sessions = plannings[i].sessions?.filter((element) => Array.isArray(element) && element.length).length ? plannings[i].sessions.filter((element) => Array.isArray(element.sessions)) : []
+                const sessions = plannings[i].sessions
+                for (let j=0 ; j<sessions.length; j++){
+                    if (sessions[j]){
+                        currentSession = sessions[j]
+                        var realDay = currentSession.day === 0 ? 7 : currentSession.day
+                        var session_startsAt_v1 = addDays(planning_starting, Number(realDay - 1))
+                        var session_startsAt_resetedTomidNight = resetTimeToMidnight(session_startsAt_v1)
+                        var session_endsAt = session_startsAt_resetedTomidNight
+                        var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
+                        var session_endsAt_v2 = addMinutes(session_endsAt, Number(currentSession.endsAt))
+                        if ( dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2) ){
+                            currentSession.suspended = false
+                            await currentSession.save()
+                        }
+                    }
+                }
+            }
+            notification.canceled = true
+            await notification.save()
+            return res.status(200).send({
+                canceled: true,
+                notification
+            })
+        }else{
+            return res.status(404).send({
+                message : "Session with id: " +idNotification+ " Not found"
+            })
+        }
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
     }
 }

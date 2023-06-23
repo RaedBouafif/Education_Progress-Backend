@@ -82,8 +82,9 @@ exports.createDeclaration = async (req,res) => {
                     for (let j=0 ; j<sessions.length; j++){
                         if (sessions[j]){
                             var currentSession = sessions[j]
+                            var realDay = currentSession.day === 0 ? 7 : currentSession.day
                             //setting the session starts date and ends date
-                            var session_startsAt_v1 = addDays(planning_starting, Number(currentSession.day))
+                            var session_startsAt_v1 = addDays(planning_starting, Number(realDay - 1))
                             var session_startsAt_resetedTomidNight = resetTimeToMidnight(session_startsAt_v1)
                             var session_endsAt = session_startsAt_resetedTomidNight
                             var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
@@ -91,7 +92,6 @@ exports.createDeclaration = async (req,res) => {
                             if ( finalDateDeb <= new Date(session_startsAt_v2) && finalDateFin >= new Date(session_endsAt_v2) ){
                                 consernedSessions.push(currentSession)
                                 currentSession.suspended = true
-                                const sessionTOSave = await Session.create(currentSession)
                                 await currentSession.save()
                             }
                         }

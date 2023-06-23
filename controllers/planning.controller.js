@@ -728,6 +728,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
                     session.startsAt = startsAt
                     session.endsAt = endsAt
                     session.sessionCategorie = "Planning"
+                    session.suspended = false
                 }
                 await session.save()
             }
@@ -741,6 +742,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
                     session.startsAt = startsAt
                     session.endsAt = endsAt
                     session.sessionCategorie = "Planning"
+                    session.suspended = false
                     await session.save()
                 }
             }
@@ -1289,7 +1291,7 @@ exports.checkSessionDurationAvailability = async (req, res) => {
 exports.toggleCancelSession = async (req, res) => {
     try {
         const { sessionId, status } = req.params
-        const updateSession = await Session.findByIdAndUpdate(sessionId, { canceled: status }, { runValidators: true, new: true })
+        const updateSession = await Session.findByIdAndUpdate(sessionId, { canceled: status, suspended: false }, { runValidators: true, new: true })
             .populate("group")
             .populate("teacher", "firstName lastName")
             .populate("classroom")

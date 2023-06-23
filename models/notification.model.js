@@ -58,6 +58,10 @@ const Notification = Schema({
     },
     active: {
         type: Boolean
+    },
+    canceled: {
+        type: Boolean,
+        default : false
     }
 },
 {
