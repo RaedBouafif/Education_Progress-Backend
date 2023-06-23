@@ -118,6 +118,7 @@ exports.createDeclaration = async (req,res) => {
                     }
                     notificationData = {
                         ...notificationData,
+                        notificationType: "teacherAbsenceDeclared",
                         active: active,
                         object: "Absence d'enseignant: " +teacher.firstName.toUpperCase()+" "+teacher.lastName.toUpperCase(),
                         content: `L'enseignant ${teacher.firstName} ${teacher.lastName} sera absent à partir de le date: ${dateDeb} jusqu'a le date: ${dateFin}`,
@@ -135,6 +136,7 @@ exports.createDeclaration = async (req,res) => {
                     notificationData = {
                         ...notificationData,
                         active : true,
+                        notificationType: "studentAbsenceDeclared",
                         object: "Absence d'élève: " +student.firstName.toUpperCase()+" "+student.lastName.toUpperCase(),
                         content: `L'enseignant ${student.firstName} ${student.lastName} sera absent à partir de le date: ${dateDeb} jusqu'a le date: ${dateFin}`,
                         sender: { senderPath: senderPath, senderId: Types.ObjectId(senderId)},

@@ -129,9 +129,9 @@ exports.changeNotificationState = async (async, res) => {
 }
 
 exports.validateNotification = async (req,res) => {
-    const { daclarationAbsenceId } = req.params 
+    const { idNotification } = req.params 
     try{
-        const notification = await Notification.findOneAndUpdate({ declarationAbsence: Types.ObjectId(daclarationAbsenceId) }, { active: true})
+        const notification = await Notification.findByIdAndUpdate(Types.ObjectId(idNotification), { active: true})
         return notification ? res.status(200).send({ activated: true, notification}) : res.status(204).send({ message : "Empty database"})
     }catch(e){
         return res.status(500).send({
@@ -190,7 +190,7 @@ exports.getNotificationDeclaredWithDetails = async(req,res) => {
                         { dateBegin: { $gte: dateDebDeclaration}, dateEnd: { $lte: dateFinDeclaration}}
                     ] 
             })
-            .populate({ path: "sessions", match: { teacher: Types.ObjectId(teacher._id) }, populate : { path: "group"} })
+            .populate({ path: "sessions", match: { teacher: Types.ObjectId(teacher._id), suspended: true }, populate : { path: "group"} })
             var consernedSessions = []
             for (let i=0; i<plannings.length ; i++){
                 let planning_starting= plannings[i].dateBegin
@@ -206,6 +206,8 @@ exports.getNotificationDeclaredWithDetails = async(req,res) => {
                         var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
                         var session_endsAt_v2 = addMinutes(session_endsAt, Number(currentSession.endsAt))
                         if ( dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2) ){
+                            currentSession.startingDate = new Date(session_startsAt_v2)
+                            currentSession.endingDate = new Date(session_endsAt_v2)
                             consernedSessions.push(currentSession)
                         }
                     }
@@ -213,7 +215,8 @@ exports.getNotificationDeclaredWithDetails = async(req,res) => {
             }
             const finalData = {
                 sessions: consernedSessions,
-                declarationAbsence : notification.declarationAbsence
+                declarationAbsence : notification.declarationAbsence,
+                activeDeclaration: notification.active
             }
             return res.status(200).send(finalData)
         }else{
