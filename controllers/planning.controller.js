@@ -634,7 +634,7 @@ exports.addSessionToPlanning = async (req, res) => {
         await session.save()
         if (session) {
             if (catched) {
-                await Session.findByIdAndUpdate(catched, { catchedBy: session._id }, { runValidators: true, new: true })
+                await Session.findByIdAndUpdate(catched, { catchedBy: session._id, treated: true }, { runValidators: true, new: true })
                 //catchup notification 
                 notificationData = { ...notificationData, notificationType: "catchupSession", object: "Séance de rattrapage ajouté à votre emploi de temps" }
             }
@@ -758,7 +758,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
                     session.startsAt = startsAt
                     session.endsAt = endsAt
                     session.sessionCategorie = "Planning"
-                    session.suspended = false
+                    session.treated = true
                 }
                 await session.save()
             }
@@ -772,7 +772,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
                     session.startsAt = startsAt
                     session.endsAt = endsAt
                     session.sessionCategorie = "Planning"
-                    session.suspended = false
+                    session.treated = true
                     await session.save()
                 }
             }
@@ -1317,7 +1317,7 @@ exports.checkSessionDurationAvailability = async (req, res) => {
 exports.toggleCancelSession = async (req, res) => {
     try {
         const { sessionId, status } = req.params
-        const updateSession = await Session.findByIdAndUpdate(sessionId, { canceled: status, suspended: false }, { runValidators: true, new: true })
+        const updateSession = await Session.findByIdAndUpdate(sessionId, { canceled: status, treated: true }, { runValidators: true, new: true })
             .populate("group")
             .populate("teacher", "firstName lastName")
             .populate("classroom")

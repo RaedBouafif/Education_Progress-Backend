@@ -194,7 +194,7 @@ exports.getNotificationDeclaredWithDetails = async (req, res) => {
                         { dateBegin: { $gte: dateDebDeclaration }, dateEnd: { $lte: dateFinDeclaration } }
                     ]
                 })
-                .populate({ path: "sessions", match: { teacher: Types.ObjectId(teacher._id), suspended: true }, populate: [{ path: "group", populate: { path: "section" } }, { path: "classroom" }, { path: "subject" }] })
+                .populate({ path: "sessions", match: { teacher: Types.ObjectId(teacher._id)}, populate: [{ path: "group", populate: { path: "section" } }, { path: "classroom" }, { path: "subject" }] })
             var consernedSessions = []
             for (let i = 0; i < plannings.length; i++) {
                 let planning_starting = plannings[i].dateBegin
@@ -239,41 +239,8 @@ exports.getNotificationDeclaredWithDetails = async (req, res) => {
 exports.cancelNotification = async (req, res) => {
     try {
         const { idNotification } = req.params
-        const notification = await Notification.findById(idNotification).populate({ path: "declarationAbsence" })
+        const notification = await Notification.findByIdAndUpdate(Types.ObjectId(idNotification), { canceled : true}, {new : true})
         if (notification) {
-            var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb)
-            var dateFinDeclaration = new Date(notification.declarationAbsence.dateFin)
-            const plannings = await Planning.find(
-                {
-                    $or: [
-                        { dateBegin: { $lte: dateDebDeclaration }, dateEnd: { $gte: dateDebDeclaration } },
-                        { dateBegin: { $lte: dateFinDeclaration }, dateEnd: { $gte: dateFinDeclaration } },
-                        { dateBegin: { $gte: dateDebDeclaration }, dateEnd: { $lte: dateFinDeclaration } }
-                    ]
-                })
-                .populate({ path: "sessions", match: { teacher: Types.ObjectId(notification.declarationAbsence.teacher) } })
-            for (let i = 0; i < plannings.length; i++) {
-                let planning_starting = plannings[i].dateBegin
-                // const sessions = plannings[i].sessions?.filter((element) => Array.isArray(element) && element.length).length ? plannings[i].sessions.filter((element) => Array.isArray(element.sessions)) : []
-                const sessions = plannings[i].sessions
-                for (let j = 0; j < sessions.length; j++) {
-                    if (sessions[j]) {
-                        currentSession = sessions[j]
-                        var realDay = currentSession.day === 0 ? 7 : currentSession.day
-                        var session_startsAt_v1 = addDays(planning_starting, Number(realDay - 1))
-                        var session_startsAt_resetedTomidNight = resetTimeToMidnight(session_startsAt_v1)
-                        var session_endsAt = session_startsAt_resetedTomidNight
-                        var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
-                        var session_endsAt_v2 = addMinutes(session_endsAt, Number(currentSession.endsAt))
-                        if (dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2)) {
-                            currentSession.suspended = false
-                            await currentSession.save()
-                        }
-                    }
-                }
-            }
-            notification.canceled = true
-            await notification.save()
             return res.status(200).send({
                 canceled: true,
                 notification
