@@ -17,26 +17,26 @@ const { Types, Schema } = require("mongoose")
 
 
 // get notifications
-exports.getNotifications = async (req,res) => {
-    const actorId = req.params.id 
-    try{
-        if (!actorId){
+exports.getNotifications = async (req, res) => {
+    const actorId = req.params.id
+    try {
+        if (!actorId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const notifications = await Notification.find({ receivers : {$elemMatch : { receiverId : new Types.ObjectId(actorId)}}, seen : false}).sort( {createdAt : -1 })
-        if (!notifications){
+        const notifications = await Notification.find({ receivers: { $elemMatch: { receiverId: new Types.ObjectId(actorId) } }, seen: false, canceled: false }).sort({ createdAt: -1 })
+        if (!notifications) {
             return res.status(204).send({
-                available : false
+                available: false
             })
-        }else{
+        } else {
             return res.status(200).send(notifications)
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
@@ -44,16 +44,16 @@ exports.getNotifications = async (req,res) => {
 
 
 //get notifications with details
-exports.getNotificationsWithDetails = async(req,res) => {
+exports.getNotificationsWithDetails = async (req, res) => {
     const actorId = req.params.id
-    try{
-        if (!actorId){
+    try {
+        if (!actorId) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
         // sender need test on populate
-        const notifications = await Notification.find({ receivers : {$elemMatch : { receiverId : new Types.ObjectId(actorId)}}}).sort( {createdAt : -1 })
+        const notifications = await Notification.find({ receivers: { $elemMatch: { receiverId: new Types.ObjectId(actorId) } }, canceled: false }).sort({ createdAt: -1 })
             .populate(
                 'sender.senderId'
             )
@@ -63,25 +63,25 @@ exports.getNotificationsWithDetails = async(req,res) => {
             .populate("session")
 
         console.log(notifications)
-        return (notifications) ? res.status(200).send(notifications) :  res.status(204).send({ message : "There is no Notifications"})
-    }catch(e){
+        return (notifications) ? res.status(200).send(notifications) : res.status(204).send({ message: "There is no Notifications" })
+    } catch (e) {
         console.log(e)
-            return res.status(500).send({
-                error :"Server Error"
-            })
+        return res.status(500).send({
+            error: "Server Error"
+        })
     }
 }
 
-exports.seenNotification = async(req,res) => {
-    try{
-        const notifId = req.params.id
-        console.log(notifId)
-        if (!notifId){
+exports.seenNotification = async (req, res) => {
+    try {
+        const {idNotification, idUser} = req.params
+        console.log(idNotification)
+        if (!idNotification) {
             return res.status(400).send({
-                error : "BadRequest"
+                error: "BadRequest"
             })
         }
-        const notification = await Notification.findByIdAndUpdate(new Types.ObjectId(notifId), { seen : true }, { runValidators : true , new : true})
+        const notification = await Notification.findByIdAndUpdate(new Types.ObjectId(idNotification), { $push: { seen : idUser } }, { runValidators: true, new: true })
             .populate(
                 'sender.senderId'
             )
@@ -90,28 +90,28 @@ exports.seenNotification = async(req,res) => {
             .populate("report")
             .populate("session")
         console.log(notification)
-        return (notification) ? res.status(200).send(notification) :  res.status(204).send({ message : "There is no Notifications id: "+notifId})
-    }catch(e){
+        return (notification) ? res.status(200).send(notification) : res.status(204).send({ message: "There is no Notifications id: " + idNotification })
+    } catch (e) {
         console.log(e)
-            return res.status(500).send({
-                error :"Server Error"
-            })
+        return res.status(500).send({
+            error: "Server Error"
+        })
     }
 }
 
 exports.changeNotificationState = async (async, res) => {
-    try{
+    try {
         const { notificationId } = req.params
-        if (!notificationId){
+        if (!notificationId) {
             return res.status(400).send({
                 error: "Server error"
             })
-        } 
+        }
         const notification = await Notification.findById(Types.ObjectId(notificationId))
-        if (!notification){
+        if (!notification) {
             return res.status(404).send({
                 eroor: "Not Found",
-                message: "Notification with id: " +notificationId+ " does not exist!"
+                message: "Notification with id: " + notificationId + " does not exist!"
             })
         }
         notification.active = !notification.active
@@ -120,20 +120,20 @@ exports.changeNotificationState = async (async, res) => {
             changed: true,
             notification
         })
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : "Server Error"
+            error: "Server Error"
         })
     }
 }
 
-exports.validateNotification = async (req,res) => {
-    const { idNotification } = req.params 
-    try{
-        const notification = await Notification.findByIdAndUpdate(Types.ObjectId(idNotification), { active: true})
-        return notification ? res.status(200).send({ activated: true, notification}) : res.status(204).send({ message : "Empty database"})
-    }catch(e){
+exports.validateNotification = async (req, res) => {
+    const { idNotification } = req.params
+    try {
+        const notification = await Notification.findByIdAndUpdate(idNotification, { active: true })
+        return notification ? res.status(200).send({ activated: true, notification }) : res.status(404).send({ message: "NotFound" })
+    } catch (e) {
         return res.status(500).send({
             error: "Server Error"
         })
@@ -173,87 +173,87 @@ function resetTimeToMidnight(dateString) {
     return date.toISOString();
 }
 
-exports.getNotificationDeclaredWithDetails = async(req,res) => {
-    try{
+exports.getNotificationDeclaredWithDetails = async (req, res) => {
+    try {
         const { idNotification } = req.params
         console.log(idNotification)
-        const notification = await Notification.findById(idNotification).populate({ path: "declarationAbsence", populate: { path: "teacher" }})
-        if (notification){
-            var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb) 
+        const notification = await Notification.findById(idNotification).populate({ path: "declarationAbsence", populate: { path: "teacher" } })
+        if (notification) {
+            var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb)
             var dateFinDeclaration = new Date(notification.declarationAbsence.dateFin)
             var teacher = notification.declarationAbsence.teacher
             const plannings = await Planning.find(
                 {
                     $or: [
-                        { dateBegin: { $lte: dateDebDeclaration}, dateEnd: { $gte: dateDebDeclaration}},
-                        { dateBegin: { $lte: dateFinDeclaration}, dateEnd: { $gte: dateFinDeclaration}},
-                        { dateBegin: { $gte: dateDebDeclaration}, dateEnd: { $lte: dateFinDeclaration}}
-                    ] 
-            })
-            .populate({ path: "sessions", match: { teacher: Types.ObjectId(teacher._id), suspended: true }, populate : { path: "group"} })
+                        { dateBegin: { $lte: dateDebDeclaration }, dateEnd: { $gte: dateDebDeclaration } },
+                        { dateBegin: { $lte: dateFinDeclaration }, dateEnd: { $gte: dateFinDeclaration } },
+                        { dateBegin: { $gte: dateDebDeclaration }, dateEnd: { $lte: dateFinDeclaration } }
+                    ]
+                })
+                .populate({ path: "sessions", match: { teacher: Types.ObjectId(teacher._id), suspended: true }, populate: [{ path: "group", populate: { path: "section" } }, { path: "classroom" }, { path: "subject" }] })
             var consernedSessions = []
-            for (let i=0; i<plannings.length ; i++){
-                let planning_starting= plannings[i].dateBegin
+            for (let i = 0; i < plannings.length; i++) {
+                let planning_starting = plannings[i].dateBegin
                 // const sessions = plannings[i].sessions?.filter((element) => Array.isArray(element) && element.length).length ? plannings[i].sessions.filter((element) => Array.isArray(element.sessions)) : []
                 const sessions = plannings[i].sessions
-                for (let j=0 ; j<sessions.length; j++){
-                    if (sessions[j]){
-                        currentSession = sessions[j]
+                for (let j = 0; j < sessions.length; j++) {
+                    if (sessions[j]) {
+                        var currentSession = sessions[j]
                         var realDay = currentSession.day === 0 ? 7 : currentSession.day
                         var session_startsAt_v1 = addDays(planning_starting, Number(realDay - 1))
                         var session_startsAt_resetedTomidNight = resetTimeToMidnight(session_startsAt_v1)
                         var session_endsAt = session_startsAt_resetedTomidNight
                         var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
                         var session_endsAt_v2 = addMinutes(session_endsAt, Number(currentSession.endsAt))
-                        if ( dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2) ){
-                            currentSession.startingDate = new Date(session_startsAt_v2)
-                            currentSession.endingDate = new Date(session_endsAt_v2)
-                            consernedSessions.push(currentSession)
+                        if (dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2)) {
+                            var startingDate = new Date(session_startsAt_v2)
+                            var endingDate = new Date(session_endsAt_v2)
+                            consernedSessions.push({ ...currentSession._doc, startingDate, endingDate, weekSession: plannings[i].week, collegeYear: plannings[i].collegeYear })
                         }
                     }
                 }
             }
             const finalData = {
                 sessions: consernedSessions,
-                declarationAbsence : notification.declarationAbsence,
+                declarationAbsence: notification.declarationAbsence,
                 activeDeclaration: notification.active
             }
             return res.status(200).send(finalData)
-        }else{
+        } else {
             return res.status(404).send({
-                message : "Session with id: " +idNotification+ " Not found"
+                message: "Session with id: " + idNotification + " Not found"
             })
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
             error: "Server Error"
-        }) 
+        })
     }
 }
 
-exports.cancelNotification = async(req,res) => {
-    try{
+exports.cancelNotification = async (req, res) => {
+    try {
         const { idNotification } = req.params
-        const notification = await Notification.findById(idNotification).populate({path: "declarationAbsence"})
-        if (notification){
-            var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb) 
+        const notification = await Notification.findById(idNotification).populate({ path: "declarationAbsence" })
+        if (notification) {
+            var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb)
             var dateFinDeclaration = new Date(notification.declarationAbsence.dateFin)
             const plannings = await Planning.find(
                 {
                     $or: [
-                        { dateBegin: { $lte: dateDebDeclaration}, dateEnd: { $gte: dateDebDeclaration}},
-                        { dateBegin: { $lte: dateFinDeclaration}, dateEnd: { $gte: dateFinDeclaration}},
-                        { dateBegin: { $gte: dateDebDeclaration}, dateEnd: { $lte: dateFinDeclaration}}
-                    ] 
-            })
-            .populate({ path: "sessions", match: { teacher: Types.ObjectId(notification.declarationAbsence.teacher) }})
-            for (let i=0; i<plannings.length ; i++){
-                let planning_starting= plannings[i].dateBegin
+                        { dateBegin: { $lte: dateDebDeclaration }, dateEnd: { $gte: dateDebDeclaration } },
+                        { dateBegin: { $lte: dateFinDeclaration }, dateEnd: { $gte: dateFinDeclaration } },
+                        { dateBegin: { $gte: dateDebDeclaration }, dateEnd: { $lte: dateFinDeclaration } }
+                    ]
+                })
+                .populate({ path: "sessions", match: { teacher: Types.ObjectId(notification.declarationAbsence.teacher) } })
+            for (let i = 0; i < plannings.length; i++) {
+                let planning_starting = plannings[i].dateBegin
                 // const sessions = plannings[i].sessions?.filter((element) => Array.isArray(element) && element.length).length ? plannings[i].sessions.filter((element) => Array.isArray(element.sessions)) : []
                 const sessions = plannings[i].sessions
-                for (let j=0 ; j<sessions.length; j++){
-                    if (sessions[j]){
+                for (let j = 0; j < sessions.length; j++) {
+                    if (sessions[j]) {
                         currentSession = sessions[j]
                         var realDay = currentSession.day === 0 ? 7 : currentSession.day
                         var session_startsAt_v1 = addDays(planning_starting, Number(realDay - 1))
@@ -261,7 +261,7 @@ exports.cancelNotification = async(req,res) => {
                         var session_endsAt = session_startsAt_resetedTomidNight
                         var session_startsAt_v2 = addMinutes(session_startsAt_resetedTomidNight, Number(currentSession.startsAt))
                         var session_endsAt_v2 = addMinutes(session_endsAt, Number(currentSession.endsAt))
-                        if ( dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2) ){
+                        if (dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2)) {
                             currentSession.suspended = false
                             await currentSession.save()
                         }
@@ -274,12 +274,12 @@ exports.cancelNotification = async(req,res) => {
                 canceled: true,
                 notification
             })
-        }else{
+        } else {
             return res.status(404).send({
-                message : "Session with id: " +idNotification+ " Not found"
+                message: "Session with id: " + idNotification + " Not found"
             })
         }
-    }catch(e){
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
             error: "Server Error"
