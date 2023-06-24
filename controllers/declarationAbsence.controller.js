@@ -108,7 +108,7 @@ exports.createDeclaration = async (req, res) => {
                         var session_endsAt_v2 = addMinutes(session_endsAt, Number(currentSession.endsAt))
                         if (finalDateDeb <= new Date(session_startsAt_v2) && finalDateFin >= new Date(session_endsAt_v2)) {
                             consernedSessions.push(currentSession)
-                            currentSession.suspended = true
+                            currentSession.treated = false
                             await currentSession.save()
                         }
                     }

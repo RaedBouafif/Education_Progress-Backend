@@ -104,7 +104,7 @@ const Session = Schema(
             type: Schema.Types.ObjectId,
             ref: "Session",
         },
-        suspended: {
+        treated: {
             type: Boolean,
             default: false
         }
