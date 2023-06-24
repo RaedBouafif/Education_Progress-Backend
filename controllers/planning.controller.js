@@ -283,11 +283,11 @@ exports.create = async (req, res) => {
                             // }
                         }
                         if (returnedPlanning && infos.length) {
-                            try{
-                                logData({modelId: planning._id, modelPath: "Planning", action: "Creating a new Planning: " +planning._id.toString()})
-                            }catch(e){
+                            try {
+                                logData({ modelId: planning._id, modelPath: "Planning", action: "Creating a new Planning: " + planning._id.toString() })
+                            } catch (e) {
                                 console.log(e.message)
-                            }   
+                            }
                             return res.status(200).send({
                                 cteated: true
                                 // planning: returnedPlanning,
@@ -412,6 +412,34 @@ exports.getPlanningByNextWeek = async (req, res) => {
             })
         }
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) + nbrNextWeek }).sort({ createdAt: -1 })
+            .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
+            .populate("collegeYear")
+            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
+        if (!planning) {
+            return res.status(404).send({
+                message: "PlannigNotFound"
+            })
+        }
+        return res.status(200).send(planning)
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+
+exports.getPlanningWithWeek = async (req, res) => {
+    const collegeYear = req.params.collegeYear
+    const group = req.params.group
+    const week = req.params.week
+    try {
+        if (!week || !group || !collegeYear) {
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
             .populate("collegeYear")
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
@@ -634,7 +662,7 @@ exports.addSessionToPlanning = async (req, res) => {
                         ...notificationData,
                         receivers: [{ receiverId: new Types.ObjectId(teacher), type: "Teacher" }, ...updatedPlanning.group.students?.map((element) => ({ receiverId: new Types.ObjectId(element), type: "Student" })), ...otherGroupsData.map((element) => element.students ? element.students : []).flatMap((element) => element).map((element) => ({ receiverId: new Types.ObjectId(element), type: "Student" }))],
                         content: `Prof : ${teacherName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Groupes : ${[...otherGroupsData.map((element) => element?.section?.sectionName + " " + element.groupName), updatedPlanning.group?.section?.sectionName + " " + updatedPlanning.group?.groupName].join(" - ")} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`,
-                        session : new Types.ObjectId(session._id)
+                        session: new Types.ObjectId(session._id)
                     }
                     notify(notificationData)
                 } catch (e) {
@@ -673,11 +701,11 @@ exports.addSessionToPlanning = async (req, res) => {
                         }
                     }
                 }
-                try{
-                    logData({modelId: Types.ObjectId(idPlanning), modelPath: "Planning", secondModelId: session._id, secondModelPath: "Session", action: "Creating a new Session: " +session._id.toString()+ " to planning: " +idPlanning} )
-                }catch(e){
+                try {
+                    logData({ modelId: Types.ObjectId(idPlanning), modelPath: "Planning", secondModelId: session._id, secondModelPath: "Session", action: "Creating a new Session: " + session._id.toString() + " to planning: " + idPlanning })
+                } catch (e) {
                     console.log(e.message)
-                }   
+                }
                 return res.status(200).send(newPlannings)
             } else {
                 return res.status(404).send({
@@ -785,11 +813,11 @@ exports.updateSessionFromPlanning = async (req, res) => {
             console.log(e)
             console.log("error in modification")
         }
-        try{
-            logData({modelId: findedPlanning._id, modelPath: "Planning", secondModelId: findedSession._id, secondModelPath: "Session", action: "Updating a session: " +findedPlanning._id.toString()+ " from Planning: " +findedSession._id.toString()})
-        }catch(e){
+        try {
+            logData({ modelId: findedPlanning._id, modelPath: "Planning", secondModelId: findedSession._id, secondModelPath: "Session", action: "Updating a session: " + findedPlanning._id.toString() + " from Planning: " + findedSession._id.toString() })
+        } catch (e) {
             console.log(e.message)
-        }   
+        }
         return res.status(200).json(newPlannings)
     } catch (e) {
         console.log(e)
@@ -819,9 +847,9 @@ exports.deleteSessionFromPlanning = async (req, res) => {
                 if (deletedSession?.catched) {
                     await Session.findByIdAndUpdate(deletedSession.catched, { catchedBy: null })
                 }
-                try{
-                    logData({ modelId :planning._id, modelPath: "Planning", secondModelId: Types.ObjectId(sessionId), secondModelPath: "Session", action: "Deleting a session: " +sessionId+ " from Planning: " +planning._id.toString()})
-                }catch(e){
+                try {
+                    logData({ modelId: planning._id, modelPath: "Planning", secondModelId: Types.ObjectId(sessionId), secondModelPath: "Session", action: "Deleting a session: " + sessionId + " from Planning: " + planning._id.toString() })
+                } catch (e) {
                     console.log(e.message)
                 }
                 return res.status(200).json({ deleted: true })
@@ -866,11 +894,11 @@ exports.switchSessionsFromPlanning = async (req, res) => {
                     message: "the other Planning with id : " + otherPlanning + " Issue."
                 })
             }
-            try{
-                logData({modelId: newInitialPlanning._id, modelPath: "Planning", secondModelId: newOtherPlanning._id, secondModelPath: "Planning", action: "Switching session: " +Types.ObjectId(otherSessionId)+ "from planning: " +newInitialPlanning._id.toString()+ " to planning: " +newOtherPlanning._id.toString()})
-            }catch(e){
+            try {
+                logData({ modelId: newInitialPlanning._id, modelPath: "Planning", secondModelId: newOtherPlanning._id, secondModelPath: "Planning", action: "Switching session: " + Types.ObjectId(otherSessionId) + "from planning: " + newInitialPlanning._id.toString() + " to planning: " + newOtherPlanning._id.toString() })
+            } catch (e) {
                 console.log(e.message)
-            }   
+            }
             return res.status(200).send(newInitialPlanning)
         } else {
             return res.status(400).send({
@@ -1294,11 +1322,11 @@ exports.toggleCancelSession = async (req, res) => {
             .populate("teacher", "firstName lastName")
             .populate("classroom")
             .populate("subject")
-        var notificationData= {}
-        if ( status == "true" ){
-            notificationData = { ...notificationData, notificationType: "cancelSession", object: `Une séance a été annuler`}
-        }else{
-            notificationData = { ...notificationData, notificationType: "activateSession", object: `Une séance a été activer`}
+        var notificationData = {}
+        if (status == "true") {
+            notificationData = { ...notificationData, notificationType: "cancelSession", object: `Une séance a été annuler` }
+        } else {
+            notificationData = { ...notificationData, notificationType: "activateSession", object: `Une séance a été activer` }
         }
         console.log("hedhaaa")
         console.log(status)

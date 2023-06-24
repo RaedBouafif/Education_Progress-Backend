@@ -16,7 +16,8 @@ const {
     getTeacherPlanning,
     getCurrentTeacherPlanning,
     getNextTeacherPlanning,
-    getPredTeacherPlanning
+    getPredTeacherPlanning,
+    getPlanningWithWeek
 } = require("../controllers/planning.controller");
 
 const Router = require("express").Router();
@@ -34,6 +35,7 @@ Router.route("/availableGroups").post(authMiddleWare(["owner", "admin", "teacher
 
 
 //---GET---//
+Router.route("/getWithWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningWithWeek)
 Router.route("/getByWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningByWeek)
 Router.route("/getNextWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningByNextWeek)
 Router.route("/getPredWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningByPredWeek)
