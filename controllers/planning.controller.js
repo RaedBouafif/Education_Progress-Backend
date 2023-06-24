@@ -626,12 +626,14 @@ exports.addSessionToPlanning = async (req, res) => {
                     var margeDate = new Date(updatedPlanning.dateBegin)
                     var realDay = findedSession.day === 0 ? 7 : findedSession.day
                     margeDate.setDate(margeDate.getDate() + realDay - 1)
-                    const finalDate = margeDate.toDateString()
+                    var myYear = margeDate.getFullYear()
+                    var myMonth = String(margeDate.getMonth() + 1).padStart(2, '0');
+                    var myDay = String(margeDate.getDate()).padStart(2, '0');
+                    const finalDate = `${myYear}/${myMonth}/${myDay}`
                     notificationData = {
                         ...notificationData,
                         receivers: [{ receiverId: new Types.ObjectId(teacher), type: "Teacher" }, ...updatedPlanning.group.students?.map((element) => ({ receiverId: new Types.ObjectId(element), type: "Student" })), ...otherGroupsData.map((element) => element.students ? element.students : []).flatMap((element) => element).map((element) => ({ receiverId: new Types.ObjectId(element), type: "Student" }))],
                         content: `Prof : ${teacherName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Groupes : ${[...otherGroupsData.map((element) => element?.section?.sectionName + " " + element.groupName), updatedPlanning.group?.section?.sectionName + " " + updatedPlanning.group?.groupName].join(" - ")} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`,
-                        seen: false,
                         session : new Types.ObjectId(session._id)
                     }
                     notify(notificationData)
@@ -759,25 +761,23 @@ exports.updateSessionFromPlanning = async (req, res) => {
             var margeDate = new Date()
             var realDay = findedSession.day === 0 ? 7 : findedSession.day
             margeDate.setDate(margeDate.getDate() + realDay - 1)
-            const finalDate = margeDate.toDateString()
+            var myYear = margeDate.getFullYear()
+            var myMonth = String(margeDate.getMonth() + 1).padStart(2, '0');
+            var myDay = String(margeDate.getDate()).padStart(2, '0');
+            const finalDate = `${myYear}/${myMonth}/${myDay}`
             if (findedSession.subTeacher) {
                 notificationData = {
                     session: new Types.ObjectId(findedSession._id),
                     object: 'Une séance a été modifiée dans votre emploi du temps',
-                    notificationType: "updateSession",
                     receivers: [{ receiverId: new Types.ObjectId(findedSession.teacher._id), receiverPath: "Teacher" }, { receiverId: new Types.ObjectId(findedSession.subTeacher._id), receiverPath: "Teacher" }, ...findedPlanning.group.students?.map((element) => ({ receiverId: new Types.ObjectId(element), receiverPath: "Student" }))],
                     content: `Prof : ${findedSession.subTeacher.firstName + " " + findedSession.subTeacher.lastName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`,
-                    seen : false,
                 }
             } else
                 notificationData = {
                     session: new Types.ObjectId(findedSession._id),
                     object: 'Une séance a été modifiée dans votre emploi du temps',
-                    notificationType: "updateSession",
                     receivers: [{ receiverId: new Types.ObjectId(findedSession.teacher._id), receiverPath: "Teacher" }, ...findedPlanning.group.students?.map((element) => ({ receiverId: new Types.ObjectId(element), receiverPath: "Student" }))],
                     content: `Prof : ${findedSession.teacher.firstName + " " + findedSession.teacher.lastName} \n Salle : ${findedSession?.classroom?.classroomName} \n Matiere : ${findedSession?.subject?.subjectName} \n Type séance : ${findedSession.sessionType} \n Date de séance : ${finalDate} \n Durée de séance : ${transformToTime(findedSession?.startsAt)}H - ${transformToTime(findedSession?.endsAt)}H`,
-                    seen : false
-
                 }
             notify(notificationData)
 
@@ -785,8 +785,6 @@ exports.updateSessionFromPlanning = async (req, res) => {
             console.log(e)
             console.log("error in modification")
         }
-        findedPlanning
-        findedSession
         try{
             logData({modelId: findedPlanning._id, modelPath: "Planning", secondModelId: findedSession._id, secondModelPath: "Session", action: "Updating a session: " +findedPlanning._id.toString()+ " from Planning: " +findedSession._id.toString()})
         }catch(e){
@@ -1298,9 +1296,9 @@ exports.toggleCancelSession = async (req, res) => {
             .populate("subject")
         var notificationData= {}
         if ( status == "true" ){
-            notificationData = { ...notificationData, object: `Une séance a été annuler`}
+            notificationData = { ...notificationData, notificationType: "cancelSession", object: `Une séance a été annuler`}
         }else{
-            notificationData = { ...notificationData, object: `Une séance a été activer`}
+            notificationData = { ...notificationData, notificationType: "activateSession", object: `Une séance a été activer`}
         }
         console.log("hedhaaa")
         console.log(status)
@@ -1309,10 +1307,8 @@ exports.toggleCancelSession = async (req, res) => {
                 notificationData = {
                     ...notificationData,
                     session: new Types.ObjectId(updateSession._id),
-                    content: `Prof : ${updateSession.teacher.firstName + " " + updateSession.teacher.lastName} \n Salle : ${updateSession?.classroom?.classroomName} \n Matiere : ${updateSession?.subject?.subjectName} \n Type séance : ${updateSession.sessionType} \n Durée de séance : ${transformToTime(updateSession?.startsAt)}H - ${transformToTime(updateSession?.endsAt)}H`,
+                    content: `Enseignant : ${updateSession.teacher.firstName + " " + updateSession.teacher.lastName} \n Salle : ${updateSession?.classroom?.classroomName} \n Matiere : ${updateSession?.subject?.subjectName} \n Type séance : ${updateSession.sessionType} \n Durée de séance : ${transformToTime(updateSession?.startsAt)}H - ${transformToTime(updateSession?.endsAt)}H`,
                     receivers: [{ receiverId: new Types.ObjectId(updateSession.teacher._id), receiverPath: "Teacher" }, ...(updateSession.group.students ? updateSession.group.students.map((element) => ({ receiverId: new Types.ObjectId(element), receiverPath: "Student" })) : [])],
-                    notificationType: "cancelSession",
-                    seen : false
                 }
                 notify(notificationData)
             } catch (e) {

@@ -33,6 +33,22 @@ function resetTimeToMidnight(dateString) {
     return date.toISOString();
 }
 
+function convertDateFormat(dateString) {
+    const date = new Date(dateString);
+    
+    // Get individual date components
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    
+    // Construct the formatted date string
+    const formattedDate = `${year}/${month}/${day}--${hours}:${minutes}`;
+    
+    return formattedDate;
+  }
+
 exports.createDeclaration = async (req, res) => {
     console.log(req.body)
     try {
@@ -108,50 +124,52 @@ exports.createDeclaration = async (req, res) => {
                     var cSession = consernedSessions[k]
                     if (cSession.group && cSession.group.students?.length != 0) {
                         for (let x = 0; x < cSession.group.students.length; x++) {
-                            preparingReceivers.push({ receiverId: Types.ObjectId(cSession.group.students[k]._id), receiverPath: "Student" })
-                            preparingReceivers.push({ receiverId: Types.ObjectId(cSession.group.students[k].parent._id), receiverPath: "Parent" })
+                            preparingReceivers.push({ receiverId: Types.ObjectId(cSession?.group?.students[k]?._id), receiverPath: "Student" })
+                            preparingReceivers.push({ receiverId: Types.ObjectId(cSession?.group?.students[k]?.parent?._id), receiverPath: "Parent" })
                         }
                         for (let h = 0; h < admins.length; h++) {
                             preparingReceivers.push({ receiverId: Types.ObjectId(admins[h]._id), receiverPath: "Admin" })
                         }
                     }
 
+                    }
+                    notificationData = {
+                        ...notificationData,
+                        notificationType: "teacherAbsenceDeclared",
+                        active: active,
+                        object: "Absence d'enseignant: " +teacher.firstName.toUpperCase()+" "+teacher.lastName.toUpperCase(),
+                        content: `L'enseignant ${teacher.firstName} ${teacher.lastName} sera absent à partir de la Date: ${convertDateFormat(dateDeb).toUpperCase()} jusqu'a la Date: ${convertDateFormat(dateFin).toUpperCase()} \n ${description}`,
+                        sender: { senderPath: senderPath , senderId: Types.ObjectId(senderId)},
+                        receivers: preparingReceivers,
+                        declarationAbsence: declarationAbsence._id
+                    }
+                    notify(notificationData)
+                }catch(e){
+                    console.log(e)
                 }
-                notificationData = {
-                    ...notificationData,
-                    active: active,
-                    object: "Absence d'enseignant: " + teacher.firstName.toUpperCase() + " " + teacher.lastName.toUpperCase(),
-                    content: `L'enseignant ${teacher.firstName} ${teacher.lastName} sera absent à partir de le date: ${dateDeb} jusqu'a le date: ${dateFin}`,
-                    sender: { senderPath: senderPath, senderId: Types.ObjectId(senderId) },
-                    receivers: preparingReceivers,
-                    declarationAbsence: declarationAbsence._id
+            }else{
+                const student = await Student.findById(Types.ObjectId(studentId), {select: { password: 0}})
+                try{
+                    notificationData = {
+                        ...notificationData,
+                        active : true,
+                        notificationType: "studentAbsenceDeclared",
+                        object: "Absence d'élève: " +student.firstName.toUpperCase()+" "+student.lastName.toUpperCase(),
+                        content: `L'enseignant ${student.firstName} ${student.lastName} sera absent à partir de le date: ${convertDateFormat(dateDeb).toUpperCase()} jusqu'a le date: ${convertDateFormat(dateFin).toUpperCase()}`,
+                        sender: { senderPath: senderPath, senderId: Types.ObjectId(senderId)},
+                        receivers: [ { receiverId: student._id, receiverPath: "Student" }, { receiverId: student.parent, receiverPath: "Parent"} ],
+                        declarationAbsence: declarationAbsence._id
+                    }
+                    notify(notificationData)
+                }catch(e){
+                    console.log(e)
                 }
-                notify(notificationData)
-            } catch (e) {
-                console.log(e)
             }
-        } else {
-            const student = await Student.findById(Types.ObjectId(studentId), { select: { password: 0 } })
-            try {
-                notificationData = {
-                    ...notificationData,
-                    active: true,
-                    object: "Absence d'élève: " + student.firstName.toUpperCase() + " " + student.lastName.toUpperCase(),
-                    content: `L'enseignant ${student.firstName} ${student.lastName} sera absent à partir de le date: ${dateDeb} jusqu'a le date: ${dateFin}`,
-                    sender: { senderPath: senderPath, senderId: Types.ObjectId(senderId) },
-                    receivers: [{ receiverId: student._id, receiverPath: "Student" }, { receiverId: student.parent, receiverPath: "Parent" }],
-                    declarationAbsence: declarationAbsence._id
-                }
-                notify(notificationData)
-            } catch (e) {
-                console.log(e)
-            }
-        }
-        return res.status(201).send({
-            created: true,
-            declarationAbsence
-        })
-    } catch (e) {
+            return res.status(201).send({
+                created: true,
+                declarationAbsence
+            })
+    }catch(e) {
         console.log(e)
         return res.status(500).send({
             error: e.message,

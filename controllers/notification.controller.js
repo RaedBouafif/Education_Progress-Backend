@@ -74,14 +74,14 @@ exports.getNotificationsWithDetails = async (req, res) => {
 
 exports.seenNotification = async (req, res) => {
     try {
-        const notifId = req.params.id
-        console.log(notifId)
-        if (!notifId) {
+        const {idNotification, idUser} = req.params
+        console.log(idNotification)
+        if (!idNotification) {
             return res.status(400).send({
                 error: "BadRequest"
             })
         }
-        const notification = await Notification.findByIdAndUpdate(new Types.ObjectId(notifId), { seen: true }, { runValidators: true, new: true })
+        const notification = await Notification.findByIdAndUpdate(new Types.ObjectId(idNotification), { $push: { seen : idUser } }, { runValidators: true, new: true })
             .populate(
                 'sender.senderId'
             )
@@ -90,7 +90,7 @@ exports.seenNotification = async (req, res) => {
             .populate("report")
             .populate("session")
         console.log(notification)
-        return (notification) ? res.status(200).send(notification) : res.status(204).send({ message: "There is no Notifications id: " + notifId })
+        return (notification) ? res.status(200).send(notification) : res.status(204).send({ message: "There is no Notifications id: " + idNotification })
     } catch (e) {
         console.log(e)
         return res.status(500).send({
@@ -212,7 +212,7 @@ exports.getNotificationDeclaredWithDetails = async (req, res) => {
                         if (dateDebDeclaration <= new Date(session_startsAt_v2) && dateFinDeclaration >= new Date(session_endsAt_v2)) {
                             var startingDate = new Date(session_startsAt_v2)
                             var endingDate = new Date(session_endsAt_v2)
-                            consernedSessions.push({ ...currentSession._doc, startingDate, endingDate })
+                            consernedSessions.push({ ...currentSession._doc, startingDate, endingDate, weekSession: plannings[i].week, collegeYear: plannings[i].collegeYear })
                         }
                     }
                 }
