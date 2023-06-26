@@ -383,7 +383,7 @@ exports.getPlanningByWeek = async (req, res) => {
         }
         const planning = Planning.findOne({ group: group, collegeYear: collegeYear, week: week }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-            .populate("collegeYear")
+            .populate({ path :"collegeYear", populate: { path: "semesters"}})
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
@@ -413,7 +413,7 @@ exports.getPlanningByNextWeek = async (req, res) => {
         }
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) + nbrNextWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-            .populate("collegeYear")
+            .populate({ path :"collegeYear", populate: { path: "semesters"}})
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
@@ -443,7 +443,7 @@ exports.getPlanningByPredWeek = async (req, res) => {
         }
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) - nbrPredWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-            .populate("collegeYear")
+            .populate({ path: "collegeYear", populate: { path: "semesters" }})
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
@@ -487,12 +487,12 @@ exports.getCurrentPlanning = async (req, res) => {
             const currentDate = new Date()
             const currentPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
                 .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-                .populate("collegeYear")
+                .populate({ path :"collegeYear", populate: { path: "semesters"}})
                 .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
             if (!currentPlanning) {
                 const initialPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                     .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-                    .populate("collegeYear")
+                    .populate({ path :"collegeYear", populate: { path: "semesters"}})
                     .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
                 if (!initialPlanning) {
                     return res.status(404).json({
@@ -1528,6 +1528,42 @@ exports.getPredTeacherPlanning = async (req, res) => {
         })
     }
 
+}
+
+
+exports.changeTeacherController = async (req,res) => {
+    try{
+        const { sessionId, idSubTeacher } = req.params
+        if (!sessionId || !idSubTeacher){
+            return res.status(400).send({
+                error : "Bad Request"
+            })
+        }
+        const session = findByIdAndUpdate(Types.ObjectId(sessionId), { subTeacher : Types.ObjectId(idSubTeacher)}, {new: true})
+        .populate({ 
+            populate: [{ path: "teacher", select: { password: 0 }},
+            {populate: { path: "subjects", select: { image: 0 } } },
+            { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, 
+            { path: "subTeacher", select: { password: 0 }},
+            {populate: { path: "subjects", select: { image: 0 } } }, 
+            { path: "subject" }, { path: "classroom" }]
+        })
+        if(!session){
+            return res.status(404).send({
+                message: "id: " +sessionId+ "Not Found"
+            })
+        }
+        return res.status(200).send({
+            updated : true,
+            session
+        })
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            error: e.message,
+            message: "Server Error"
+        })
+    }
 }
 
 // exports.createInitialTemplate = async (req, res) => {

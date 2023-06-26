@@ -5,7 +5,6 @@ const Session = Schema(
         teacher: {
             type: Schema.Types.ObjectId,
             ref: "Teacher",
-            required: [true, "teacherRequired"]
         },
         subTeacher: {
             type: Schema.Types.ObjectId,
@@ -61,7 +60,7 @@ const Session = Schema(
         sessionType: {
             type: String,
             required: [true, "sessionTypeRequired"],
-            enum: ['TP', 'COUR']
+            enum: ['TP', 'COUR', "EXAM", "EVENT"]
         },
         active: {
             type: Boolean,
@@ -107,6 +106,13 @@ const Session = Schema(
         treated: {
             type: Boolean,
             default: false
+        },
+        examen: {
+            type: Types.ObjectId,
+            ref: "Examen"
+        },
+        invitedActor: {
+            type: String
         }
     },
     {
