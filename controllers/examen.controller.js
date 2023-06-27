@@ -83,7 +83,7 @@ exports.createExam = async (req,res) => {
                     classroom: Types.ObjectId(currentSessionData.classroom),
                     invitedActor: currentSessionData.invitedActor || null,
                     group: Types.ObjectId(currentSessionData.group),
-                    subject: Types.ObjectId(subject),
+                    subject: Types.ObjectId(subject._id),
                     day: Number(day),
                     startsAt: Number(startsAt),
                     endsAt: Number(endsAt),
