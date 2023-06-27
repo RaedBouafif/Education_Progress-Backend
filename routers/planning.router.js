@@ -17,7 +17,8 @@ const {
     getCurrentTeacherPlanning,
     getNextTeacherPlanning,
     getPredTeacherPlanning,
-    changeTeacherController
+    changeTeacherController,
+    changeWeekType
 } = require("../controllers/planning.controller");
 
 const Router = require("express").Router();
@@ -55,5 +56,5 @@ Router.route("/deleteSession/:planningId/:sessionId").delete(authMiddleWare(["ad
 
 //---UPDATE---//
 Router.route("/changeTeacher/:sessionId/:idSubTeacher").put(authMiddleWare(["admin", "owner", "super"]), changeTeacherController)
-
+Router.route("/changeWeekType/:idPlanning/:weekType").put(changeWeekType)
 module.exports = Router;

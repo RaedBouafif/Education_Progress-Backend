@@ -57,6 +57,7 @@ exports.createExam = async (req,res) => {
             collegeYear: collegeYearId,
             semester: semesterId,
             examType: examenType,
+            examNumber: examenNumber,
             beginDate: new Date(exam_final_starting_date),
             endingDate: new Date(exam_final_ending_date),
         })
@@ -95,7 +96,7 @@ exports.createExam = async (req,res) => {
                 })
                 console.log(session)
                 if(planning.sessions.length != 0){
-                    planning.sessions.length = 0
+                    planning.sessions = []
                 }
                 planning.sessions.push(session)
                 await planning.save()
@@ -121,6 +122,81 @@ exports.createExam = async (req,res) => {
         })
     }
 }
+
+exports.updateSessionExam = async(req,res) => {
+    const { idSession,
+        teacher,
+        classroom,
+        subject,
+        startsAt,
+        endsAt,
+        dateDebPlanning,
+        examenType,
+        examenNumber,
+    } = req.params
+    try{
+        if(!idSession){
+            return res.status(400).send({
+                message : "Bad Request"
+            })
+        }
+        var newDateCheck = false
+        const session = await Session.findById(Types.ObjectId(idSession)).populate("examen")
+        if(session){
+            if(Number(session.startsAt) != Number(startsAt) || Number(session.endsAt) != Number(endsAt))
+            {
+                newDateCheck = true
+            }
+            if (session.teacher.toString() != teacher || session.classroom.toString() != classroom || session.subject.toString() != subject || newDateCheck == true){
+                session.teacher = Types.ObjectId(teacher)
+                session.classroom = Types.ObjectId(classroom)
+                session.subject = Types.ObjectId(subject._id)
+                session.startsAt = startsAt
+                session.endsAt = endsAt
+                if(newDateCheck){
+                    var starting_date_planning = new Date(dateDebPlanning)
+                    var realDay = Number(session.day) === 0 ? 7 : day
+                    var exam_starting_day = addDays(starting_date_planning, Number(realDay - 1))
+                    var exam_starting_resetedTomidNight = resetTimeToMidnight(exam_starting_day)
+                    var exam_ending_day = exam_starting_resetedTomidNight
+                    var exam_final_starting_date = addMinutes(exam_starting_resetedTomidNight, Number(startsAt))
+                    var exam_final_ending_date = addMinutes(exam_ending_day, Number(endsAt))
+                }
+                if(Number(examenNumber) != Number(session.examen.examenNumber) || examenType != session.examen.examenType ){
+                    var examTitle = subject.name +"-"+examenType+"-"+examenNumber
+                }
+                const exam = await Examen.create({
+                    examTitle: examTitle,
+                    collegeYear: Types.ObjectId(session.examen.collegeYear),
+                    semester: Types.ObjectId(session.examen.semesterId),
+                    examType: examenType,
+                    examNumber: examenNumber,
+                    beginDate: new Date(exam_final_starting_date),
+                    endingDate: new Date(exam_final_ending_date),
+                })
+                await exam.save()
+                session.examen = {}
+                session.examen = exam._id
+                await session.save()
+                return res.status(200).send({
+                    session,
+                    updated: true
+                })
+            }
+        }else{
+            return res.status(404).send({
+                message: "Session with id: " +idSession+ " Not Found"
+            })
+        }
+    }catch(e){
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+
+}
+
+
 
 
 exports.findAvailableTeachersForExams = async (req, res) => {

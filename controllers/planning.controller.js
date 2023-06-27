@@ -1566,6 +1566,35 @@ exports.changeTeacherController = async (req,res) => {
     }
 }
 
+
+//change weekType 
+exports.changeWeekType = async(req,res) => {
+    try{    
+        const { idPlanning, weekType} = req.params
+        if (!idPlanning || !weekType){
+            return res.status(400).send({
+                message: "Bad Request"
+            })
+        }
+        const planning = await Planning.findByIdAndUpdate(Types.ObjectId(idPlanning), { weekType: weekType, sessions: [] }, { new: true})
+        if(planning){
+            return res.status(200).send({
+                planning,
+                updated :true
+            })
+        }else{
+            return res.status(404).send({
+                message: "Planning with id: "  +idPlanning+  " Not found"
+            })
+        }
+    }catch(e){
+        return res.status(500).send({
+            error : e.message,
+            messaage: "Server ERROR"
+        })
+    }
+}
+
 // exports.createInitialTemplate = async (req, res) => {
 //     //test if modified or not
 //     try {

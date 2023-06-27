@@ -16,6 +16,10 @@ const Examen = Schema({
         type: String,
         enum : ["Synthèse", "Controle", "Atelier", "Tp"]
     },
+    examNumber: {
+        type: Number,
+        enum: [1,2,3,4,5]
+    },
     beginDate: {
         type: Date,
         required : [true, "beginDateRequired"]
