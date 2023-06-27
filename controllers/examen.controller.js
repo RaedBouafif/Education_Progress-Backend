@@ -60,6 +60,7 @@ exports.createExam = async (req,res) => {
             beginDate: new Date(exam_final_starting_date),
             endingDate: new Date(exam_final_ending_date),
         })
+        console.log(exam)
         await exam.save()
         for( let i=0 ; i < sessions.length; i++){
             let currentSessionData = sessions[i]
@@ -87,8 +88,12 @@ exports.createExam = async (req,res) => {
                     startsAt: Number(startsAt),
                     endsAt: Number(endsAt),
                     sessionType: "EXAM",
-                    examen: exam._id
+                    examen: exam._id,
+                    initialSubGroup: "All",
+                    sessionCategorie: "Planning"
+
                 })
+                console.log(session)
                 if(planning.sessions.length != 0){
                     planning.sessions.length = 0
                 }
