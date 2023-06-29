@@ -5,7 +5,7 @@ const authMiddleWare = require("../middlewares/auth")
 //---POST---//
 Router.route("/create").post(authMiddleWare(["admin", "super", "owner"]), create)
 //---GET---//
-Router.route("/getAll").get(authMiddleWare(["owner", "admin", "teacher", "super"]), getAll)
+Router.route("/getAll/:yearId").get(authMiddleWare(["owner", "admin", "teacher", "super"]), getAll)
 Router.route("/getAllGroups/:collegeYearId").get(authMiddleWare(["owner", "admin", "teacher", "super"]), getAllGroups)//get without distinct
 Router.route("/getById/:groupId").get(authMiddleWare(["owner", "admin", "teacher", "super"]), getById)
 Router.route("/addStudent/:groupId/:studentId").get(authMiddleWare(["admin", "super", "owner"]), addStudent)
