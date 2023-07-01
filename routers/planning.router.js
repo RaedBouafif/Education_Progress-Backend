@@ -56,5 +56,5 @@ Router.route("/deleteSession/:planningId/:sessionId").delete(authMiddleWare(["ad
 
 //---UPDATE---//
 Router.route("/changeTeacher/:sessionId/:idSubTeacher").put(authMiddleWare(["admin", "owner", "super"]), changeTeacherController)
-Router.route("/changeWeekType/:idPlanning/:weekType").put(changeWeekType)
+Router.route("/changeWeekType/:idPlanning/:weekType/:all").put(changeWeekType)
 module.exports = Router;

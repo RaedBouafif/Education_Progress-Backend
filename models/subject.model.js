@@ -39,7 +39,11 @@ const SubjectSchema = mongoose.Schema(
         image: {
             type: String
         },
-        teachers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Teacher" }]
+        teachers: [{ type: mongoose.Schema.Types.ObjectId, ref: "Teacher" }],
+        responsibleTeacher: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Teacher"
+        }
     },
     {
         timestamps: true

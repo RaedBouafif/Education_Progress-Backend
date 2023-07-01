@@ -1,4 +1,4 @@
-const { createSubject, findAllSubjects, findAllSubjectsWithTeachers, findSubjectByName, updateSubject, deleteSubject, changeSubjectState, findAvailableTeachers } = require('../controllers/subject.controller')
+const { makeTeacherResponsibleOfSubject, createSubject, findAllSubjects, findAllSubjectsWithTeachers, findSubjectByName, updateSubject, deleteSubject, changeSubjectState, findAvailableTeachers } = require('../controllers/subject.controller')
 const Router = require('express').Router()
 const authMiddleWare = require("../middlewares/auth")
 //get
@@ -15,5 +15,6 @@ Router.route("/delete/:subjectId").delete(authMiddleWare(["super", "admin", "own
 //put
 Router.route("/update/:subjectId").put(authMiddleWare(["super", "admin", "owner"]), updateSubject)
 Router.route("/changeState").put(authMiddleWare(["super", "admin", "owner"]), changeSubjectState)
+Router.route("/makeResponsible/:idTeacher/:idSubject").put(authMiddleWare(["super", "admin", "owner"]), makeTeacherResponsibleOfSubject)
 
 module.exports = Router 

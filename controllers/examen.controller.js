@@ -20,7 +20,7 @@ const { logData } = require("../functions/logging")
 
 //Création d'un examen dans un Planning
 exports.createExam = async (req,res) => {
-    try{
+    try{ 
         // sessions = [ { teacher, classroom, group, invitedActor }, { teacher, classroom, group, invitedActor }]
         //examenNumer = 1,2,3
         //examenType = ["Synthèse", "Atelier", "Controle", "Tp"]
@@ -94,6 +94,7 @@ exports.createExam = async (req,res) => {
                     sessionCategorie: "Planning"
 
                 })
+                await session.save()
                 console.log(session)
                 if(planning.sessions.length != 0){
                     planning.sessions = []
@@ -232,7 +233,7 @@ exports.findAvailableTeachersForExams = async (req, res) => {
                 if (OccupiedNextTeachers[j].sessions?.length) {
                     if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree))) {
                         console.log("edszdqs")
-                        teachers = teachersOfTheSubject.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher.toString() != element._id.toString())
+                        teachers = teachers.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher.toString() != element._id.toString())
                     }
                 }
                 // console.log(OccupiedNextTeachers[j]?.sessions[0]?.startsAt)

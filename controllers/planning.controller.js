@@ -480,7 +480,7 @@ exports.getCurrentPlanning = async (req, res) => {
                 let currentDateEnd = currentSemester.dateEnd
                 let currentDateBegin = currentSemester.dateBegin
                 let numberOfWeeks = Math.floor(Math.abs(currentDateEnd - currentDateBegin) / (1000 * 60 * 60 * 24 * 7))
-                infos.push({ semester: currentSemester.name, numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd })
+                infos.push({ semester: currentSemester.name, _id: currentSemester._id,numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd })
                 numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks
             }
             // this will always return week number 1 
@@ -1570,16 +1570,20 @@ exports.changeTeacherController = async (req,res) => {
 //change weekType 
 exports.changeWeekType = async(req,res) => {
     try{    
-        const { idPlanning, weekType} = req.params
+        //all : true/false is for assuring that the selected week of all plannings should be empty
+        const { idPlanning, weekType, all} = req.params
         if (!idPlanning || !weekType){
             return res.status(400).send({
                 message: "Bad Request"
             })
         }
-        const planning = await Planning.findByIdAndUpdate(Types.ObjectId(idPlanning), { weekType: weekType, sessions: [] }, { new: true})
-        if(planning){
+        const currentPlanning = await Planning.findByIdAndUpdate(Types.ObjectId(idPlanning), { weekType: weekType, sessions: [] }, { new: true})
+        if(currentPlanning){
+            if (all === true){
+                await Planning.updateMany({ week: currentPlanning.week, collegeYear: currentPlanning.collegeYear, _id : { $ne: currentPlanning._id}}, { sessions: [] } )
+            }
             return res.status(200).send({
-                planning,
+                currentPlanning,
                 updated :true
             })
         }else{

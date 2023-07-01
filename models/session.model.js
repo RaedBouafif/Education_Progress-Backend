@@ -13,12 +13,10 @@ const Session = Schema(
         , classroom: {
             type: Schema.Types.ObjectId,
             ref: "Classroom",
-            required: [true, "classroomRequired"]
         },
         subject: {
             type: Schema.Types.ObjectId,
             ref: "Subject",
-            required: [true, "subjectRequired"]
         },
         group: {
             type: Schema.Types.ObjectId,
@@ -110,6 +108,10 @@ const Session = Schema(
         examen: {
             type: Types.ObjectId,
             ref: "Examen"
+        },
+        event: {
+            type: Types.ObjectId,
+            ref: "Evennement"
         },
         invitedActor: {
             type: String
