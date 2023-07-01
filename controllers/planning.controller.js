@@ -383,7 +383,7 @@ exports.getPlanningByWeek = async (req, res) => {
         }
         const planning = Planning.findOne({ group: group, collegeYear: collegeYear, week: week }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-            .populate("collegeYear")
+            .populate({ path: "collegeYear", populate: { path: "semesters" } })
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
@@ -413,7 +413,7 @@ exports.getPlanningByNextWeek = async (req, res) => {
         }
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) + nbrNextWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-            .populate("collegeYear")
+            .populate({ path: "collegeYear", populate: { path: "semesters" } })
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
@@ -471,7 +471,7 @@ exports.getPlanningByPredWeek = async (req, res) => {
         }
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) - nbrPredWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-            .populate("collegeYear")
+            .populate({ path: "collegeYear", populate: { path: "semesters" } })
             .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
@@ -508,19 +508,19 @@ exports.getCurrentPlanning = async (req, res) => {
                 let currentDateEnd = currentSemester.dateEnd
                 let currentDateBegin = currentSemester.dateBegin
                 let numberOfWeeks = Math.floor(Math.abs(currentDateEnd - currentDateBegin) / (1000 * 60 * 60 * 24 * 7))
-                infos.push({ semester: currentSemester.name, numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd })
+                infos.push({ semester: currentSemester.name, numberOfWeeks: numberOfWeeks, dateBegin: currentDateBegin, dateEnd: currentDateEnd, _id: currentSemester._id })
                 numberTotalOfWeeks = numberTotalOfWeeks + numberOfWeeks
             }
             // this will always return week number 1 
             const currentDate = new Date()
             const currentPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
                 .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-                .populate("collegeYear")
+                .populate({ path: "collegeYear", populate: { path: "semesters" } })
                 .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
             if (!currentPlanning) {
                 const initialPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                     .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-                    .populate("collegeYear")
+                    .populate({ path: "collegeYear", populate: { path: "semesters" } })
                     .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
                 if (!initialPlanning) {
                     return res.status(404).json({
@@ -1556,6 +1556,71 @@ exports.getPredTeacherPlanning = async (req, res) => {
         })
     }
 
+}
+
+
+exports.changeTeacherController = async (req, res) => {
+    try {
+        const { sessionId, idSubTeacher } = req.params
+        if (!sessionId || !idSubTeacher) {
+            return res.status(400).send({
+                error: "Bad Request"
+            })
+        }
+        const session = findByIdAndUpdate(Types.ObjectId(sessionId), { subTeacher: Types.ObjectId(idSubTeacher) }, { new: true })
+            .populate({
+                populate: [{ path: "teacher", select: { password: 0 } },
+                { populate: { path: "subjects", select: { image: 0 } } },
+                { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] },
+                { path: "subTeacher", select: { password: 0 } },
+                { populate: { path: "subjects", select: { image: 0 } } },
+                { path: "subject" }, { path: "classroom" }]
+            })
+        if (!session) {
+            return res.status(404).send({
+                message: "id: " + sessionId + "Not Found"
+            })
+        }
+        return res.status(200).send({
+            updated: true,
+            session
+        })
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: e.message,
+            message: "Server Error"
+        })
+    }
+}
+
+
+//change weekType 
+exports.changeWeekType = async (req, res) => {
+    try {
+        const { idPlanning, weekType } = req.params
+        if (!idPlanning || !weekType) {
+            return res.status(400).send({
+                message: "Bad Request"
+            })
+        }
+        const planning = await Planning.findByIdAndUpdate(Types.ObjectId(idPlanning), { weekType: weekType, sessions: [] }, { new: true })
+        if (planning) {
+            return res.status(200).send({
+                planning,
+                updated: true
+            })
+        } else {
+            return res.status(404).send({
+                message: "Planning with id: " + idPlanning + " Not found"
+            })
+        }
+    } catch (e) {
+        return res.status(500).send({
+            error: e.message,
+            messaage: "Server ERROR"
+        })
+    }
 }
 
 // exports.createInitialTemplate = async (req, res) => {
