@@ -1,10 +1,11 @@
-const { create, deleteById, getById, getAll, update, getAllGroups, addStudent, deleteStudent, countDocsss, findAllAvailableSubjects, getNumberStudentsPerYear } = require("../controllers/group.controller")
+const { getAllGroupsBySectionCollegeYear, create, deleteById, getById, getAll, update, getAllGroups, addStudent, deleteStudent, countDocsss, findAllAvailableSubjects, getNumberStudentsPerYear } = require("../controllers/group.controller")
 const Router = require("express").Router()
 const authMiddleWare = require("../middlewares/auth")
 
 //---POST---//
 Router.route("/create").post(authMiddleWare(["admin", "super", "owner"]), create)
 //---GET---//
+Router.route("/getAllWithSections/:collegeYear/:section").get(authMiddleWare(["owner", "teacher", "admin", "super"]), getAllGroupsBySectionCollegeYear)
 Router.route("/getAll/:yearId").get(authMiddleWare(["owner", "admin", "teacher", "super"]), getAll)
 Router.route("/getAllGroups/:collegeYearId").get(authMiddleWare(["owner", "admin", "teacher", "super"]), getAllGroups)//get without distinct
 Router.route("/getById/:groupId").get(authMiddleWare(["owner", "admin", "teacher", "super"]), getById)

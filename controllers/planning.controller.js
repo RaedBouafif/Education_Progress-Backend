@@ -169,7 +169,8 @@ exports.create = async (req, res) => {
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
-                                            active: true
+                                            active: true,
+                                            weekType: "Default"
                                         })
                                         await planning.save()
                                         finalDate1.setDate(finalDate1.getDate() + 1)
@@ -189,7 +190,8 @@ exports.create = async (req, res) => {
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
-                                            active: true
+                                            active: true,
+                                            weekType: "Default"
                                         })
                                         await planning.save()
                                         finalDate.setDate(finalDate.getDate() + 1)
@@ -205,7 +207,8 @@ exports.create = async (req, res) => {
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
-                                            active: true
+                                            active: true,
+                                            weekType: "Default"
                                         })
                                         await planning.save()
                                         finalDate.setDate(finalDate.getDate() + 1)
@@ -225,7 +228,8 @@ exports.create = async (req, res) => {
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
-                                            active: true
+                                            active: true,
+                                            weekType: "Default"
                                         })
                                         await planning.save()
                                         finalDate.setDate(finalDate.getDate() + 1)
@@ -241,7 +245,8 @@ exports.create = async (req, res) => {
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
-                                            active: true
+                                            active: true,
+                                            weekType: "Default"
                                         })
                                         await planning.save()
                                         finalDate.setDate(finalDate.getDate() + 1)
@@ -258,7 +263,8 @@ exports.create = async (req, res) => {
                                             group: group,
                                             collegeYear: collegeYear,
                                             sessions: newSessions,
-                                            active: true
+                                            active: true,
+                                            weekType: "Default"
                                         })
                                         await planning.save()
                                         finalDate.setDate(finalDate.getDate() + 1)
@@ -924,7 +930,7 @@ exports.findAvailableTeachers = async (req, res) => {
                 error: "BadRequest"
             })
         }
-        var teachersOfTheSubject = await Subject.findById(subjectId, 'subjectName teachers').populate({ path: "teachers", select: { image: 0, note: 0, birth: 0, maritalStatus: 0, password: 0 } })
+        var teachersOfTheSubject = await Subject.findById(subjectId, 'subjectName teachers').populate({ path: "teachers", select: { note: 0, birth: 0, maritalStatus: 0, password: 0 } })
         if (!teachersOfTheSubject) {
             return res.status(204).send({
                 error: "EmptyDataBase",
@@ -1562,20 +1568,21 @@ exports.getPredTeacherPlanning = async (req, res) => {
 exports.changeTeacherController = async (req, res) => {
     try {
         const { sessionId, idSubTeacher } = req.params
+        console.log(sessionId)
+        console.log(idSubTeacher)
         if (!sessionId || !idSubTeacher) {
             return res.status(400).send({
                 error: "Bad Request"
             })
         }
-        const session = findByIdAndUpdate(Types.ObjectId(sessionId), { subTeacher: Types.ObjectId(idSubTeacher) }, { new: true })
-            .populate({
-                populate: [{ path: "teacher", select: { password: 0 } },
-                { populate: { path: "subjects", select: { image: 0 } } },
+        const session = await Session.findByIdAndUpdate(sessionId, { subTeacher: idSubTeacher, treated: true }, { new: true })
+            .populate([
+                { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } },
                 { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] },
-                { path: "subTeacher", select: { password: 0 } },
-                { populate: { path: "subjects", select: { image: 0 } } },
-                { path: "subject" }, { path: "classroom" }]
-            })
+                { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } },
+                { path: "subject" },
+                { path: "classroom" }
+            ])
         if (!session) {
             return res.status(404).send({
                 message: "id: " + sessionId + "Not Found"
@@ -1596,19 +1603,19 @@ exports.changeTeacherController = async (req, res) => {
 
 
 //change weekType 
-exports.changeWeekType = async (req, res) => {
-    try {
-        const { idPlanning, weekType } = req.params
-        if (!idPlanning || !weekType) {
+exports.changeWeekType = async(req,res) => {
+    try{    
+        const { idPlanning, weekType} = req.params
+        if (!idPlanning || !weekType){
             return res.status(400).send({
                 message: "Bad Request"
             })
         }
-        const planning = await Planning.findByIdAndUpdate(Types.ObjectId(idPlanning), { weekType: weekType, sessions: [] }, { new: true })
-        if (planning) {
+        const planning = await Planning.findByIdAndUpdate(Types.ObjectId(idPlanning), { weekType: weekType, sessions: [] }, { new: true})
+        if(planning){
             return res.status(200).send({
                 planning,
-                updated: true
+                updated :true
             })
         } else {
             return res.status(404).send({

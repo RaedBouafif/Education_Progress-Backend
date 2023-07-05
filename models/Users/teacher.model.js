@@ -76,6 +76,10 @@ const Teacher = mongoose.Schema(
         birth: {
             type: Date,
             required: [true, "birthRequired"]
+        },
+        responsibleSubject: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Subject"
         }
     },
     {

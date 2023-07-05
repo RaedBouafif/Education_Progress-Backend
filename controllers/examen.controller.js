@@ -52,6 +52,7 @@ exports.createExam = async (req, res) => {
         var exam_final_starting_date = addMinutes(exam_starting_resetedTomidNight, Number(startsAt))
         var exam_final_ending_date = addMinutes(exam_ending_day, Number(endsAt))
         const examTitle = subject.name + "-" + examenType + "-" + examenNumber
+        const concernedGroups = sessions.map( (element) => (element.group))
         const exam = await Examen.create({
             examTitle: examTitle,
             collegeYear: collegeYearId,
@@ -60,6 +61,8 @@ exports.createExam = async (req, res) => {
             examNumber: examenNumber,
             beginDate: new Date(exam_final_starting_date),
             endingDate: new Date(exam_final_ending_date),
+            groups: concernedGroups,
+            subject: subject._id
         })
         console.log(exam)
         await exam.save()
@@ -94,6 +97,7 @@ exports.createExam = async (req, res) => {
                     sessionCategorie: "Planning"
 
                 })
+                await session.save()
                 console.log(session)
                 if (planning.sessions.length != 0) {
                     planning.sessions = []

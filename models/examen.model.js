@@ -27,6 +27,14 @@ const Examen = Schema({
     endingDate: {
         type: Date,
         required: [true, "endingDateRequired"]
+    },
+    groups: [{
+        type: Types.ObjectId,
+        ref: "Group"
+    }],
+    subject: {
+        type: Types.ObjectId,
+        ref: "Subject"
     }
 },
 {

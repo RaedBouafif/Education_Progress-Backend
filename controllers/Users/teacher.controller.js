@@ -139,9 +139,9 @@ exports.getAllTeachers = async (req, res) => {
         var filter = {}
         if (firstName) filter["firstName"] = { $regex: firstName, $options: 'i' }
         if (lastName) filter["lastName"] = { $regex: lastName, $options: 'i' }
-        var teachers = await TeacherModel.find(filter, { password: 0 }).sort({ createdAt: -1 }).populate(
-            "subjects"
-        )
+        var teachers = await TeacherModel.find(filter, { password: 0 }).sort({ createdAt: -1 })
+            .populate("subjects")
+            .populate("responsibleSubject")
         if (subject) teachers = teachers.filter((element) => element.subjects?.find((sbj) => sbj._id == subject))
         var totalPages = Math.ceil(teachers.length / PAGE_LIMIT);
         teachers = teachers.slice(offset * PAGE_LIMIT, (offset * PAGE_LIMIT) + PAGE_LIMIT)

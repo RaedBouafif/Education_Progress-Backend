@@ -6,7 +6,8 @@ const Session = require("../models/session.model")
 const Template = require("../models/template.model")
 const { Types } = require("mongoose");
 const sessionModel = require('../models/session.model');
-const { logData } = require("../functions/logging")
+const { logData } = require("../functions/logging");
+const subjectModel = require('../models/subject.model');
 
 
 
@@ -99,7 +100,7 @@ exports.findAllSubjects = (req, res) => {
 
 exports.findAllSubjectsWithTeachers = (req, res) => {
     try {
-        Subject.find({}).populate({ path: "teachers", select: { image: 1, firstName: 1, lastName: 1 } }).then(subjects => {
+        Subject.find({}).populate({ path: "teachers", select: { image: 1, firstName: 1, lastName: 1 } }).populate({ path: "responsibleTeacher", select: { image: 1, firstName: 1, lastName: 1 } }).then(subjects => {
             if (subjects.length === 0) {
                 return res.status(204).send({
                     message: "There is no subjects in the database!",
@@ -372,6 +373,33 @@ exports.findAvailableTeachers = async (req, res) => {
         console.log(e)
         return res.status(500).send({
             error: "Server Error"
+        })
+    }
+}
+
+
+exports.makeTeacherResponsibleOfSubject = async (req,res) => {
+    try{
+        const { idTeacher, idSubject } = req.params
+        console.log(idTeacher)
+        console.log(idSubject)
+        if (!idTeacher || !idSubject){
+            return res.status(400).send({
+                message: "Bad Request"
+            })
+        }
+        const teacher = await TeacherModel.findByIdAndUpdate(Types.ObjectId(idTeacher), { responsibleSubject: Types.ObjectId(idSubject) }, { new: true})
+        if(teacher){
+            const subject = await Subject.findByIdAndUpdate(Types.ObjectId(idSubject), { responsibleTeacher: Types.ObjectId(idTeacher)}, { new : true})
+            return (subject) ? res.status(200).send({ updated: true, subject, teacher}) : res.status(404).send({ message: "Subject with id: " +idSubject+ " Not Found"})
+        }else{
+            return res.status(404).send({ message: "Teacher with id: " +idSubject+ " Not Found" })
+        }
+    }catch(e){
+        console.log(e)
+        return res.status(500).send({
+            message: "Server Error",
+            error: e.message
         })
     }
 }
