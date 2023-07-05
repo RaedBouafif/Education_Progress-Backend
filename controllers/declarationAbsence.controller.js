@@ -70,7 +70,7 @@ exports.createDeclaration = async (req, res) => {
             dateDeb: finalDateDeb,
             dateFin: finalDateFin,
             description: description,
-            file: { name: req.file?.originalname, path: req.file?.path } || null
+            file: { name: req.file?.filename, path: req.file?.path } || null
         })
         await declarationAbsence.save()
         if (!declarationAbsence) {

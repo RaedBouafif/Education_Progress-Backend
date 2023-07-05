@@ -17,7 +17,7 @@ const { logData } = require("../functions/logging")
 
 exports.createLibraryExam = async (req,res) => {
     try{
-        const { examenId, examCategory, title } = req.body
+        const { examenId, examCategory } = req.body
         if (!examenId || !examCategory || !req.file ){
             return res.status(400).send({
                 message: "Bad Request"
@@ -26,7 +26,7 @@ exports.createLibraryExam = async (req,res) => {
         const examen = await Examen.findById(examenId)
         if(examen){
             const libraryExam = await LibraryExams.create({
-                title: (examCategory == "Correction" ? `Correction ${title}` : `Devoir ${examen.examTitle}`),
+                title: (examCategory == "Correction" ? `Correction ${examen.examTitle}` : `Devoir ${examen.examTitle}`),
                 examCategory: examCategory,
                 examType: examen.examType,
                 examNumber: examen.examNumber,
@@ -34,7 +34,7 @@ exports.createLibraryExam = async (req,res) => {
                 collegeYear: examen.collegeYear,
                 semester: examen.semester,
                 groups: examen.groups,
-                file: { name: req.file?.originalname, path: req.file?.path }
+                file: { name: req.file?.filename, path: req.file?.path }
             })
             await libraryExam.save()
             return (libraryExam) ? res.status(200).send({ created: true, libraryExam})
@@ -55,16 +55,19 @@ exports.createLibraryExam = async (req,res) => {
 
 exports.findAllLibraries = async (req,res) => {
     try{
-        const { examCategory, examType, subject, section, group, collegeYear, semester } = req.query
+        const { examCategory, examType, subject, section, group, collegeYear } = req.query
         var filter = {}
+        // Exmaen/correction
         if(examCategory) filter.examCategory = examCategory
+        // Synthése, atelier.....
         if(examType) filter.examType = examType
         if(subject) filter.subject = subject
         if(section) filter.section = section
         if(group) filter.group = group
-        if(semester) filter.semester = semester
         if(collegeYear) filter.collegeYear = collegeYear
-        const libraryExams = await LibraryExams.find(filter).sort({ createdAt : -1})
+        console.log(filter)
+        const libraryExams = await LibraryExams.find(filter).populate("semester").sort({ createdAt : -1}).limit(15)
+        console.log(libraryExams)
         if (libraryExams){
             return res.status(200).send(libraryExams)
         }
