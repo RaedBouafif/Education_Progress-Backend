@@ -36,7 +36,8 @@ exports.createExam = async (req, res) => {
             semesterId,
             examenType,
             examenNumber,
-            collegeYearId
+            collegeYearId,
+            currentPlanningId
         } = req.body
         if (!sessions || sessions.length == 0 || !subject || (!day && day != 0) || !startsAt || !endsAt || !week || !dateDebPlanning || !semesterId || !examenType || !examenNumber || !collegeYearId) {
             return res.status(400).send({
@@ -52,7 +53,7 @@ exports.createExam = async (req, res) => {
         var exam_final_starting_date = addMinutes(exam_starting_resetedTomidNight, Number(startsAt))
         var exam_final_ending_date = addMinutes(exam_ending_day, Number(endsAt))
         const examTitle = subject.name + "-" + examenType + "-" + examenNumber
-        const concernedGroups = sessions.map( (element) => (element.group))
+        const concernedGroups = sessions.map((element) => (element.group))
         const exam = await Examen.create({
             examTitle: examTitle,
             collegeYear: collegeYearId,
@@ -66,6 +67,7 @@ exports.createExam = async (req, res) => {
         })
         console.log(exam)
         await exam.save()
+        var newPlanning = {}
         for (let i = 0; i < sessions.length; i++) {
             let currentSessionData = sessions[i]
             // find the planning correspendant to the session
@@ -104,6 +106,9 @@ exports.createExam = async (req, res) => {
                 }
                 planning.sessions.push(session)
                 await planning.save()
+                if (currentPlanningId == planning._id.toString()) {
+                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen" }, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] }])
+                }
             } else {
                 return res.status(404).send({
                     message: "Planning for the group: " + currentSessionData.group + " on the week: " + week + " Not Found"
@@ -111,7 +116,8 @@ exports.createExam = async (req, res) => {
             }
         }
         return res.status(200).send({
-            created: true
+            created: true,
+            newPlanning
         })
     } catch (e) {
         console.log(e)
@@ -126,6 +132,11 @@ exports.createExam = async (req, res) => {
         })
     }
 }
+
+
+
+
+
 
 exports.updateSessionExam = async (req, res) => {
     const { idSession,

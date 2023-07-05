@@ -3,59 +3,60 @@ const StudentModel = require("../models/Users/student.model")
 const TemplateModel = require("../models/template.model")
 const CollegeYear = require("../models/collegeYear.model")
 const { Types } = require('mongoose')
-const { logData } = require("../functions/logging")
+const logData = require("../functions/logging")
 
 
 function groupStudents(arr) {
     let result = [];
     arr.forEach(obj => {
-      let group = result.find(item => item.groupId === obj.groupId);
-  
-      if (group) {
-        group.students.push(obj.student);
-      } else {
-        result.push({ groupId: obj.groupId, students: [obj.student] });
-      }
+        let group = result.find(item => item.groupId === obj.groupId);
+
+        if (group) {
+            group.students.push(obj.student);
+        } else {
+            result.push({ groupId: obj.groupId, students: [obj.student] });
+        }
     });
-  
+
     return result;
 }
-  
+
 exports.create = async (req, res) => {
-    var students =  req.body.students
     try {
+        var students = JSON.parse(req.body.students)
+        console.log("nbr element ", students.length)
         var group = await GroupModel.create({
             groupName: req.body.groupName,
             section: req.body.section,
             collegeYear: req.body.collegeYear,
-            students: students?.map( (element) => element._id ) || null,
+            students: students?.map((element) => element._id) || null,
             note: req.body.note || null
         });
         group = await group.save()
-        group = await GroupModel.populate(group, [{ path: "section", },{path : "students", select : { pasword : 0}}])
+        group = await GroupModel.populate(group, [{ path: "section", }, { path: "students", select: { pasword: 0 } }])
         const template = await TemplateModel.create({
             group: group._id,
             collegeYear: req.body.collegeYear,
         })
         await template.save()
+        console.log(students)
         if (students) {
-            students.map( element => element._id ).forEach(async (element) => {
+            students.map(element => element._id).forEach(async (element) => {
                 await StudentModel.findByIdAndUpdate(Types.ObjectId(element), { group: group._id }, { runValidators: true, new: true })
             })
-            const newStudentsWithGroups = students.filter( element => element.group ).map( element => ({student : element._id, groupId : element.group }))
+            const newStudentsWithGroups = students.filter(element => element.group).map(element => ({ student: element._id, groupId: element.group }))
             const lastStudentsWithGroups = groupStudents(newStudentsWithGroups)
-            console.log(lastStudentsWithGroups)
-            lastStudentsWithGroups.forEach( async currentGroupWithStudents => {
+            lastStudentsWithGroups.forEach(async currentGroupWithStudents => {
                 var gp = await GroupModel.findById(new Types.ObjectId(currentGroupWithStudents.groupId))
-                gp.students = gp?.students.filter((element)=>!currentGroupWithStudents.students.includes(element.toString()))
+                gp.students = gp?.students.filter((element) => !currentGroupWithStudents.students.includes(element.toString()))
                 await gp.save()
             })
         }
-        try{
-            logData({modelId: group._id, modelPath: "Group", /*User with id 251551515, */ action: "Created a new Group: " +group._id.toString()})
-        }catch(e){
+        try {
+            logData({ modelId: group._id, modelPath: "Group", /*User with id 251551515, */ action: "Created a new Group: " + group._id.toString() })
+        } catch (e) {
             console.log(e.message)
-        }   
+        }
         return res.status(201).json(group);
     } catch (e) {
         console.log(e);
@@ -177,18 +178,18 @@ exports.update = async (req, res) => {
                 runValidators: true
             }
         )
-        if (group){
-            try{
-                logData({modelId: group._id, modelPath: "Group", action: "Updated Group: " +group._id.toString()})
-            }catch(e){
+        if (group) {
+            try {
+                logData({ modelId: group._id, modelPath: "Group", action: "Updated Group: " + group._id.toString() })
+            } catch (e) {
                 console.log(e.message)
             }
-            return res.status(200).json({ found : true, group})
-        }else{
-            return res.status(404).json({ found : false})
+            return res.status(200).json({ found: true, group })
+        } else {
+            return res.status(404).json({ found: false })
         }
     }
-    catch (e) { 
+    catch (e) {
         console.log(e);
         if (e.code === 11000) {
             return res.status(409).json({
@@ -212,10 +213,10 @@ exports.deleteById = async (req, res) => {
     try {
         const { groupId } = req.params
         const group = await GroupModel.findByIdAndDelete(groupId)
-        if (group){
-            try{
-                logData({modelId: Types.ObjectId(groupId), modelPath: "Group", action: "Delete a group: " +groupId})
-            }catch(e){
+        if (group) {
+            try {
+                logData({ modelId: Types.ObjectId(groupId), modelPath: "Group", action: "Delete a group: " + groupId })
+            } catch (e) {
                 console.log(e.message)
             }
             return res.status(200).json({
@@ -250,15 +251,15 @@ exports.addStudent = async (req, res) => {
             error: "studentNotFound"
         })
         if (group.students?.find((element) => element.toString() == studentId)) return res.status(409).json({ error: "studentConflict" })
-        if (group?.students){
+        if (group?.students) {
             group.students.push(new Types.ObjectId(studentId))
-        }else{
-            group.students = [ new Types.ObjectId(studentId)]
+        } else {
+            group.students = [new Types.ObjectId(studentId)]
         }
         await group.save()
-        try{
-            logData({modelId: group._id, modelPath: "Group", secondModelId: student._id, secondModelPath: "Student", action:"Affected student with id : " +studentId+ " to group: " +groupId})
-        }catch(e){
+        try {
+            logData({ modelId: group._id, modelPath: "Group", secondModelId: student._id, secondModelPath: "Student", action: "Affected student with id : " + studentId + " to group: " + groupId })
+        } catch (e) {
             console.log(e.message)
         }
         return res.status(201).json({
@@ -288,9 +289,9 @@ exports.deleteStudent = async (req, res) => {
         if (!group.students?.find((element) => element == studentId)) return res.status(404).json({ error: "studentNotInGroup" })
         group.students = group.students.filter((element) => element != studentId)
         await group.save()
-        try{
-            logData({modelId: group._id, modelPath: "Group", secondModelId: student._id, secondModelPath: "Student", action: "Disaffected student with id : " +studentId+ " from group: " +groupId})
-        }catch(e){
+        try {
+            logData({ modelId: group._id, modelPath: "Group", secondModelId: student._id, secondModelPath: "Student", action: "Disaffected student with id : " + studentId + " from group: " + groupId })
+        } catch (e) {
             console.log(e.message)
         }
         return res.status(200).json({
@@ -352,41 +353,41 @@ exports.findAllAvailableSubjects = async (req, res) => {
 
 
 
-exports.getNumberStudentsPerYear = async (req,res) => {
-    try{
-        var group = await GroupModel.find({}).populate({path: "collegeYear", select: "year"})
-        if (!group){
+exports.getNumberStudentsPerYear = async (req, res) => {
+    try {
+        var group = await GroupModel.find({}).populate({ path: "collegeYear", select: "year" })
+        if (!group) {
             return res.status(204).send({
-                message : "NO groups yet"
+                message: "NO groups yet"
             })
         }
         function groupStudentsByYear(arr) {
-        const groupedByYear = {};
-        arr.forEach(obj => {
-            const year = obj.collegeYear?.year;
-            const studentsCount = obj.students.length;
-        
-            if (groupedByYear[year]) {
-            groupedByYear[year] += studentsCount;
-            } else {
-            groupedByYear[year] = studentsCount;
+            const groupedByYear = {};
+            arr.forEach(obj => {
+                const year = obj.collegeYear?.year;
+                const studentsCount = obj.students.length;
+
+                if (groupedByYear[year]) {
+                    groupedByYear[year] += studentsCount;
+                } else {
+                    groupedByYear[year] = studentsCount;
+                }
+            });
+
+            const result = [];
+
+            for (const year in groupedByYear) {
+                result.push({ year: year, students: groupedByYear[year] });
             }
-        });
-        
-        const result = [];
-        
-        for (const year in groupedByYear) {
-            result.push({ year: year, students: groupedByYear[year] });
-        }
-        return result;
+            return result;
         }
         var finalData = groupStudentsByYear(group)
         const lastOne = finalData.filter(element => element.year != 'undefined')
         return res.status(200).send(lastOne)
-    }catch(e) {
+    } catch (e) {
         console.log(e)
         return res.status(500).send({
-            error : e.message,
+            error: e.message,
             message: "Server Eroor"
         })
     }

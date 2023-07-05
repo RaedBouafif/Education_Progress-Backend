@@ -24,7 +24,7 @@ exports.createLibraryExam = async (req,res) => {
             })
         }
         const examen = await Examen.findById(examenId)
-        if(examen){
+        if (examen) {
             const libraryExam = await LibraryExams.create({
                 title: (examCategory == "Correction" ? `Correction ${examen.examTitle}` : `Devoir ${examen.examTitle}`),
                 examCategory: examCategory,
@@ -37,17 +37,27 @@ exports.createLibraryExam = async (req,res) => {
                 file: { name: req.file?.filename, path: req.file?.path }
             })
             await libraryExam.save()
-            return (libraryExam) ? res.status(200).send({ created: true, libraryExam})
-            : res.status(400).send({ created: false })
-        }else{
+            return (libraryExam) ? res.status(200).send({ created: true, libraryExam })
+                : res.status(400).send({ created: false })
+        } else {
             return res.status(404).send({
-                message: "Examen with id: " +examenId+ "Not Found"
+                message: "Examen with id: " + examenId + "Not Found"
             })
         }
-    }catch(e){
         console.log(e)
         return res.status(500).send({
-            error : e.message,
+            error: e.message,
+            message: "Server Error"
+        })
+    }
+}
+exports.getExam = async (req, res) => {
+    try {
+        const exam = await LibraryExams.findOne({})
+    } catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: e.message,
             message: "Server Error"
         })
     }
@@ -72,13 +82,13 @@ exports.findAllLibraries = async (req,res) => {
             return res.status(200).send(libraryExams)
         }
         return res.status(204).send({
-            message : "There is no exams in the database"
+            message: "There is no exams in the database"
         })
-    }catch(e){
+    } catch (e) {
         console.log(e.message)
         return res.status(500).send({
-            error : e.message,
-            message :"Server Error"
+            error: e.message,
+            message: "Server Error"
         })
     }
 }
