@@ -137,7 +137,6 @@ exports.createExam = async (req, res) => {
 
 
 
-
 exports.updateSessionExam = async (req, res) => {
     const { idSession,
         teacher,

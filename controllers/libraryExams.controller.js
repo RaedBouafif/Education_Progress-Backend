@@ -54,7 +54,8 @@ exports.createLibraryExam = async (req, res) => {
 }
 exports.getExam = async (req, res) => {
     try {
-        const exam = await LibraryExams.findOne({})
+        const exam = await LibraryExams.findOne(req.body)
+        return res.status(200).json(exam)
     } catch (e) {
         console.log(e)
         return res.status(500).send({
