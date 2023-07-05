@@ -17,6 +17,7 @@ const {
     getCurrentTeacherPlanning,
     getNextTeacherPlanning,
     getPredTeacherPlanning,
+    getPlanningWithWeek,
     changeTeacherController,
     changeWeekType
 } = require("../controllers/planning.controller");
@@ -36,6 +37,7 @@ Router.route("/availableGroups").post(authMiddleWare(["owner", "admin", "teacher
 
 
 //---GET---//
+Router.route("/getWithWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningWithWeek)
 Router.route("/getByWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningByWeek)
 Router.route("/getNextWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningByNextWeek)
 Router.route("/getPredWeek/:collegeYear/:group/:week").get(authMiddleWare(["admin", "super", "owner"]), getPlanningByPredWeek)
@@ -56,5 +58,5 @@ Router.route("/deleteSession/:planningId/:sessionId").delete(authMiddleWare(["ad
 
 //---UPDATE---//
 Router.route("/changeTeacher/:sessionId/:idSubTeacher").put(authMiddleWare(["admin", "owner", "super"]), changeTeacherController)
-Router.route("/changeWeekType/:idPlanning/:weekType/:all").put(changeWeekType)
+Router.route("/changeWeekType/:idPlanning/:weekType").put(authMiddleWare(["admin", "owner", "super"]), changeWeekType)
 module.exports = Router;

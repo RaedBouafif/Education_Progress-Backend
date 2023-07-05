@@ -115,6 +115,27 @@ exports.getAll = async (req, res) => {
     }
 };
 
+exports.getAllGroupsBySectionCollegeYear= async (req,res) => {
+    try{
+        const { collegeYear, section } = req.params
+        if(!collegeYear || !section){
+            return res.status(400).send({
+                error: "BadRequest"
+            })
+        }
+        const groups = await GroupModel.find({ collegeYear: Types.ObjectId(collegeYear), section: Types.ObjectId(section)})
+        return groups.length ?
+            res.status(200).send({ found: true, groups})
+            :
+            res.status(204).send({ found: false })
+    }catch(e){
+        console.log(e);
+        return res.status(500).json({
+            error: "serverSideError",
+        });
+    }
+}
+
 exports.getAllGroups = async (req, res) => {
     try {
         const { collegeYearId } = req.params

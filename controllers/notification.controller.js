@@ -176,7 +176,11 @@ function resetTimeToMidnight(dateString) {
 exports.getNotificationDeclaredWithDetails = async (req, res) => {
     try {
         const { idNotification } = req.params
-        console.log(idNotification)
+        if (!Types.ObjectId.isValid(idNotification)) {
+            return res.status(400).json({
+                "error": "badRequest"
+            })
+        }
         const notification = await Notification.findById(idNotification).populate({ path: "declarationAbsence", populate: { path: "teacher" } })
         if (notification) {
             var dateDebDeclaration = new Date(notification.declarationAbsence.dateDeb)

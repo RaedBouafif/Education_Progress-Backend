@@ -38,7 +38,8 @@ const Planning = Schema(
         }],
         weekType: {
             type: String,
-            enum: ["Examen", "Vacation"]
+            enum: ["Examen", "Vacation", "Default"],
+            default : "Default"
         },
         active: {
             type: Boolean,  
