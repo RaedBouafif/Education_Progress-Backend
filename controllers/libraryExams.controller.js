@@ -15,10 +15,10 @@ const { logData } = require("../functions/logging")
 
 
 
-exports.createLibraryExam = async (req,res) => {
-    try{
+exports.createLibraryExam = async (req, res) => {
+    try {
         const { examenId, examCategory } = req.body
-        if (!examenId || !examCategory || !req.file ){
+        if (!examenId || !examCategory || !req.file) {
             return res.status(400).send({
                 message: "Bad Request"
             })
@@ -50,6 +50,13 @@ exports.createLibraryExam = async (req,res) => {
             message: "Server Error"
         })
     }
+    catch (e) {
+        console.log(e)
+        return res.status(500).send({
+            error: e.message,
+            message: "Server Error"
+        })
+    }
 }
 exports.getExam = async (req, res) => {
     try {
@@ -63,23 +70,45 @@ exports.getExam = async (req, res) => {
         })
     }
 }
-
-exports.findAllLibraries = async (req,res) => {
-    try{
+exports.deleteExamLibrary = async (req, res) => {
+    try {
+        const { libraryId } = req.params
+        if (!libraryId) {
+            return res.status(400).send({
+                message: "Bad Request"
+            })
+        }
+        const libraryExam = await LibraryExams.findByIdAndDelete(libraryId)
+        if (libraryExam) {
+            return res.status(200).send({
+                deleted: true
+            })
+        }
+        return res.status(404).send({
+            deleted: false
+        })
+    } catch (e) {
+        return res.status(500).send({
+            error: "Server Error"
+        })
+    }
+}
+exports.findAllLibraries = async (req, res) => {
+    try {
         const { examCategory, examType, subject, section, group, collegeYear } = req.query
         var filter = {}
         // Exmaen/correction
-        if(examCategory) filter.examCategory = examCategory
+        if (examCategory) filter.examCategory = examCategory
         // Synthése, atelier.....
-        if(examType) filter.examType = examType
-        if(subject) filter.subject = subject
-        if(section) filter.section = section
-        if(group) filter.group = group
-        if(collegeYear) filter.collegeYear = collegeYear
+        if (examType) filter.examType = examType
+        if (subject) filter.subject = subject
+        if (section) filter.section = section
+        if (group) filter.group = group
+        if (collegeYear) filter.collegeYear = collegeYear
         console.log(filter)
-        const libraryExams = await LibraryExams.find(filter).populate("semester").sort({ createdAt : -1}).limit(15)
+        const libraryExams = await LibraryExams.find(filter).populate("semester").sort({ createdAt: -1 }).limit(15)
         console.log(libraryExams)
-        if (libraryExams){
+        if (libraryExams) {
             return res.status(200).send(libraryExams)
         }
         return res.status(204).send({
