@@ -44,6 +44,7 @@ exports.createLibraryExam = async (req,res) => {
                 message: "Examen with id: " + examenId + "Not Found"
             })
         }
+    }catch(e){
         console.log(e)
         return res.status(500).send({
             error: e.message,
@@ -51,6 +52,8 @@ exports.createLibraryExam = async (req,res) => {
         })
     }
 }
+
+
 exports.getExam = async (req, res) => {
     try {
         const exam = await LibraryExams.findOne({})
@@ -89,6 +92,30 @@ exports.findAllLibraries = async (req,res) => {
         return res.status(500).send({
             error: e.message,
             message: "Server Error"
+        })
+    }
+}
+
+exports.deleteExamLibrary = async (req,res) => {
+    try{
+        const { libraryId } = req.params
+        if (!libraryId){
+            return res.status(400).send({
+                message: "Bad Request"
+            })
+        }
+        const libraryExam = await LibraryExams.findByIdAndDelete(libraryId)
+        if(libraryExam){
+            return res.status(200).send({
+                deleted: true
+            })
+        }
+        return res.status(404).send({
+            deleted: false
+        })
+    }catch(e){
+        return res.status(500).send({
+            error: "Server Error"
         })
     }
 }

@@ -4,7 +4,7 @@ const { deleteEvent, updateSessionEvent, createEvent } = require("../controllers
 
 Router.route("/create").post(authMiddleWare(["admin", "owner", "super"]), createEvent)
 Router.route("/updateEvent/:idSession/:day/:startsAt/:endsAt/:classroom").put(authMiddleWare(["admin", "owner", "super"]), updateSessionEvent)
-Router.route("/create/:idSession").delete(authMiddleWare(["admin", "owner", "super"]), createEvent)
+Router.route("/delete/:idSession").delete(authMiddleWare(["admin", "owner", "super"]), createEvent)
 
 
 module.exports = Router;

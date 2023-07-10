@@ -5,6 +5,10 @@ const Evennement =  Schema({
     eventName: {
         type: String
     },
+    eventType: {
+        type: String,
+        enum : ["Réunion", "Workshop", "Club"]
+    },
     collegeYear: {
         type: Types.ObjectId,
         ref: "CollegeYear"
@@ -24,7 +28,7 @@ const Evennement =  Schema({
     teachersParticipant: {
         type: Boolean
     },
-    studentsParticipant: {
+    parentsParticipant: {
         type: Boolean
     },
     adminsParticipant: {

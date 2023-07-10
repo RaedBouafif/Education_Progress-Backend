@@ -17,23 +17,24 @@ const { logData } = require("../functions/logging")
 
 exports.createEvent = async (req,res) => {
     try{
+        console.log(req.body)
         const { 
             eventName,
+            groups,
             teachersParticipant, 
-            studentsParticipant, 
+            parentsParticipant, 
             adminsParticipant, 
             day,
             startsAt, 
             endsAt, 
             week,
-            classroom,
             dateDebPlanning, 
-            idPlanning,
             semesterId, 
             collegeYearId,
-            otherGroups
+            eventType,
+            currentPlanningId
         } = req.body
-        if (!day || !startsAt || !endsAt || !eventName || !week || !dateDebPlanning || !semesterId || !collegeYearId || !otherGroups || !otherSections || !idPlanning){
+        if (!day || !startsAt || !endsAt || !eventName || !week || !dateDebPlanning || !semesterId || !collegeYearId || !groups || !eventType || !currentPlanningId){
             return res.status(400).send({
                 message:  "Bad Request"
             })
@@ -51,36 +52,31 @@ exports.createEvent = async (req,res) => {
             semester: semesterId,
             beginDate: new Date(event_final_starting_date),
             endingDate: new Date(event_final_ending_date),
-            teachersParticipant: teachersParticipant,
-            studentsParticipant: studentsParticipant,
-            adminsParticipant: adminsParticipant,
+            teachersParticipant: teachersParticipant || false,
+            parentsParticipant: parentsParticipant || false,
+            adminsParticipant: adminsParticipant || false,
+            eventType: eventType
         })
         await event.save()
-        const planning = await Planning.findById(Types.ObjectId(idPlanning))
-            .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
-            .populate({ path :"collegeYear", populate: { path: "semesters"}})
-            .populate({ path: "sessions", populate: [{ path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] })
-        if(planning){
-            const session = await Session.create({
-                classroom: req.body?.classroom ? classroom : null,
-                group: Types.ObjectId(planning.group),
-                day: Number(day),
-                startsAt: Number(startsAt),
-                endsAt: Number(endsAt),
-                sessionType: "EVENT",
-                event: event._id,
-                initialSubGroup: "All",
-                sessionCategorie: "Planning"
+        var newPlanning = {}
+        for (let i = 0; i < groups.length; i++) {
+            let currentGroup = groups[i]
+            const planning = await Planning.findOne({ group: Types.ObjectId(currentGroup), collegeYear: Types.ObjectId(collegeYearId), week: Number(week) })
+            .populate({
+                path: "sessions",
+                match: {
+                    day: Number(day),
+                    $or: [
+                        { startsAt: { $lte: Number(startsAt) }, endsAt: { $lte: Number(endsAt), $gte: Number(startsAt) } },
+                        { startsAt: { $gte: Number(startsAt), $lte: Number(endsAt) }, endsAt: { $gte: Number(endsAt) } },
+                        { startsAt: { $gte: Number(startsAt) }, endsAt: { $lte: Number(endsAt) } }
+                    ]
+                }
             })
-            await session.save()
-            planning.sessions.push(session._id)
-            await planning.save()
-            for( let i=0 ; i<otherGroups.length; i++){
-                const tmpPlanning = await Planning.findOne({ week: Number(week), collegeYear: Types.ObjectId(collegeYearId), group: Types.ObjectId(otherGroups[i]) })
-                if(tmpPlanning){
-                    const tmpSession = await Session.create({
-                        classroom: req.body?.classroom ? classroom : null,
-                        group: Types.ObjectId(otherGroups[i]),
+            if (planning) {
+                if (planning.sessions.length == 0) {
+                    const session = await Session.create({
+                        group: Types.ObjectId(currentGroup),
                         day: Number(day),
                         startsAt: Number(startsAt),
                         endsAt: Number(endsAt),
@@ -89,20 +85,24 @@ exports.createEvent = async (req,res) => {
                         initialSubGroup: "All",
                         sessionCategorie: "Planning"
                     })
-                    await tmpSession.save()
-                    tmpPlanning.sessions.push(tmpSession)
-                    await tmpPlanning.save()
+                    await session.save()
+                    console.log(session)
+                    planning.sessions.push(session)
+                    await planning.save()
                 }
+                if (currentPlanningId == planning._id.toString()) {
+                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen" }, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] }])
+                }
+            } else {
+                return res.status(404).send({
+                    message: "Planning for the group: " + currentGroup + " on the week: " + week + " Not Found"
+                })
             }
-            return res.status(200).send({
-                created: true,
-                planning
-            })
-        }else{
-            return res.status(404).send({
-                message: "Planning with id: " +idPlanning+ " Not Found"
-            })
         }
+        return res.status(200).send({
+            created: true,
+            newPlanning
+        })       
     }catch(e){
         return res.status(500).send({
             error : e.message,
@@ -170,4 +170,23 @@ exports.deleteEvent = async (req,res) => {
             message: "Server Error" 
         })
     }
+}
+
+
+function addDays(dateString, numDays) {
+    const date = new Date(dateString);
+    date.setDate(date.getDate() + numDays);
+    return date.toISOString();
+}
+
+function addMinutes(dateString, numMinutes) {
+    const date = new Date(dateString);
+    date.setTime(date.getTime() + numMinutes * 60000);
+    return date.toISOString();
+}
+
+function resetTimeToMidnight(dateString) {
+    const date = new Date(dateString);
+    date.setUTCHours(0, 0, 0, 0);
+    return date.toISOString();
 }
