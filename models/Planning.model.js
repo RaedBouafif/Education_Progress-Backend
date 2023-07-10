@@ -32,10 +32,6 @@ const Planning = Schema(
             type: Schema.Types.ObjectId,
             ref: "Session",
         }],
-        exams: [{
-            type: Schema.Types.ObjectId,
-            ref: "Examen"
-        }],
         weekType: {
             type: String,
             enum: ["Examen", "Vacation", "Default"],

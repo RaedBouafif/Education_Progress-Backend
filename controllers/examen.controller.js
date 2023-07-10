@@ -237,7 +237,7 @@ exports.findAvailableTeachersForExams = async (req, res) => {
             for (let i = 0; i < OccupiedPredTeachers.length; i++) {
                 if (OccupiedPredTeachers[i].sessions?.length) {
                     if ((Number(OccupiedPredTeachers[i].sessions[0]?.endsAt) > Number(startsAt))) {
-                        teachers = teachers.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher.toString() != element._id.toString())
+                        teachers = teachers.filter((element) => OccupiedPredTeachers[i]?.sessions[0]?.teacher?.toString() != element?._id?.toString())
                     }
                 }
             }
@@ -245,7 +245,7 @@ exports.findAvailableTeachersForExams = async (req, res) => {
                 if (OccupiedNextTeachers[j].sessions?.length) {
                     if ((Number(OccupiedNextTeachers[j]?.sessions[0]?.startsAt) < Number(startsAt) + Number(duree))) {
                         console.log("edszdqs")
-                        teachers = teachers.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher.toString() != element._id.toString())
+                        teachers = teachers.filter((element) => OccupiedNextTeachers[j]?.sessions[0]?.teacher?.toString() != element?._id?.toString())
                     }
                 }
                 // console.log(OccupiedNextTeachers[j]?.sessions[0]?.startsAt)
@@ -257,14 +257,14 @@ exports.findAvailableTeachersForExams = async (req, res) => {
                 let curr = 0
                 for (let i = 0; i < OccupiedTeachers.length; i++) {
                     if (OccupiedTeachers[i].sessions?.length) {
-                        newOccupiedTeachers[curr] = OccupiedTeachers[i].sessions[0].teacher.toString()
+                        newOccupiedTeachers[curr] = OccupiedTeachers[i]?.sessions[0]?.teacher?.toString()
                         curr = curr + 1
                     }
                 }
                 // newOccupiedTeachers = OccupiedTeachers.reduce((a, b, index) => index !== 1 ? [...a, ...b.sessions] : [...a.sessions, b.sessions]).map((element) => element.teacher?.toString()) || []
             }
             else if (OccupiedTeachers.length === 1) {
-                newOccupiedTeachers = OccupiedTeachers[0].sessions?.map((element) => element.teacher.toString()) || []
+                newOccupiedTeachers = OccupiedTeachers[0].sessions?.map((element) => element?.teacher?.toString()) || []
                 //OccupiedTeachers = [OccupiedTeachers[0].teacher.toString()]// can generate error because i have correct her in avai-classroom(planning)
             }
             // console.log(teachersOfTheSubject)
@@ -272,7 +272,7 @@ exports.findAvailableTeachersForExams = async (req, res) => {
                 return res.status(200).json(teachers)
             } else {
                 console.log(2232)
-                return res.status(200).json(teachers.filter((element) => newOccupiedTeachers.indexOf(element._id.toString()) === -1))
+                return res.status(200).json(teachers.filter((element) => newOccupiedTeachers.indexOf(element?._id?.toString()) === -1))
             }
         }
     } catch (e) {

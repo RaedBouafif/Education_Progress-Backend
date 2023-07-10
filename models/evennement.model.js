@@ -33,6 +33,14 @@ const Evennement =  Schema({
     },
     adminsParticipant: {
         type: Boolean
+    },
+    file: {
+        name: {
+            type: String,
+        },
+        path: {
+            type: String
+        }
     }
 },{
     timestamps: true

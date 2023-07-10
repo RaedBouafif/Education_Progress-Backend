@@ -34,9 +34,9 @@ exports.createEvent = async (req,res) => {
             eventType,
             currentPlanningId
         } = req.body
-        if (!day || !startsAt || !endsAt || !eventName || !week || !dateDebPlanning || !semesterId || !collegeYearId || !groups || !eventType || !currentPlanningId){
+        if (!day || !startsAt || !endsAt || !eventName || !week || !dateDebPlanning || !semesterId || !collegeYearId || !groups.length || !eventType || !currentPlanningId){
             return res.status(400).send({
-                message:  "Bad Request"
+                message:  "Bad Requesteazeaz"
             })
         }
         var starting_date_planning = new Date(dateDebPlanning)
@@ -55,7 +55,8 @@ exports.createEvent = async (req,res) => {
             teachersParticipant: teachersParticipant || false,
             parentsParticipant: parentsParticipant || false,
             adminsParticipant: adminsParticipant || false,
-            eventType: eventType
+            eventType: eventType,
+            file: { name: req.file?.filename, path: req.file?.path }
         })
         await event.save()
         var newPlanning = {}
@@ -99,11 +100,13 @@ exports.createEvent = async (req,res) => {
                 })
             }
         }
+        console.log(newPlanning)
         return res.status(200).send({
             created: true,
             newPlanning
         })       
     }catch(e){
+        console.log(e.message)
         return res.status(500).send({
             error : e.message,
             message: "Server Error"

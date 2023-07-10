@@ -51,13 +51,6 @@ exports.createLibraryExam = async (req, res) => {
             message: "Server Error"
         })
     }
-    catch (e) {
-        console.log(e)
-        return res.status(500).send({
-            error: e.message,
-            message: "Server Error"
-        })
-    }
 }
 
 
