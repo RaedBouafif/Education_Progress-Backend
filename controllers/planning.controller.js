@@ -1036,7 +1036,7 @@ exports.findAvailableClassroms = async (req, res) => {
             let x = 0
             for (let i = 0; i < OccupiedClassrooms.length; i++) {
                 if (OccupiedClassrooms[i].sessions?.length) {
-                    newOccupiedClassrooms[x] = OccupiedClassrooms[i].sessions[0].teacher.toString()
+                    newOccupiedClassrooms[x] = OccupiedClassrooms[i]?.sessions[0]?.teacher?.toString()
                     console.log(newOccupiedClassrooms)
                     x = x + 1
                 }
