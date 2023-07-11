@@ -2,7 +2,7 @@ const Logs = require("../models/logs")
 const jwt = require("jsonwebtoken")
 
 const logData = async ({modelId, modelType, secondModelId, secondModelType, action}) => {
-    const decodedToken = await jwt.verify(req.cookies.tck, process.env.TOKEN_KEY)
+    const decodedToken = await jwt.verify(req?.cookies?.tck, process.env.TOKEN_KEY)
     if (decodedToken){
         const roles = ["owner", "super", "admin"]
         const log = await Logs.create({

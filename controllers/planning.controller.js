@@ -390,7 +390,7 @@ exports.getPlanningByWeek = async (req, res) => {
         const planning = Planning.findOne({ group: group, collegeYear: collegeYear, week: week }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
             .populate({ path: "collegeYear", populate: { path: "semesters" } })
-            .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -420,7 +420,7 @@ exports.getPlanningByNextWeek = async (req, res) => {
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) + nbrNextWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
             .populate({ path: "collegeYear", populate: { path: "semesters" } })
-            .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -448,7 +448,7 @@ exports.getPlanningWithWeek = async (req, res) => {
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -478,7 +478,7 @@ exports.getPlanningByPredWeek = async (req, res) => {
         const planning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: Number(week) - nbrPredWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
             .populate({ path: "collegeYear", populate: { path: "semesters" } })
-            .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -522,12 +522,12 @@ exports.getCurrentPlanning = async (req, res) => {
             const currentPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
                 .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
                 .populate({ path: "collegeYear", populate: { path: "semesters" } })
-                .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+                .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
             if (!currentPlanning) {
                 const initialPlanning = await Planning.findOne({ group: group, collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                     .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
                     .populate({ path: "collegeYear", populate: { path: "semesters" } })
-                    .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+                    .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
                 if (!initialPlanning) {
                     return res.status(404).json({
                         message: "PlannigNotFound"
@@ -650,7 +650,7 @@ exports.addSessionToPlanning = async (req, res) => {
             }
             const updatedPlanning = await Planning.findByIdAndUpdate(idPlanning, { $push: { sessions: session._id } }, { new: true, runValidators: true })
                 .populate("collegeYear")
-                .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+                .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
                 .populate({ path: "group", populate: { path: "section" } })
             if (updatedPlanning) {
                 const findedSession = updatedPlanning?.sessions.find((element) => element._id.toString() == session._id.toString())
@@ -695,7 +695,7 @@ exports.addSessionToPlanning = async (req, res) => {
                         await session2.save()
                         const updatedPlanning1 = await Planning.findOneAndUpdate({ collegeYear: collegeYear, group: group, week: updatedPlanning.week + i + 1 }, { $push: { sessions: session2._id } }, { new: true, runValidators: true })
                             .populate("collegeYear")
-                            .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+                            .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
                             .populate("group")
                         if (!updatedPlanning1) {
                             return res.status(400).send({
@@ -786,7 +786,7 @@ exports.updateSessionFromPlanning = async (req, res) => {
         }
         const newPlannings = await Planning.find({ group, week: { $gte: week, $lt: (Number(week) + Number(WeeksDuration)) } })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
             .populate("group")
         try {
             const findedPlanning = newPlannings.find((element) => element.sessions?.find((element2) => element2._id.toString() === sessions[0]._id.toString()))
@@ -890,7 +890,7 @@ exports.switchSessionsFromPlanning = async (req, res) => {
         }
         const newInitialPlanning = await Planning.findByIdAndUpdate(initialPlanning, { $pull: { sessions: Types.ObjectId(intialSessionId) }, $push: { sessions: Types.ObjectId(otherSessionId) } }, { new: true })
             .populate("collegeYear")
-            .populate({ path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
             .populate("group")
         if (newInitialPlanning) {
             const newOtherPlanning = await Planning.findByIdAndUpdate(otherPlanning, { $pull: { sessions: Types.ObjectId(otherSessionId) }, $push: { sessions: Types.ObjectId(intialSessionId) } }, { new: true })
@@ -1372,7 +1372,7 @@ exports.getTeacherPlanning = async (req, res) => {
                 error: "BadRequest"
             })
         }
-        const templates = await Planning.find({ collegeYear: collegeYear, week: week }, "sessions").populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen" }, {path: "event"}, { path: "group", populate: { path: "section" } }, { path: "teacher", select: { password: 0 } }, { path: "classroom" }] })
+        const templates = await Planning.find({ collegeYear: collegeYear, week: week }, "sessions").populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "group", populate: { path: "section" } }, { path: "teacher", select: { password: 0 } }, { path: "classroom" }] })
         if (templates) {
             teacherTemplate = templates?.filter((element) => Array.isArray(element.sessions) && element.sessions.length).length ? templates?.filter((element) => Array.isArray(element.sessions)) : []
             teacherTemplate = teacherTemplate.filter(element => element.sessions.length != 0)
@@ -1431,13 +1431,13 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
                     const currentPlannings = await Planning.find({ collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
                         .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
                         .populate("collegeYear")
-                        .populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+                        .populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
                     if (!currentPlannings.length) {
                         console.log(1)
                         const initialPlannings = await Planning.find({ collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
                             .populate("collegeYear")
-                            .populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+                            .populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
                         if (!initialPlannings.length) {
                             return res.status(404).json({
                                 message: "PlannigNotFound"
@@ -1508,7 +1508,7 @@ exports.getNextTeacherPlanning = async (req, res) => {
         var planning = await Planning.find({ collegeYear: collegeYear, week: Number(week) + nbrNextWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
             .populate("collegeYear")
-            .populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", match: { teacher: idTeacher }, populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [[{ path: "students", select: { password: 0 } }, { path: "section" }], { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"
@@ -1543,7 +1543,7 @@ exports.getPredTeacherPlanning = async (req, res) => {
         const planning = await Planning.find({ collegeYear: collegeYear, week: Number(week) - nbrPredWeek }).sort({ createdAt: -1 })
             .populate({ path: "group", populate: [{ path: "section" }, { path: "students", select: { password: 0 } }] })
             .populate("collegeYear")
-            .populate({ path: "sessions", select: { teacher: idTeacher }, populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
+            .populate({ path: "sessions", select: { teacher: idTeacher }, populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" }, }, { path: "classroom" }] })
         if (!planning) {
             return res.status(404).send({
                 message: "PlannigNotFound"

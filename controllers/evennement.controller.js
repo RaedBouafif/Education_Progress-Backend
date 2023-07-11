@@ -68,9 +68,13 @@ exports.createEvent = async (req,res) => {
                 match: {
                     day: Number(day),
                     $or: [
-                        { startsAt: { $lte: Number(startsAt) }, endsAt: { $lte: Number(endsAt), $gte: Number(startsAt) } },
-                        { startsAt: { $gte: Number(startsAt), $lte: Number(endsAt) }, endsAt: { $gte: Number(endsAt) } },
-                        { startsAt: { $gte: Number(startsAt) }, endsAt: { $lte: Number(endsAt) } }
+                        { startsAt: { $lt : Number(startsAt)}, endsAt: { $gt: Number(endsAt)}},
+                        { startsAt: { $lt : Number(startsAt)}, endsAt: { $lte: Number(endsAt), $gt: Number(startsAt) }},
+                        { startsAt: Number(startsAt)},
+                        { startsAt: { $gt: Number(startsAt), $lt: Number(endsAt)}}
+                        // { startsAt: { $lte: Number(startsAt) }, endsAt: { $lte: Number(endsAt), $gte: Number(startsAt) } },
+                        // { startsAt: { $gte: Number(startsAt), $lte: Number(endsAt) }, endsAt: { $gte: Number(endsAt) } },
+                        // { startsAt: { $gte: Number(startsAt) }, endsAt: { $lte: Number(endsAt) } }
                     ]
                 }
             })
@@ -92,12 +96,10 @@ exports.createEvent = async (req,res) => {
                     await planning.save()
                 }
                 if (currentPlanningId == planning._id.toString()) {
-                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen" }, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] }])
+                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen" }, {path: "event"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject" }, { path: "classroom" }] }])
                 }
-            } else {
-                return res.status(404).send({
-                    message: "Planning for the group: " + currentGroup + " on the week: " + week + " Not Found"
-                })
+            }else{
+                continue
             }
         }
         console.log(newPlanning)

@@ -35,13 +35,17 @@ const Examen = Schema({
     subject: {
         type: Types.ObjectId,
         ref: "Subject"
+    },
+    responsibleNotes: {
+        type: Types.ObjectId,
+        ref: "Teacher"
     }
 },
 {
     timestamps: true
 })
 
-Examen.index({ semester: 1, collegeYear: 1, examTitle : 1 }, { unique: true })
+    Examen.index({ semester: 1, collegeYear: 1, examTitle : 1, beginDate: 1 }, { unique: true })
 
 
 module.exports = model("Examen", Examen)

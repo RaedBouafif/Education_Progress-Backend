@@ -25,6 +25,7 @@ exports.createExam = async (req, res) => {
         //examenNumer = 1,2,3
         //examenType = ["Synthèse", "Atelier", "Controle", "Tp"]
         //subject = { _id: 1558969855, name: "Math" }  // to optimize and do not perform one additional request
+        console.log(req.body)
         const {
             sessions,
             subject,
@@ -37,9 +38,10 @@ exports.createExam = async (req, res) => {
             examenType,
             examenNumber,
             collegeYearId,
-            currentPlanningId
+            currentPlanningId,
+            responsibleNotes
         } = req.body
-        if (!sessions || sessions.length == 0 || !subject || (!day && day != 0) || !startsAt || !endsAt || !week || !dateDebPlanning || !semesterId || !examenType || !examenNumber || !collegeYearId) {
+        if ( !responsibleNotes || !sessions || sessions.length == 0 || !subject || (!day && day != 0) || !startsAt || !endsAt || !week || !dateDebPlanning || !semesterId || !examenType || !examenNumber || !collegeYearId) {
             return res.status(400).send({
                 message: "Server Error"
             })
@@ -63,7 +65,8 @@ exports.createExam = async (req, res) => {
             beginDate: new Date(exam_final_starting_date),
             endingDate: new Date(exam_final_ending_date),
             groups: concernedGroups,
-            subject: subject._id
+            subject: subject._id,
+            responsibleNotes: responsibleNotes
         })
         console.log(exam)
         await exam.save()
@@ -77,9 +80,14 @@ exports.createExam = async (req, res) => {
                     match: {
                         day: Number(day),
                         $or: [
-                            { startsAt: { $lte: Number(startsAt) }, endsAt: { $lte: Number(endsAt), $gte: Number(startsAt) } },
-                            { startsAt: { $gte: Number(startsAt), $lte: Number(endsAt) }, endsAt: { $gte: Number(endsAt) } },
-                            { startsAt: { $gte: Number(startsAt) }, endsAt: { $lte: Number(endsAt) } }
+                            { startsAt: { $lt : Number(startsAt)}, endsAt: { $gt: Number(endsAt)}},
+                            { startsAt: { $lt : Number(startsAt)}, endsAt: { $lte: Number(endsAt), $gt: Number(startsAt) }},
+                            { startsAt: Number(startsAt)},
+                            { startsAt: { $gt: Number(startsAt), $lt: Number(endsAt)}}
+                            //dqs
+                            // { startsAt: { $lte: Number(startsAt) }, endsAt: { $lte: Number(endsAt), $gte: Number(startsAt) } },
+                            // { startsAt: { $gte: Number(startsAt), $lte: Number(endsAt) }, endsAt: { $gte: Number(endsAt) } },
+                            // { startsAt: { $gte: Number(startsAt) }, endsAt: { $lte: Number(endsAt) } }
                         ]
                     }
                 })
@@ -107,12 +115,10 @@ exports.createExam = async (req, res) => {
                 planning.sessions.push(session)
                 await planning.save()
                 if (currentPlanningId == planning._id.toString()) {
-                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen" }, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" } }, { path: "classroom" }] }])
+                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" } }, { path: "classroom" }] }])
                 }
             } else {
-                return res.status(404).send({
-                    message: "Planning for the group: " + currentSessionData.group + " on the week: " + week + " Not Found"
-                })
+                continue
             }
         }
         return res.status(200).send({

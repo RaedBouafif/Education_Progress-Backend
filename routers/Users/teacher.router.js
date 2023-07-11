@@ -13,7 +13,8 @@ const {
     findTeacherByName,
     getTeacherProfile,
     welcome,
-    logout
+    logout,
+    getListOfTeachersWithoutPopulate
 
 } = require("../../controllers/Users/teacher.controller");
 const authMiddleWare = require("../../middlewares/auth");
@@ -33,6 +34,7 @@ Router.route("/addSubject/:teacherId/:subjectId").get(authMiddleWare(["owner", "
 Router.route("/count").get(countDocsss)
 Router.route("/getListOfTeachers").get(authMiddleWare(["owner", "super", "admin", "teacher"]), getListOfTeachers)
 Router.route("/getTeacherProfile/:teacherId").get(authMiddleWare(["owner", "super", "admin", "teacher"]), getTeacherProfile)
+Router.route("/getListOfTeachersWithoutPopulate").get(authMiddleWare(["owner", "super", "admin", "teacher"]), getListOfTeachersWithoutPopulate)
 // Router.route("/welcome").get(authMiddleWare, welcome);
 // Router.route("/logout").get(logout);
 

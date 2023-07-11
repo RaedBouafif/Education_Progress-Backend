@@ -169,6 +169,19 @@ exports.getListOfTeachers = async (req, res) => {
     }
 };
 
+//get list of all teachers without populating
+exports.getListOfTeachersWithoutPopulate = async (req, res) => {
+    try {
+        var teachers = await TeacherModel.find({}, { password: 0, image: 0 }).sort({ createdAt: -1 })
+        return teachers?.length
+            ? res.status(200).json({ teachers, found: true, })
+            : res.status(204).json({ found: false });
+    } catch (e) {
+        console.log(e)
+        return res.status(500).json({ error: "serverSideError" });
+    }
+};
+
 
 exports.deleteTeacher = async (req, res) => {
     try {
