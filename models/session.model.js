@@ -115,6 +115,10 @@ const Session = Schema(
         },
         invitedActor: {
             type: String
+        },
+        correcteur: {
+            type: Types.ObjectId,
+            ref: "Teacher"
         }
     },
     {

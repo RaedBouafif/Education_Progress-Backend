@@ -36,10 +36,6 @@ const Examen = Schema({
         type: Types.ObjectId,
         ref: "Subject"
     },
-    responsibleNotes: {
-        type: Types.ObjectId,
-        ref: "Teacher"
-    }
 },
 {
     timestamps: true
@@ -49,3 +45,7 @@ const Examen = Schema({
 
 
 module.exports = model("Examen", Examen)
+
+
+
+

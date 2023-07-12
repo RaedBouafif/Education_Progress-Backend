@@ -39,9 +39,8 @@ exports.createExam = async (req, res) => {
             examenNumber,
             collegeYearId,
             currentPlanningId,
-            responsibleNotes
         } = req.body
-        if ( !responsibleNotes || !sessions || sessions.length == 0 || !subject || (!day && day != 0) || !startsAt || !endsAt || !week || !dateDebPlanning || !semesterId || !examenType || !examenNumber || !collegeYearId) {
+        if ( !sessions || sessions.length == 0 || !subject || (!day && day != 0) || !startsAt || !endsAt || !week || !dateDebPlanning || !semesterId || !examenType || !examenNumber || !collegeYearId) {
             return res.status(400).send({
                 message: "Server Error"
             })
@@ -104,8 +103,8 @@ exports.createExam = async (req, res) => {
                     sessionType: "EXAM",
                     examen: exam._id,
                     initialSubGroup: "All",
-                    sessionCategorie: "Planning"
-
+                    sessionCategorie: "Planning",
+                    correcteur: Types.ObjectId(currentSessionData.correcteur)
                 })
                 await session.save()
                 console.log(session)
@@ -115,7 +114,7 @@ exports.createExam = async (req, res) => {
                 planning.sessions.push(session)
                 await planning.save()
                 if (currentPlanningId == planning._id.toString()) {
-                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen", populate: { path: "responsibleNotes"} }, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" } }, { path: "classroom" }] }])
+                    newPlanning = await Planning.findById(currentPlanningId).populate([{ path: "collegeYear" }, { path: "sessions", populate: [{ path: "examen"}, {path: "correcteur"}, { path: "teacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }] }, { path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } } }, { path: "subject", populate: { path: "responsibleTeacher" } }, { path: "classroom" }] }])
                 }
             } else {
                 continue
