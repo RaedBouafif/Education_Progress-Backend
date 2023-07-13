@@ -39,6 +39,7 @@ exports.createExam = async (req, res) => {
             examenNumber,
             collegeYearId,
             currentPlanningId,
+            responsibleNotes
         } = req.body
         if ( !sessions || sessions.length == 0 || !subject || (!day && day != 0) || !startsAt || !endsAt || !week || !dateDebPlanning || !semesterId || !examenType || !examenNumber || !collegeYearId) {
             return res.status(400).send({
@@ -65,7 +66,7 @@ exports.createExam = async (req, res) => {
             endingDate: new Date(exam_final_ending_date),
             groups: concernedGroups,
             subject: subject._id,
-            responsibleNotes: responsibleNotes
+            responsibleNotes: responsibleNotes || null
         })
         console.log(exam)
         await exam.save()

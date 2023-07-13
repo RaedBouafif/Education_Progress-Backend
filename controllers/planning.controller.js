@@ -1402,6 +1402,7 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
         const collegeYear = req.params.collegeYear
         const idTeacher = req.params.idTeacher
         const isMe = req.params.isMe
+        console.log(isMe)
         if (!collegeYear || !idTeacher) {
             return res.status(400).send({
                 error: "BadRequest"
@@ -1432,10 +1433,10 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
                     }
                     // this will always return week number 1 
                     const currentDate = new Date()
-                    if (isMe){
+                    if (req.params.isMe === "true"){
                         console.log("Me")
                         const currentPlannings_1 = await Planning.find({ collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate }})
-                            .populate({ path: "group", populate: [{ path: "section"}, {path: "students", select : { password : 0}}] })
+                            .populate({ path: "group", populate: [{ path: "section"}, {path: "students", select : { password : 0, image: 0}}] })
                             .populate("collegeYear")
                             .populate({ 
                                 path: "sessions",
@@ -1445,17 +1446,18 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
                                     {path: "correcteur"},
                                     {path: "event"},
                                     {path: "teacher", select: { password: 0}, populate: { path: "subjects", select: { image: 0 }}},
-                                    {path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }]},
-                                    {path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } }},
-                                    {path: "subject", populate: { path: "responsibleTeacher" }},
+                                    {path: "group", populate: [{ path: "students", select: { password: 0} }, { path: "section" }]},
+                                    {path: "subTeacher", select: { password: 0, image: 0 }, populate: { path: "subjects", select: { image: 0 } }},
+                                    {path: "subject", populate: { path: "responsibleTeacher"}},
                                     {path: "classroom"}
                                 ]
                             })
                         const currentPlannings_responsibleTeacher = await Planning.find({ collegeYear: collegeYear, dateBegin: { $lte: currentDate}, dateEnd: { $gte: currentDate }})
-                            .populate({ path: "group", populate: [{ path: "section"}, {path: "students", select : { password : 0}}] })
+                            .populate({ path: "group", populate: [{ path: "section"}, {path: "students", select : { password : 0, image : 0}}] })
                             .populate("collegeYear")
                             .populate({ 
                                 path: "sessions",
+                                match: { sessionType: "EXAM"},
                                 populate: [
                                     {path: "examen"},
                                     {path: "correcteur"},
@@ -1467,14 +1469,14 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
                                     {path: "classroom"}
                                 ]
                             })
-                        if(!currentPlannings_1.length && !currentPlannings_responsibleTeacher.length){
+                        if(currentPlannings_1.length == 0 && currentPlannings_responsibleTeacher.length == 0){
                             const initialPlannings_1 = await Planning.find({ collegeYear: collegeYear, week: 1 }).sort({ createdAt: -1 })
                                 .populate({
                                     path: "group", 
                                     populate: [
                                         { path: "section" },
                                         { path: "students",
-                                        select: { password: 0 } }
+                                        select: { password: 0, image: 0 } }
                                     ]
                                 })
                                 .populate("collegeYear")
@@ -1498,12 +1500,13 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
                                     populate: [
                                         { path: "section" },
                                         { path: "students",
-                                        select: { password: 0 } }
+                                        select: { password: 0, image: 0 } }
                                     ]
                                 })
                                 .populate("collegeYear")
                                 .populate({ 
                                     path: "sessions",
+                                    match: { sessionType: "EXAM"},
                                     populate: [
                                         {path: "examen"},
                                         {path: "correcteur"},
@@ -1511,7 +1514,7 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
                                         {path: "teacher", select: { password: 0}, populate: { path: "subjects", select: { image: 0 }}},
                                         {path: "group", populate: [{ path: "students", select: { password: 0 } }, { path: "section" }]},
                                         {path: "subTeacher", select: { password: 0 }, populate: { path: "subjects", select: { image: 0 } }},
-                                        {path: "subject", match: { responsibleTeacher: idTeacher },  populate: { path: "responsibleTeacher" }},
+                                        {path: "subject", match: { responsibleTeacher: idTeacher },  populate: { path: "responsibleTeacher"}},
                                         {path: "classroom"}
                                     ]
                                 })
@@ -1525,45 +1528,74 @@ exports.getCurrentTeacherPlanning = async (req, res) => {
                                 var finalInitialPlanning1_1 = initialPlannings_1[0]
                                 if(initialPlannings_responsibleTeacher.length != 0){
                                     var newInitialPlannings_responsibleTeacher_sessions = initialPlannings_responsibleTeacher.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? initialPlannings_responsibleTeacher?.filter((element) => Array.isArray(element?.sessions)) : []
-                                    newInitialPlannings_responsibleTeacher_sessions = newInitialPlannings_responsibleTeacher_sessions.filter((element) => (element?.teacher != idTeacher && element?.correcteur != idTeacher))
+                                    var newInitialPlannings_responsibleTeacher_sessions_latest = newInitialPlannings_responsibleTeacher_sessions.flatMap( pln => pln.sessions)
+                                    newInitialPlannings_responsibleTeacher_sessions_latest = newInitialPlannings_responsibleTeacher_sessions_latest.filter( (element) => (element.subject && Object.keys(element.subject).length))
                                 }
+                                var teacherPlannings_1 = initialPlannings_1.filter((element) => Array.isArray(element.sessions) && element?.sessions?.length).length ? initialPlannings_1?.filter((element) => Array.isArray(element?.sessions)) : []
+                                teacherPlannings_1 = teacherPlannings_1.filter(element => element.sessions?.length != 0)
+                                const sessions_1 = teacherPlannings_1.flatMap(teacherPlanning => teacherPlanning.sessions);
+                                for ( let i=0; i< newInitialPlannings_responsibleTeacher_sessions_latest.length ; i++){
+                                    sessions_1.push(newInitialPlannings_responsibleTeacher_sessions_latest[i])
+                                }
+                                finalInitialPlanning1_1.sessions = sessions_1 || []
+                                console.log("ending With sénario intialPlanning Me")
+                                return res.status(200).json({
+                                    planning: finalInitialPlanning1_1,
+                                    initialSemester: year.semesters[0].name,
+                                    numberTotalOfWeeks: numberTotalOfWeeks,
+                                    infos
+                                })
                             }else{
                                 var finalInitialPlanning1_1 = initialPlannings_responsibleTeacher[0]
+                                var teacherPlannings_1_1_1 = initialPlannings_responsibleTeacher.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? initialPlannings_responsibleTeacher?.filter((element) => Array.isArray(element?.sessions)) : []
+                                teacherPlannings_1_1_1 = teacherPlannings_1_1_1.filter(element => element?.sessions?.length != 0)
+                                const sessions = teacherPlannings_1_1_1.flatMap(teacherPlanning => teacherPlanning.sessions);
+                                finalInitialPlanning1_1.sessions = sessions || []
+                                return res.status(200).send({
+                                    planning: finalInitialPlanning1_1,
+                                    initialSemester: year.semesters[0].name,
+                                    numberTotalOfWeeks: numberTotalOfWeeks,
+                                    infos
+                                })
                             }
-                            var teacherPlannings_1 = initialPlannings_1.filter((element) => Array.isArray(element.sessions) && element?.sessions?.length).length ? initialPlannings_1?.filter((element) => Array.isArray(element?.sessions)) : []
-                            teacherPlannings_1 = teacherPlannings_1.filter(element => element.sessions?.length != 0)
-                            const sessions_1 = initialPlannings_1.flatMap(teacherPlanning => teacherPlanning.sessions);
-                            finalInitialPlanning1_1.sessions = sessions_1
-                            finalInitialPlanning1_1.sessions.concat(newInitialPlannings_responsibleTeacher_sessions)
-                            console.log("ending With sénario intialPlanning Me")
-                            return res.status(200).json({
-                                planning: finalInitialPlanning1_1,
-                                initialSemester: year.semesters[0].name,
-                                numberTotalOfWeeks: numberTotalOfWeeks,
-                                infos
-                            })
                         }else{
                             if(currentPlannings_1.length != 0){
                                 var finalCurrentPlanning_1_1 = currentPlannings_1[0]
                                 if(currentPlannings_responsibleTeacher.length != 0){
                                     var newCurrentPlannings_responsibleTeacher_sessions = currentPlannings_responsibleTeacher.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? currentPlannings_responsibleTeacher?.filter((element) => Array.isArray(element?.sessions)) : []
-                                    newCurrentPlannings_responsibleTeacher_sessions = newCurrentPlannings_responsibleTeacher_sessions.filter((element) => (element?.teacher != idTeacher && element?.correcteur != idTeacher))
+                                    var newCurrentPlannings_responsibleTeacher_sessions_latest = newCurrentPlannings_responsibleTeacher_sessions.flatMap( pln => pln.sessions)
+                                    newCurrentPlannings_responsibleTeacher_sessions_latest = newCurrentPlannings_responsibleTeacher_sessions_latest.filter( (element) => (element.subject && Object.keys(element.subject).length))
+                                    console.log(newCurrentPlannings_responsibleTeacher_sessions_latest.length)
                                 }
+                                var teacherPlannings_1_1 = currentPlannings_1.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? currentPlannings_1?.filter((element) => Array.isArray(element?.sessions)) : []
+                                teacherPlannings_1_1 = teacherPlannings_1_1.filter(element => element?.sessions?.length != 0)
+                                const sessions = teacherPlannings_1_1.flatMap(teacherPlanning => teacherPlanning.sessions);
+                                console.log(sessions.length)
+                                for ( let i=0; i< newCurrentPlannings_responsibleTeacher_sessions_latest.length ; i++){
+                                    sessions.push(newCurrentPlannings_responsibleTeacher_sessions_latest[i])
+                                }
+                                console.log(finalCurrentPlanning_1_1.sessions.length)
+                                finalCurrentPlanning_1_1.sessions = sessions || []
+                                console.log("ending With sénario currentPlanning Me")
+                                return res.status(200).send({
+                                    planning: finalCurrentPlanning_1_1,
+                                    initialSemester: year.semesters[0].name,
+                                    numberTotalOfWeeks: numberTotalOfWeeks,
+                                    infos
+                                })
                             }else{
-                                var finalInitialPlanning1_1 = currentPlannings_responsibleTeacher[0]
+                                var finalCurrentPlanning_1_1 = currentPlannings_responsibleTeacher[0]
+                                var teacherPlannings_1_1 = currentPlannings_responsibleTeacher.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? currentPlannings_responsibleTeacher?.filter((element) => Array.isArray(element?.sessions)) : []
+                                teacherPlannings_1_1 = teacherPlannings_1_1.filter(element => element?.sessions?.length != 0)
+                                const sessions = teacherPlannings_1_1.flatMap(teacherPlanning => teacherPlanning.sessions);
+                                finalCurrentPlanning_1_1.sessions = sessions || []
+                                return res.status(200).send({
+                                    planning: finalCurrentPlanning_1_1,
+                                    initialSemester: year.semesters[0].name,
+                                    numberTotalOfWeeks: numberTotalOfWeeks,
+                                    infos
+                                })
                             }
-                            var teacherPlannings_1_1 = currentPlannings_1.filter((element) => Array.isArray(element?.sessions) && element?.sessions?.length).length ? currentPlannings_1?.filter((element) => Array.isArray(element?.sessions)) : []
-                            teacherPlannings_1_1 = teacherPlannings_1_1.filter(element => element?.sessions?.length != 0)
-                            const sessions = currentPlannings_1.flatMap(teacherPlanning => teacherPlanning.sessions);
-                            finalCurrentPlanning_1_1.sessions = sessions || []
-                            finalCurrentPlanning_1_1.sessions.concat(newCurrentPlannings_responsibleTeacher_sessions)
-                            console.log("ending With sénario currentPlanning Me")
-                            return res.status(200).send({
-                                planning: finalCurrentPlanning_1_1,
-                                initialSemester: year.semesters[0].name,
-                                numberTotalOfWeeks: numberTotalOfWeeks,
-                                infos
-                            })
                         }
                     }else{
                         const currentPlannings = await Planning.find({ collegeYear: collegeYear, dateBegin: { $lte: currentDate }, dateEnd: { $gte: currentDate } })
