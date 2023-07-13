@@ -46,8 +46,8 @@ Router.route("/toggleCancelSession/:sessionId/:status").get(authMiddleWare(["adm
 Router.route("/getTeacherPlanning/:collegeYear/:week/:idTeacher").get(authMiddleWare(["admin", "super", "owner", "teacher"]), getTeacherPlanning)
 //teacher Template
 Router.route("/getTeacherCurrentWeek/:collegeYear/:idTeacher/:isMe").get(authMiddleWare(["admin", "super", "owner", "teacher"]), getCurrentTeacherPlanning)
-Router.route("/getTeacherPredWeek/:collegeYear/:week/:idTeacher").get(authMiddleWare(["admin", "super", "owner", "teacher"]), getPredTeacherPlanning)
-Router.route("/getNextTeacherWeek/:collegeYear/:week/:idTeacher").get(authMiddleWare(["admin", "super", "owner", "teacher"]), getNextTeacherPlanning)
+Router.route("/getTeacherPredWeek/:collegeYear/:week/:idTeacher/:isMe").get(authMiddleWare(["admin", "super", "owner", "teacher"]), getPredTeacherPlanning)
+Router.route("/getNextTeacherWeek/:collegeYear/:week/:idTeacher/:isMe").get(authMiddleWare(["admin", "super", "owner", "teacher"]), getNextTeacherPlanning)
 
 
 
